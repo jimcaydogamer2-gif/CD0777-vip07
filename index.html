@@ -101,9 +101,9 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc } from 'firebase/firestore';
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
         // --- 1. FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -137,16 +137,17 @@
                 menu: "القائمة", settings: "الإعدادات", logout: "خروج",
                 success: "عملية ناجحة", error: "حدث خطأ",
                 you_get: "لقد ربحت", you_lose: "حظ أوفر",
-                upload_proof: "رفع إثبات الدفع", amount: "المبلغ", pay_method: "طريقة الدفع",
+                upload_proof: "رفع إثبات الدفع (سكرين شوت)", amount: "المبلغ", pay_method: "طريقة الدفع",
                 forgot_pass: "نسيت كلمة المرور؟", reset_req: "طلب استعادة",
                 change_pass: "تغيير كلمة المرور", old_pass: "كلمة المرور القديمة", new_pass: "كلمة المرور الجديدة",
                 admin_panel: "لوحة التحكم", approve: "قبول", reject: "رفض",
-                payment_info: "معلومات الدفع", active: "نشط", review: "مراجعة", play: "لعب", done: "مكتمل", execute: "نفذ",
+                payment_info: "معلومات الدفع", active: "نشط", review: "مراجعة", play: "لعب", done: "مكتمل", execute: "إرسال الطلب",
                 inputs_err: "البيانات ناقصة", personal_info: "المعلومات الشخصية", no_tasks: "لا توجد مهام حالياً",
                 cashout: "سحب", multiplier: "المضاعف", rolling: "جاري اللعب...",
                 heads: "صورة", tails: "كتابة", target: "الهدف", next_round: "الجولة التالية",
                 bet_placed: "تم الرهان", crashed: "تحطم", waiting: "انتظار...",
-                history: "السجل", support: "الدعم الفني", lang: "اللغة", policy: "سياسة الخصوصية", terms: "الشروط والاحكام", confirm: "تأكيد"
+                history: "السجل", support: "الدعم الفني", lang: "اللغة", policy: "سياسة الخصوصية", terms: "الشروط والاحكام", confirm: "تأكيد",
+                acc_num: "رقم الحساب / المحفظة", bank_name: "اسم البنك / الشبكة", proof_needed: "المرجو تحويل المبلغ ورفع الصورة", pending: "قيد المراجعة"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -157,21 +158,21 @@
                 menu: "Menu", settings: "Settings", logout: "Logout",
                 success: "Success", error: "Error",
                 you_get: "YOU WIN", you_lose: "YOU LOSE",
-                upload_proof: "Upload Proof", amount: "Amount", pay_method: "Payment Method",
+                upload_proof: "Upload Proof (Screenshot)", amount: "Amount", pay_method: "Payment Method",
                 forgot_pass: "Forgot Password?", reset_req: "Request Reset",
                 change_pass: "Change Password", old_pass: "Old Password", new_pass: "New Password",
                 admin_panel: "Admin Panel", approve: "Approve", reject: "Reject",
-                payment_info: "Payment Info", active: "Active", review: "Review", play: "Play", done: "Done", execute: "Execute",
+                payment_info: "Payment Info", active: "Active", review: "Review", play: "Play", done: "Done", execute: "Send Request",
                 inputs_err: "Missing Inputs", personal_info: "Personal Info", no_tasks: "No Tasks",
                 cashout: "CASHOUT", multiplier: "Multiplier", rolling: "Rolling...",
                 heads: "Heads", tails: "Tails", target: "Target", next_round: "Next Round",
                 bet_placed: "Bet Placed", crashed: "CRASHED", waiting: "Waiting...",
-                history: "History", support: "Support", lang: "Language", policy: "Privacy Policy", terms: "Terms of Service", confirm: "Confirm"
+                history: "History", support: "Support", lang: "Language", policy: "Privacy Policy", terms: "Terms of Service", confirm: "Confirm",
+                acc_num: "Account No. / Wallet", bank_name: "Bank Name / Network", proof_needed: "Transfer amount & upload proof", pending: "Pending"
             }
         };
 
         // --- COMPONENTS ---
-        // FIX: Added type="button" to prevent form submission
         const Button = ({ children, onClick, disabled, variant='gold', full, className='', icon: Icon }) => {
             const base = "relative font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 btn-press disabled:opacity-50 disabled:grayscale select-none";
             const styles = {
@@ -205,6 +206,15 @@
             }
         };
 
+        const convertToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        };
+
         // --- APP ROOT ---
         export default function App() {
             const [splash, setSplash] = useState(true);
@@ -220,21 +230,30 @@
             useEffect(() => { setTimeout(() => setSplash(false), 2500); }, []);
             useEffect(() => { if(db) onSnapshot(doc(db, "settings", "global"), (s) => s.exists() && setSettings(s.data())); }, []);
 
+            // --- FIXED AUTH & DATA SYNC ---
             useEffect(() => {
                 const uid = localStorage.getItem('cd0777_uid');
                 if (uid && db) {
+                    if (uid === 'admin') {
+                        setUser({role: 'admin', username: 'Admin'});
+                        return;
+                    }
                     const unsub = onSnapshot(doc(db, "users", uid), (s) => {
                         if (s.exists()) {
                             setUser({ id: s.id, ...s.data() });
-                            // Don't auto-redirect if already in a valid view, to prevent reset during games
-                            if(view === 'auth') setView(s.data().role==='admin'?'admin':'home');
                         } else {
                             setUser(null); localStorage.removeItem('cd0777_uid'); setView('auth');
                         }
                     }, err => showMsg("Connection Error", 'error'));
                     return () => unsub();
                 }
-            }, []); // Empty dependency array prevents re-subscription loops
+            }, []);
+
+            useEffect(() => {
+                if (user && view === 'auth') {
+                    setView(user.role === 'admin' ? 'admin' : 'home');
+                }
+            }, [user]);
 
             const showMsg = (msg, type='success') => { 
                 setNotify({msg, type}); 
@@ -252,7 +271,8 @@
             if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
-            if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db });
+            // --- ADMIN PANEL ---
+            if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
             // --- GAMES ---
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
@@ -343,7 +363,7 @@
 
         // --- AUTH ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
-            const [isReg, setIsReg] = useState(false); const [country, setCountry] = useState(COUNTRIES[0]); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
+            const [isReg, setIsReg] = useState(false); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
             const submit = async () => {
                 if(!f.u || !f.p) return showMsg(t('inputs_err'), 'error');
                 if(f.u==='admin' && f.p==='admin123') { localStorage.setItem('cd0777_uid', 'admin'); setUser({role:'admin'}); setView('admin'); return; }
@@ -351,11 +371,11 @@
                     if(isReg) {
                         const q = query(collection(db, "users"), where("username", "==", f.u)); if(!(await getDocs(q)).empty) throw new Error('Username taken');
                         const sz = (await getDocs(collection(db, "users"))).size;
-                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'pending', coins: 100, balance: 0, completedTasks: [] };
-                        const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu}); setView('home');
+                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'active', coins: 100, balance: 0, completedTasks: [] };
+                        const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu});
                     } else {
                         const q = query(collection(db, "users"), where("username", "==", f.u), where("password", "==", f.p)); const s = await getDocs(q);
-                        if(s.empty) throw new Error('Invalid credentials'); const d=s.docs[0]; localStorage.setItem('cd0777_uid', d.id); setUser({id:d.id, ...d.data()}); setView('home');
+                        if(s.empty) throw new Error('Invalid credentials'); const d=s.docs[0]; localStorage.setItem('cd0777_uid', d.id); setUser({id:d.id, ...d.data()});
                     }
                 } catch(e) { showMsg(e.message, 'error'); }
             };
@@ -439,7 +459,6 @@
         }
         const GameCard = ({ title, sub, color, icon: Icon, onClick }) => React.createElement('button', { onClick, className: `relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-dark-800 hover:border-${color}-500/50 transition-all group w-full text-right active:scale-95 shadow-lg` }, React.createElement('div', { className: `absolute inset-0 bg-gradient-to-br from-${color}-900/50 to-transparent` }), React.createElement('div', { className: `absolute top-3 left-3 text-${color}-500/20 group-hover:text-${color}-500/40 transition-colors` }, React.createElement(Icon, { size: 60 })), React.createElement('div', { className: "absolute bottom-4 right-4 z-10" }, React.createElement('h3', { className: "text-xl font-black text-white italic" }, title), React.createElement('p', { className: `text-[10px] text-${color}-300 font-bold uppercase` }, sub)));
 
-        // --- MISSING SCREENS (ADDED TO FIX CRASH) ---
         function TasksScreen({ user, showMsg, t }) {
             return React.createElement('div', { className: "animate-pop" },
                 React.createElement('h2', { className: "text-gold-500 font-bold text-lg mb-4" }, t('tasks')),
@@ -450,15 +469,16 @@
             );
         }
 
+        // --- FIXED WALLET SCREEN ---
         function WalletScreen({ user, showMsg, t, isRTL, navTo }) {
             return React.createElement('div', { className: "space-y-6 animate-pop" },
                 React.createElement('div', { className: "bg-gradient-to-r from-gold-600 to-gold-400 p-6 rounded-2xl shadow-lg text-black relative overflow-hidden" },
                    React.createElement('div', { className: "absolute -right-4 -top-4 text-white/20" }, React.createElement(Wallet, { size: 100 })),
                    React.createElement('p', { className: "text-xs font-black uppercase tracking-widest opacity-60" }, "Total Balance"),
-                   React.createElement('h2', { className: "text-4xl font-black font-mono mt-1 mb-4" }, `$${user.balance.toFixed(2)}`),
+                   React.createElement('h2', { className: "text-4xl font-black font-mono mt-1 mb-4" }, `$${Number(user.balance).toFixed(2)}`),
                    React.createElement('div', { className: "flex gap-2" },
-                        React.createElement('button', { onClick: ()=>navTo('deposit'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('deposit')),
-                        React.createElement('button', { onClick: ()=>navTo('withdraw'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('withdraw'))
+                       React.createElement('button', { onClick: ()=>navTo('deposit'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('deposit')),
+                       React.createElement('button', { onClick: ()=>navTo('withdraw'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('withdraw'))
                    )
                 ),
                 React.createElement('div', { className: "bg-dark-900 rounded-2xl p-1" },
@@ -469,36 +489,109 @@
             );
         }
 
+        // --- NEW: UPDATED DEPOSIT SCREEN WITH METHODS ---
         function DepositScreen({ user, showMsg, t, settings, back }) {
-             return React.createElement('div', { className: "animate-pop" },
+             const [method, setMethod] = useState(null);
+             const [amount, setAmount] = useState('');
+             const [imgFile, setImgFile] = useState(null);
+             const [loading, setLoading] = useState(false);
+
+             const METHODS = [
+                 { id: 'attijari', name: 'Attijari Bank', color: 'text-orange-500', bg: 'bg-orange-500/10', icon: Banknote },
+                 { id: 'cashplus', name: 'Cash Plus', color: 'text-yellow-500', bg: 'bg-yellow-500/10', icon: Zap },
+                 { id: 'paypal', name: 'PayPal', color: 'text-blue-500', bg: 'bg-blue-500/10', icon: Wallet },
+                 { id: 'binance', name: 'Binance', color: 'text-yellow-400', bg: 'bg-yellow-400/10', icon: Disc }
+             ];
+
+             const submit = async () => {
+                 if(!method || !amount || !imgFile) return showMsg(t('inputs_err'), 'error');
+                 setLoading(true);
+                 try {
+                     const base64Img = await convertToBase64(imgFile);
+                     await addDoc(collection(db, "deposits"), {
+                         userId: user.id,
+                         username: user.username,
+                         amount: Number(amount),
+                         method: method.name,
+                         status: 'pending',
+                         image: base64Img,
+                         date: new Date().toISOString()
+                     });
+                     showMsg(t('success'));
+                     back();
+                 } catch(e) { showMsg(t('error'), 'error'); }
+                 setLoading(false);
+             };
+
+             return React.createElement('div', { className: "animate-pop h-full flex flex-col" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
                 React.createElement('h2', { className: "text-2xl font-bold mb-4" }, t('deposit')),
-                React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-center" },
-                    React.createElement('p', { className: "text-gray-400 mb-4" }, settings.walletAddress || "No payment method available currently."),
-                    React.createElement(Button, { full:true, onClick:back }, t('done'))
+                
+                React.createElement('div', { className: "flex-1 overflow-y-auto space-y-4 pb-20" },
+                    // Step 1: Method
+                    React.createElement('div', { className: "grid grid-cols-2 gap-3" },
+                        METHODS.map(m => React.createElement('button', {
+                            key: m.id,
+                            onClick: () => setMethod(m),
+                            className: `p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${method?.id === m.id ? 'border-gold-500 bg-gold-500/10' : 'border-white/10 bg-dark-900'}`
+                        }, React.createElement(m.icon, { className: m.color }), React.createElement('span', { className: "text-xs font-bold" }, m.name)))
+                    ),
+
+                    // Step 2: Info & Upload
+                    method && React.createElement('div', { className: "space-y-4 animate-slide-up" },
+                        React.createElement('div', { className: "bg-dark-800 p-4 rounded-xl border border-white/5 text-center" },
+                            React.createElement('p', { className: "text-xs text-gray-400 mb-2" }, t('proof_needed')),
+                            React.createElement('p', { className: "font-mono text-lg text-gold-500 break-all select-text" }, settings[`${method.id}_info`] || "Ask Admin for details")
+                        ),
+                        React.createElement(Input, { placeholder: t('amount'), type: "number", value: amount, onChange: e=>setAmount(e.target.value), icon: DollarSign }),
+                        
+                        React.createElement('div', { className: "bg-dark-900 border border-dashed border-white/20 rounded-xl p-6 text-center relative" },
+                            React.createElement('input', { type: "file", accept: "image/*", onChange: e=>setImgFile(e.target.files[0]), className: "absolute inset-0 opacity-0 z-10 w-full h-full cursor-pointer" }),
+                            React.createElement(Upload, { className: "mx-auto text-gray-500 mb-2" }),
+                            React.createElement('p', { className: "text-xs text-gray-400" }, imgFile ? imgFile.name : t('upload_proof'))
+                        ),
+
+                        React.createElement(Button, { full: true, onClick: submit, disabled: loading }, loading ? "..." : t('execute'))
+                    )
                 )
             );
         }
 
+        // --- NEW: UPDATED WITHDRAW SCREEN ---
         function WithdrawScreen({ user, showMsg, t, back }) {
+             const [form, setForm] = useState({ amount: '', name: '', account: '', bank: '' });
              return React.createElement('div', { className: "animate-pop" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
                 React.createElement('h2', { className: "text-2xl font-bold mb-4" }, t('withdraw')),
                 React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl space-y-4" },
-                    React.createElement(Input, { placeholder: t('amount'), type:"number" }),
-                    React.createElement(Input, { placeholder: t('pay_method') }),
+                    React.createElement(Input, { placeholder: t('name'), value: form.name, onChange: e=>setForm({...form, name:e.target.value}), icon: User }),
+                    React.createElement(Input, { placeholder: t('amount'), type:"number", value: form.amount, onChange: e=>setForm({...form, amount:e.target.value}), icon: DollarSign }),
+                    React.createElement(Input, { placeholder: t('acc_num'), value: form.account, onChange: e=>setForm({...form, account:e.target.value}), icon: CreditCard }),
+                    React.createElement(Input, { placeholder: t('bank_name'), value: form.bank, onChange: e=>setForm({...form, bank:e.target.value}), icon: Landmark }),
                     React.createElement(Button, { full:true, onClick:()=>showMsg(t('success')) }, t('execute'))
                 )
             );
         }
 
         function HistoryScreen({ user, t, back }) {
+            const [list, setList] = useState([]);
+            useEffect(() => {
+                const q = query(collection(db, "deposits"), where("userId", "==", user.id), orderBy("date", "desc"));
+                onSnapshot(q, s => setList(s.docs.map(d => d.data())));
+            }, []);
             return React.createElement('div', { className: "animate-pop" },
                 React.createElement('div', { className: "flex items-center gap-2 mb-4" }, 
-                    back && React.createElement('button', { onClick: back, className: "text-gold-500" }, React.createElement(ChevronRight)),
+                     back && React.createElement('button', { onClick: back, className: "text-gold-500" }, React.createElement(ChevronRight)),
                     React.createElement('h2', { className: "text-gold-500 font-bold text-lg" }, t('history'))
                 ),
-                React.createElement('div', { className: "bg-dark-900 rounded-2xl p-6 text-center text-gray-500" }, "No records found")
+                list.length === 0 
+                ? React.createElement('div', { className: "bg-dark-900 rounded-2xl p-6 text-center text-gray-500" }, "No records found")
+                : React.createElement('div', { className: "space-y-2" }, list.map((item, i) => 
+                    React.createElement('div', { key: i, className: "bg-dark-900 p-4 rounded-xl flex justify-between items-center" },
+                        React.createElement('div', {}, React.createElement('p', { className: "text-white font-bold" }, item.method), React.createElement('p', { className: "text-xs text-gray-500" }, new Date(item.date).toLocaleDateString())),
+                        React.createElement('div', { className: "text-right" }, React.createElement('p', { className: "text-gold-500 font-mono" }, `+${item.amount}`), React.createElement('p', { className: `text-[10px] ${item.status==='pending'?'text-yellow-500':'text-green-500'}` }, item.status))
+                    )
+                ))
             );
         }
 
@@ -525,6 +618,89 @@
         }
         
         const SettingsBtn = ({ icon: Icon, label, onClick, arrow, isRTL }) => React.createElement('button', { onClick, className: "w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-xl group transition-all" }, React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "p-2 bg-dark-950 rounded-lg text-gold-500 group-hover:scale-110 transition-transform" }, React.createElement(Icon, { size: 18 })), React.createElement('span', { className: "font-medium text-sm" }, label)), arrow && (isRTL ? React.createElement(ChevronLeft, { size: 16, className: "text-gray-600" }) : React.createElement(ChevronRight, { size: 16, className: "text-gray-600" })));
+
+
+        // --- NEW: FULL ADMIN PANEL ---
+        function AdminPanel({ user, logout, db, showMsg, t }) {
+            const [tab, setTab] = useState('req'); // req, settings
+            const [reqs, setReqs] = useState([]);
+            const [conf, setConf] = useState({ attijari_info: '', cashplus_info: '', paypal_info: '', binance_info: '' });
+
+            useEffect(() => {
+                const q = query(collection(db, "deposits"), where("status", "==", "pending"));
+                onSnapshot(q, s => setReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                getDoc(doc(db, "settings", "global")).then(s => s.exists() && setConf(s.data()));
+            }, []);
+
+            const saveSettings = async () => {
+                await setDoc(doc(db, "settings", "global"), conf, { merge: true });
+                showMsg(t('success'));
+            };
+
+            const handleReq = async (r, action) => {
+                try {
+                    if (action === 'approve') {
+                        // 1. Get user
+                        const uRef = doc(db, "users", r.userId);
+                        const uSnap = await getDoc(uRef);
+                        if(uSnap.exists()) {
+                            // 2. Add coins
+                            await updateDoc(uRef, { coins: Number(uSnap.data().coins) + Number(r.amount), balance: Number(uSnap.data().balance) + Number(r.amount) });
+                            // 3. Update req
+                            await updateDoc(doc(db, "deposits", r.id), { status: 'approved' });
+                            showMsg('Approved & Coins Added');
+                        }
+                    } else {
+                        await updateDoc(doc(db, "deposits", r.id), { status: 'rejected' });
+                        showMsg('Rejected');
+                    }
+                } catch(e) { showMsg('Error', 'error'); }
+            };
+
+            return React.createElement('div', { className: "min-h-screen bg-dark-950 p-6" },
+                React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                    React.createElement('h1', { className: "text-3xl font-bold text-gold-500" }, "ADMIN CONTROL"),
+                    React.createElement('button', { onClick: logout, className: "bg-red-900/20 text-red-500 p-2 rounded-lg" }, React.createElement(LogOut))
+                ),
+                
+                // Tabs
+                React.createElement('div', { className: "flex gap-2 mb-6" },
+                    React.createElement(Button, { onClick: ()=>setTab('req'), variant: tab==='req'?'gold':'dark', className: "flex-1" }, "Requests"),
+                    React.createElement(Button, { onClick: ()=>setTab('settings'), variant: tab==='settings'?'gold':'dark', className: "flex-1" }, "Payment Methods")
+                ),
+
+                // Content
+                tab === 'req' && React.createElement('div', { className: "space-y-4" },
+                    reqs.length === 0 && React.createElement('div', { className: "text-center text-gray-500 py-10" }, "No pending requests"),
+                    reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                        React.createElement('div', { className: "flex justify-between mb-2" },
+                            React.createElement('span', { className: "font-bold text-white" }, r.username),
+                            React.createElement('span', { className: "text-gold-500 font-mono" }, `+${r.amount}`)
+                        ),
+                        React.createElement('div', { className: "flex justify-between text-xs text-gray-400 mb-4" },
+                            React.createElement('span', {}, r.method),
+                            React.createElement('span', {}, new Date(r.date).toLocaleString())
+                        ),
+                        // Image Preview (Simple)
+                        r.image && React.createElement('img', { src: r.image, className: "w-full h-32 object-cover rounded-lg mb-4 bg-black" }),
+                        
+                        React.createElement('div', { className: "flex gap-2" },
+                            React.createElement(Button, { onClick: ()=>handleReq(r, 'approve'), variant: 'green', full:true, className: "py-2" }, t('approve')),
+                            React.createElement(Button, { onClick: ()=>handleReq(r, 'reject'), variant: 'red', full:true, className: "py-2" }, t('reject'))
+                        )
+                    ))
+                ),
+
+                tab === 'settings' && React.createElement('div', { className: "space-y-4" },
+                    React.createElement('p', { className: "text-gray-400 text-sm mb-4" }, "Set account numbers that users will see when depositing."),
+                    React.createElement(Input, { placeholder: "Attijari RIB/Info", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
+                    React.createElement(Input, { placeholder: "Cash Plus Info", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
+                    React.createElement(Input, { placeholder: "PayPal Email", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) }),
+                    React.createElement(Input, { placeholder: "Binance Wallet Address", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
+                    React.createElement(Button, { onClick: saveSettings, full:true }, "Save Changes")
+                )
+            );
+        }
 
 
         // --- FIXED CRASH GAME (AUTO LOOP) ---
@@ -563,7 +739,6 @@
                 if (nextRoundBet) {
                     setActiveBet(nextRoundBet);
                     setNextRoundBet(null);
-                    // Deduct balance here or when queueing? Better when queueing to prevent negative balance tricks.
                 }
 
                 // Determine Crash Point (House Edge Logic)
@@ -779,13 +954,13 @@
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')]" },
                     React.createElement('div', { className: "bg-gradient-to-b from-purple-900 to-black p-4 rounded-3xl border-4 border-gold-500 shadow-[0_0_50px_rgba(234,179,8,0.3)] relative" },
-                         React.createElement('div', { className: "absolute -top-6 left-1/2 -translate-x-1/2 bg-gold-500 text-black font-black px-4 py-1 rounded-full text-xs shadow-lg uppercase tracking-widest" }, "Jackpot 50x"),
-                         React.createElement('div', { className: "flex gap-2 bg-black/50 p-4 rounded-xl border border-white/10" },
+                          React.createElement('div', { className: "absolute -top-6 left-1/2 -translate-x-1/2 bg-gold-500 text-black font-black px-4 py-1 rounded-full text-xs shadow-lg uppercase tracking-widest" }, "Jackpot 50x"),
+                          React.createElement('div', { className: "flex gap-2 bg-black/50 p-4 rounded-xl border border-white/10" },
                            reels.map((r, i) => React.createElement('div', { key: i, className: "w-20 h-24 bg-white rounded-lg flex items-center justify-center text-5xl shadow-inner relative overflow-hidden" }, 
                                React.createElement('div', { className: `absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none` }),
                                React.createElement('div', { className: spinning ? 'slot-spin' : 'animate-pop' }, r)
                            ))
-                         )
+                          )
                     )
                 ),
                 React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 pb-safe" }, 
