@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Global Club</title>
+    <title>CD0777 Club</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,42 +11,34 @@
             theme: {
                 extend: {
                     colors: {
-                        gold: { 100: '#FFF9C4', 300: '#FDD835', 500: '#FFD700', 600: '#C0A000', 800: '#8A7000' },
+                        gold: { 100: '#FFF9C4', 400: '#FDD835', 500: '#FFD700', 600: '#C0A000', 800: '#8A7000' },
                         dark: { 950: '#020617', 900: '#0f172a', 800: '#1e293b' }
                     },
                     fontFamily: {
                         cairo: ['Cairo', 'sans-serif'],
                         mono: ['Share Tech Mono', 'monospace'],
-                        oswald: ['Oswald', 'sans-serif'],
-                        inter: ['Inter', 'sans-serif']
+                        oswald: ['Oswald', 'sans-serif']
                     },
                     animation: {
                         'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
-                        'float': 'float 6s ease-in-out infinite'
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
-                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } },
-                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } }
                     }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Oswald:wght@500&family=Share+Tech+Mono&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Oswald:wght@500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #fff; overflow: hidden; }
-        /* Responsive Container for PC */
-        #root { height: 100vh; display: flex; justify-content: center; align-items: center; background: url('https://www.transparenttextures.com/patterns/cubes.png'), radial-gradient(circle at center, #1e293b 0%, #000 100%); }
-        .app-container { width: 100%; height: 100%; max-width: 480px; position: relative; background: #020617; overflow: hidden; display: flex; flex-direction: column; }
-        @media (min-width: 768px) {
-            .app-container { height: 90vh; max-height: 900px; border-radius: 40px; border: 8px solid #333; box-shadow: 0 0 50px rgba(255, 215, 0, 0.1); }
-        }
+        body { background-color: #000; color: #fff; overflow: hidden; touch-action: manipulation; }
         .glass-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.05); }
         input, select, button { outline: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 0px; }
-        canvas { touch-action: none; }
+        .no-select { user-select: none; -webkit-user-select: none; }
+        canvas { display: block; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
@@ -67,11 +59,11 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, Flag } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy } from 'firebase/firestore';
 
-        // --- CONFIG ---
+        // --- FIREBASE CONFIG (YOUR KEYS) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDJ5B7MncMfyjwb0ZnZ8p3d0bsoQAFqZQY",
             authDomain: "cd0777-casino.firebaseapp.com",
@@ -90,7 +82,7 @@
             FACEBOOK: "https://www.facebook.com/share/p/17gNCDYUYs/"
         };
 
-        // --- TRANSLATIONS & DATA ---
+        // --- TRANSLATIONS ---
         const COUNTRIES = [
             { code: 'MA', name: 'Morocco', dial: '+212', flag: '🇲🇦' },
             { code: 'DZ', name: 'Algeria', dial: '+213', flag: '🇩🇿' },
@@ -103,89 +95,93 @@
             { code: 'IQ', name: 'Iraq', dial: '+964', flag: '🇮🇶' },
             { code: 'US', name: 'USA', dial: '+1', flag: '🇺🇸' },
             { code: 'FR', name: 'France', dial: '+33', flag: '🇫🇷' },
-            { code: 'ES', name: 'Spain', dial: '+34', flag: '🇪🇸' },
             { code: 'OTHER', name: 'Other', dial: '+', flag: '🌍' }
         ];
 
         const TEXTS = {
             ar: {
-                welcome: "أهلاً بك", login: "تسجيل الدخول", register: "إنشاء حساب",
-                name: "الاسم الكامل", phone: "رقم الهاتف", user: "اسم المستخدم", pass: "كلمة المرور",
-                country: "الدولة", code: "الرمز", haveAcc: "لديك حساب؟", noAcc: "حساب جديد",
+                welcome: "أهلاً بك", login: "دخول", register: "تسجيل",
+                name: "الاسم", phone: "الهاتف", user: "المستخدم", pass: "كلمة المرور",
+                country: "الدولة", haveAcc: "لديك حساب؟", noAcc: "حساب جديد",
                 home: "الرئيسية", casino: "كازينو", tasks: "المهام", wallet: "المحفظة",
-                balance: "الرصيد المتاح", holder: "صاحب البطاقة", id: "معرف العضو",
-                active: "نشط", review: "مراجعة", activate: "للتفعيل",
-                play: "ابدأ اللعب", withdraw: "سحب", deposit: "إيداع", convert: "تحويل",
+                balance: "الرصيد", id: "المعرف", active: "نشط", review: "مراجعة",
+                play: "لعب", withdraw: "سحب", convert: "تحويل",
                 crash: "صاروخ", plinko: "إسقاط", 
-                live: "مباشر", history: "السجل", settings: "الإعدادات", logout: "خروج",
+                history: "السجل", settings: "الإعدادات", logout: "خروج",
                 menu: "القائمة", lang: "اللغة",
                 min: "الحد الأدنى", confirm: "تأكيد", cancel: "إلغاء",
-                task_daily: "المهام اليومية", execute: "تنفيذ", done: "تم",
-                inputs_err: "البيانات ناقصة", success: "تم بنجاح",
-                conv_rate: "1000 نقطة = 1$"
+                inputs_err: "بيانات ناقصة", success: "تم بنجاح",
+                conv_rate: "1000 = 1$"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
-                name: "Full Name", phone: "Phone Number", user: "Username", pass: "Password",
-                country: "Country", code: "Code", haveAcc: "Have account?", noAcc: "New account",
+                name: "Name", phone: "Phone", user: "User", pass: "Pass",
+                country: "Country", haveAcc: "Login?", noAcc: "New Account",
                 home: "Home", casino: "Casino", tasks: "Tasks", wallet: "Wallet",
-                balance: "Available Balance", holder: "Card Holder", id: "Member ID",
-                active: "Active", review: "Review", activate: "Activate",
-                play: "Play Now", withdraw: "Withdraw", deposit: "Deposit", convert: "Convert",
+                balance: "Balance", id: "ID", active: "Active", review: "Review",
+                play: "Play", withdraw: "Withdraw", convert: "Convert",
                 crash: "Crash", plinko: "Plinko", 
-                live: "Live", history: "History", settings: "Settings", logout: "Logout",
+                history: "History", settings: "Settings", logout: "Logout",
                 menu: "Menu", lang: "Language",
                 min: "Minimum", confirm: "Confirm", cancel: "Cancel",
-                task_daily: "Daily Tasks", execute: "Execute", done: "Done",
-                inputs_err: "Missing Inputs", success: "Success",
-                conv_rate: "1000 Pts = $1"
+                inputs_err: "Missing info", success: "Success",
+                conv_rate: "1000 = $1"
             }
         };
 
         // --- COMPONENTS ---
         const Button = ({ children, onClick, disabled, variant='gold', full, className='' }) => {
             const styles = {
-                gold: 'bg-gradient-to-b from-[#FFD700] to-[#C0A000] text-black shadow-[0_4px_0_#8A7000] active:translate-y-1 active:shadow-none',
-                green: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-[0_4px_0_#047857] active:translate-y-1 active:shadow-none',
-                red: 'bg-gradient-to-r from-red-600 to-red-800 text-white shadow-[0_4px_0_#991b1b] active:translate-y-1 active:shadow-none',
-                dark: 'bg-dark-800 text-gold-500 border border-gold-500/30 active:scale-95'
+                gold: 'bg-gradient-to-b from-[#FFD700] to-[#C0A000] text-black shadow-lg shadow-yellow-900/40 border border-[#FFD700]',
+                green: 'bg-gradient-to-r from-emerald-600 to-green-600 text-white border border-emerald-500 shadow-lg',
+                red: 'bg-gradient-to-r from-red-600 to-red-800 text-white border border-red-500 shadow-lg',
+                dark: 'bg-dark-800 text-gold-500 border border-gold-500/30'
             };
-            return React.createElement('button', { onClick, disabled, className: `relative font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale disabled:shadow-none disabled:translate-y-0 ${styles[variant]} ${full?'w-full':''} ${className}` }, children);
+            return React.createElement('button', { onClick, disabled, className: `relative font-bold py-3 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:grayscale ${styles[variant]} ${full?'w-full':''} ${className}` }, children);
         };
 
-        const Input = (props) => React.createElement('input', { ...props, className: `w-full bg-dark-800 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-gold-500 transition-all placeholder:text-gray-600 shadow-inner ${props.className}` });
+        const Input = (props) => React.createElement('input', { ...props, className: `w-full bg-dark-900 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-gold-500 transition-all placeholder:text-gray-600 shadow-inner ${props.className}` });
 
         // --- APP ROOT ---
         export default function App() {
             const [user, setUser] = useState(null);
             const [view, setView] = useState('auth'); 
-            const [lang, setLang] = useState('ar'); // 'ar' or 'en'
+            const [lang, setLang] = useState('ar');
             const [notify, setNotify] = useState(null);
             const [menuOpen, setMenuOpen] = useState(false);
             const t = (k) => TEXTS[lang][k] || k;
 
+            // 🔥 FIX: Prevent redirection loop by separating Auth logic from Data logic
             useEffect(() => {
                 const uid = localStorage.getItem('cd0777_uid');
-                const savedLang = localStorage.getItem('cd0777_lang');
-                if(savedLang) setLang(savedLang);
-
                 if (uid && db) {
                     return onSnapshot(doc(db, "users", uid), (s) => {
                         if (s.exists()) {
                             const u = { id: s.id, ...s.data() };
                             setUser(u);
-                            if (view === 'auth') setView(u.role === 'admin' ? 'admin' : 'home');
-                        } else { setUser(null); localStorage.removeItem('cd0777_uid'); }
+                            // Only redirect IF we are currently in Auth screen
+                            if (window.isAuthView) {
+                                setView(u.role === 'admin' ? 'admin' : 'home');
+                                window.isAuthView = false; // Flag to stop redirects
+                            }
+                        } else {
+                            setUser(null);
+                            localStorage.removeItem('cd0777_uid');
+                            window.isAuthView = true;
+                        }
                     });
+                } else {
+                    window.isAuthView = true;
                 }
             }, []);
 
-            const toggleLang = () => {
-                const newLang = lang === 'ar' ? 'en' : 'ar';
-                setLang(newLang);
-                localStorage.setItem('cd0777_lang', newLang);
-            };
+            // Helper to track view state for redirection fix
+            useEffect(() => {
+                if (view === 'auth') window.isAuthView = true;
+                else window.isAuthView = false;
+            }, [view]);
 
+            const toggleLang = () => setLang(l => l === 'ar' ? 'en' : 'ar');
             const showMsg = (msg, type='success') => { setNotify({msg, type}); setTimeout(()=>setNotify(null), 3000); };
             const logout = () => { localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth'); };
             const navTo = (v) => { setView(v); setMenuOpen(false); };
@@ -194,14 +190,15 @@
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout });
 
             const isRTL = lang === 'ar';
-            const ArrowIcon = isRTL ? ChevronRight : ChevronLeft; // Back button flips based on lang
+            const ArrowIcon = isRTL ? ChevronRight : ChevronLeft;
 
-            // Games Wrapper
+            // Full screen games
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon });
             if (view === 'game-plinko') return React.createElement(PlinkoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon });
 
-            return React.createElement('div', { className: `app-container ${lang === 'ar' ? 'font-cairo' : 'font-inter'}`, dir: isRTL ? 'rtl' : 'ltr' },
-                notify && React.createElement('div', { className: `absolute top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-2 animate-pop glass-panel w-max ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
+            return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white ${lang === 'ar' ? 'font-cairo' : 'font-oswald'}`, dir: isRTL ? 'rtl' : 'ltr' },
+                // Notify
+                notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-2 animate-pop glass-panel w-max ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
                     notify.type==='success'?React.createElement(CheckCircle,{size:20}):React.createElement(XCircle,{size:20}), 
                     React.createElement('span', { className: "font-bold text-sm" }, notify.msg)
                 ),
@@ -214,10 +211,11 @@
                     view === 'casino' && React.createElement(CasinoScreen, { navTo, t }),
                     view === 'tasks' && React.createElement(TasksScreen, { user, showMsg, t }),
                     view === 'profile' && React.createElement(WalletScreen, { user, showMsg, t, isRTL }),
-                    view === 'history' && React.createElement(HistoryScreen, { user, t })
+                    view === 'history' && React.createElement(HistoryScreen, { user, t }),
+                    view === 'settings' && React.createElement(SettingsScreen, { user, showMsg, t })
                 ),
 
-                React.createElement('nav', { className: "absolute bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl z-40 flex justify-around items-center shadow-2xl border border-white/10" },
+                React.createElement('nav', { className: "fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl z-40 flex justify-around items-center shadow-2xl border border-white/10" },
                     React.createElement(NavBtn, { icon: Home, label: t('home'), active: view==='home', onClick:()=>navTo('home') }),
                     React.createElement(NavBtn, { icon: Dices, label: t('casino'), active: view==='casino', onClick:()=>navTo('casino') }),
                     React.createElement(NavBtn, { icon: Trophy, label: t('tasks'), active: view==='tasks', onClick:()=>navTo('tasks') }),
@@ -231,10 +229,10 @@
         function Header({ user, toggleMenu }) {
             return React.createElement('div', { className: "sticky top-0 z-40 bg-dark-950/80 backdrop-blur-md border-b border-white/5 px-5 py-4 flex justify-between items-center" },
                 React.createElement('div', { className: "flex items-center gap-3" },
-                    React.createElement('button', { onClick: toggleMenu, className: "p-2 bg-dark-800 rounded-xl text-gold-500 border border-white/5 active:scale-90 transition-transform" }, React.createElement(Menu, { size: 24 })),
-                    React.createElement('div', { className: "w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-400 to-gold-600 flex items-center justify-center font-black text-black text-sm shadow-[0_0_15px_rgba(255,193,7,0.3)]" }, "CD")
+                    React.createElement('button', { onClick: toggleMenu, className: "p-2 bg-dark-900 rounded-xl text-gold-500 border border-white/5 active:scale-90 transition-transform" }, React.createElement(Menu, { size: 24 })),
+                    React.createElement('div', { className: "w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-400 to-gold-600 flex items-center justify-center font-black text-black text-sm shadow-lg" }, "CD")
                 ),
-                React.createElement('div', { className: "bg-dark-800 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-inner" }, 
+                React.createElement('div', { className: "bg-dark-900 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-inner" }, 
                     React.createElement(Gem, { size: 16, className: "text-gold-500 animate-pulse" }), 
                     React.createElement('span', { className: "text-gold-500 font-mono font-bold text-sm" }, user.coins.toLocaleString())
                 )
@@ -242,11 +240,11 @@
         }
 
         function Sidebar({ user, logout, close, navTo, t, lang, toggleLang }) {
-            return React.createElement('div', { className: "absolute inset-0 z-50 flex" },
+            return React.createElement('div', { className: "fixed inset-0 z-50 flex" },
                 React.createElement('div', { className: "absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity", onClick: close }),
-                React.createElement('div', { className: `relative w-72 bg-dark-900 border-l border-gold-500/20 h-full p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col ${lang==='ar'?'animate-slide-in-right':'animate-slide-in-left'}` },
+                React.createElement('div', { className: `relative w-72 bg-dark-900 border-l border-gold-500/20 h-full p-6 shadow-2xl flex flex-col ${lang==='ar'?'animate-slide-in-right':'animate-slide-in-left'}` },
                     React.createElement('div', { className: "flex justify-between items-center mb-8 border-b border-white/10 pb-4" }, 
-                        React.createElement('h2',{className:"text-gold-500 font-bold text-2xl font-oswald"}, t('menu')), 
+                        React.createElement('h2',{className:"text-gold-500 font-bold text-2xl"}, t('menu')), 
                         React.createElement('button',{onClick:close, className:"text-gray-400 hover:text-white p-2"},React.createElement(X))
                     ),
                     React.createElement('nav', { className: "space-y-2 flex-1" },
@@ -256,8 +254,8 @@
                         React.createElement(SidebarBtn, { icon: Wallet, label: t('wallet'), onClick:()=>navTo('profile') }),
                         React.createElement('div', {className:"h-px bg-white/5 my-3"}),
                         React.createElement(SidebarBtn, { icon: History, label: t('history'), onClick:()=>navTo('history') }),
+                        React.createElement(SidebarBtn, { icon: Settings, label: t('settings'), onClick:()=>navTo('settings') }),
                         
-                        // Language Toggle
                         React.createElement('button', { onClick: toggleLang, className: "w-full flex items-center justify-between p-3.5 rounded-xl text-gray-300 hover:bg-white/5 mt-4 border border-white/5" },
                             React.createElement('div', {className:"flex items-center gap-4"}, React.createElement(Globe, {size:20}), React.createElement('span',{}, t('lang'))),
                             React.createElement('span', {className:"text-gold-500 font-bold text-xs bg-black px-2 py-1 rounded"}, lang==='ar'?'English':'العربية')
@@ -269,9 +267,9 @@
         }
         
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl transition-all active:scale-95 text-gray-300 hover:bg-white/5 hover:text-white" }, React.createElement(Icon, { size: 20 }), React.createElement('span', { className: "font-medium" }, label));
-        const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all duration-300 ${active?'text-gold-500 -translate-y-1 scale-110 drop-shadow-[0_0_8px_rgba(255,193,7,0.5)]':'text-gray-500 hover:text-gray-300'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold tracking-wide" }, label));
+        const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all duration-300 ${active?'text-gold-500 -translate-y-1 scale-110 drop-shadow-md':'text-gray-500 hover:text-gray-300'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold tracking-wide" }, label));
 
-        // --- AUTH (WITH COUNTRY & PHONE) ---
+        // --- AUTH ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, toggleLang }) {
             const [isReg, setIsReg] = useState(false); 
             const [loading, setLoading] = useState(false);
@@ -308,22 +306,18 @@
                 React.createElement('div', { className: "w-full max-w-sm space-y-4" },
                     React.createElement('h1', { className: "text-2xl font-bold text-center text-white mb-6" }, isReg ? t('register') : t('login')),
                     isReg && React.createElement(Input, { placeholder: t('name'), value: f.n, onChange: e=>setF({...f,n:e.target.value}) }),
-                    
-                    // Country & Phone
                     isReg && React.createElement('div', { className: "space-y-2" },
                         React.createElement('label', { className: "text-xs text-gray-500 px-1" }, t('country')),
                         React.createElement('select', { 
-                            className: "w-full bg-dark-800 border border-white/10 p-4 rounded-xl text-white outline-none appearance-none",
+                            className: "w-full bg-dark-900 border border-white/10 p-4 rounded-xl text-white outline-none appearance-none",
                             onChange: e => setCountry(COUNTRIES[e.target.value]),
                             value: COUNTRIES.indexOf(country)
                         }, COUNTRIES.map((c, i) => React.createElement('option', { key: i, value: i }, `${c.flag} ${c.name} (${c.dial})`))),
-                        
                         React.createElement('div', { className: "flex gap-2" },
                             React.createElement('div', { className: "bg-dark-900 border border-white/10 p-4 rounded-xl text-gold-500 font-mono w-24 flex items-center justify-center" }, country.dial),
                             React.createElement(Input, { placeholder: t('phone'), value: f.ph, onChange: e=>setF({...f,ph:e.target.value}), className: "flex-1" })
                         )
                     ),
-
                     React.createElement(Input, { placeholder: t('user'), value: f.u, onChange: e=>setF({...f,u:e.target.value}) }),
                     React.createElement(Input, { type: "password", placeholder: t('pass'), value: f.p, onChange: e=>setF({...f,p:e.target.value}) }),
                     React.createElement(Button, { full: true, onClick: submit, disabled: loading }, loading?'...':(isReg?t('register'):t('login'))),
@@ -365,9 +359,7 @@
                                 React.createElement('p', { className: "text-[7px] text-gold-600 uppercase mb-0.5 font-bold" }, t('holder')), 
                                 React.createElement('p', { className: "font-mono text-gray-200 text-sm tracking-widest uppercase shadow-black drop-shadow-md" }, user.fullName)
                             ),
-                            React.createElement('div', { className: "w-10 h-7 bg-yellow-600/20 rounded-md border border-yellow-600/40 flex items-center justify-center" }, 
-                                React.createElement('div', { className: "w-6 h-4 border border-yellow-600/30 grid grid-cols-2 gap-px" }, React.createElement('div',{className:"bg-yellow-600/30"}), React.createElement('div',{}))
-                            )
+                            React.createElement('div', { className: "text-right" }, React.createElement('div', { className: "w-8 h-5 bg-yellow-600/20 rounded border border-yellow-600/50 flex items-center justify-center" }, React.createElement('div', { className: "w-full h-px bg-yellow-600/50" })))
                         )
                     )
                 ),
@@ -410,8 +402,23 @@
 
         function CrashGame({ user, back, showMsg, ArrowIcon }) {
             const cvsRef = useRef(null); const [bet, setBet] = useState(100); const [st, setSt] = useState('IDLE'); const [cashed, setCashed] = useState(false); const gm = useRef({s:0, c:0, a:null, m:1.0});
-            const start = async () => { if(user.coins<bet) return showMsg('Low Balance', 'error'); await updateDoc(doc(db,"users",user.id),{coins:user.coins-bet}); setSt('RUNNING'); setCashed(false); let c = 0.99/(1-Math.random()); if(Math.random()<0.05) c=1.0; if(c>50) c=50; gm.current = { s: Date.now(), c: Math.max(1.0, c), a: null, m: 1.0 }; loop(); };
-            const cash = async () => { if(st!=='RUNNING'||cashed) return; const w = Math.floor(bet * gm.current.m); await updateDoc(doc(db,"users",user.id),{coins: user.coins + w}); setCashed(true); showMsg(`+${w} Coins`,'success'); };
+            // 🔥 FIXED: Direct Update Logic without Redirection
+            const updateCoins = async (newCoins) => {
+                await updateDoc(doc(db,"users",user.id), {coins: newCoins});
+            };
+            const start = async () => {
+                if(user.coins<bet) return showMsg('Low Balance', 'error');
+                await updateCoins(user.coins - bet); 
+                setSt('RUNNING'); setCashed(false);
+                let c = 0.99/(1-Math.random()); if(Math.random()<0.05) c=1.0; if(c>50) c=50;
+                gm.current = { s: Date.now(), c: Math.max(1.0, c), a: null, m: 1.0 }; loop();
+            };
+            const cash = async () => {
+                if(st!=='RUNNING'||cashed) return;
+                const w = Math.floor(bet * gm.current.m);
+                await updateCoins(user.coins + w); // Win added to current balance (subtracted balance is reactive)
+                setCashed(true); showMsg(`+${w} Coins`,'success');
+            };
             const loop = () => { const ctx = cvsRef.current?.getContext('2d'); if(!ctx) return; const { width: w, height: h } = cvsRef.current; const el = (Date.now() - gm.current.s) / 1000; const nm = 1.0 + el * el * 0.1 + el * 0.05; gm.current.m = nm; if(nm >= gm.current.c) { setSt('CRASHED'); draw(ctx, w, h, gm.current.c, true); return; } draw(ctx, w, h, nm, false); gm.current.a = requestAnimationFrame(loop); };
             const draw = (ctx, w, h, val, isCr) => { ctx.fillStyle = '#020617'; ctx.fillRect(0,0,w,h); ctx.fillStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#fff'); ctx.font = 'bold 50px monospace'; ctx.textAlign = 'center'; ctx.fillText(`${val.toFixed(2)}x`, w/2, h/2); const t = Math.min((val-1)/5, 1); const x = t*(w*0.8); const y = h - t*(h*0.8); ctx.beginPath(); ctx.moveTo(0,h); ctx.quadraticCurveTo(w/4, h, x, y); ctx.strokeStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#eab308'); ctx.lineWidth = 4; ctx.stroke(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); };
             useEffect(()=>{ if(cvsRef.current){cvsRef.current.width=cvsRef.current.offsetWidth; cvsRef.current.height=cvsRef.current.offsetHeight;} return ()=>cancelAnimationFrame(gm.current.a); },[]);
@@ -425,7 +432,7 @@
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full" }, React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 shrink-0" }, React.createElement('button',{onClick:back,className:"text-slate-400 active:scale-90"},React.createElement(ArrowIcon)), React.createElement('span',{className:"font-bold text-purple-500"},"PLINKO"), React.createElement('span',{className:"text-xs font-mono bg-black px-2 py-1 rounded text-white"},user.coins)), React.createElement('div', { className: "flex-1 relative w-full" }, React.createElement('canvas', { ref: cvsRef, className: "w-full h-full block" })), React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 shrink-0 pb-safe" }, React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), React.createElement(Button, { full: true, onClick: drop }, "DROP")));
         }
 
-        // --- TASKS & WALLET ---
+        // --- TASKS & WALLET (FIXED) ---
         function TasksScreen({ user, showMsg, t }) {
             const [tasks, setTasks] = useState([]);
             useEffect(() => { if(db) onSnapshot(collection(db, "tasks"), s => setTasks(s.docs.map(d=>({id:d.id, ...d.data()})))); }, []);
@@ -436,6 +443,7 @@
 
         function WalletScreen({ user, showMsg, t, isRTL }) {
             const [mod, setMod] = useState(false); const [method, setMethod] = useState(''); const [val1, setVal1] = useState(''); const [val2, setVal2] = useState('IAM'); const [convAmt, setConvAmt] = useState(''); const [wAmt, setWAmt] = useState('');
+            // 🔥 FIXED: Conversion updates state without redirecting
             const convert = async () => { if(user.status!=='active') return showMsg(t('review'),'error'); const amt=parseInt(convAmt); if(!amt) return; const d=amt/1000; await updateDoc(doc(db,"users",user.id),{coins:user.coins-amt,balance:user.balance+d}); setConvAmt(''); showMsg(t('success')); };
             const withdraw = async () => { if(!val1) return showMsg(t('inputs_err'),'error'); let det = val1; if(method==='Mobile') det=`${val1} (${val2})`; await addDoc(collection(db,"withdrawals"),{userId:user.id, userName:user.fullName, memberId:user.memberId, amount:Number(wAmt), method, details:det, status:'pending', date:new Date().toLocaleDateString()}); await updateDoc(doc(db,"users",user.id),{balance:user.balance-Number(wAmt)}); setMod(false); showMsg(t('success')); };
             return React.createElement('div', { className: "space-y-6" },
@@ -450,6 +458,19 @@
             const [list, setList] = useState([]);
             useEffect(() => { if(db) { const q = query(collection(db, "withdrawals"), where("userId", "==", user.id)); onSnapshot(q, s => setList(s.docs.map(d=>d.data()).reverse())); } }, []);
             return React.createElement('div', { className: "space-y-4" }, React.createElement('h2', { className: "text-gold-500 font-bold text-lg" }, t('history')), list.map((w,i)=>React.createElement('div', { key: i, className: "bg-dark-800 p-4 rounded-xl border border-white/5 flex justify-between items-center" }, React.createElement('div',{},React.createElement('div',{className:"font-bold text-white"},w.method),React.createElement('div',{className:"text-xs text-gray-500"},w.date)), React.createElement('div',{className:"text-right"},React.createElement('div',{className:"font-mono text-gold-500"},`$${w.amount}`),React.createElement('div',{className:`text-[10px] font-bold ${w.status==='paid'?'text-green-500':'text-yellow-500'}`},w.status==='paid'?t('done'):t('review'))))));
+        }
+
+        function SettingsScreen({ user, showMsg, t }) {
+            const [f, setF] = useState({ fullName: user.fullName, phone: user.phone });
+            const save = async () => { await updateDoc(doc(db,"users",user.id), f); showMsg(t('success')); };
+            return React.createElement('div', { className: "space-y-4" }, React.createElement('h2', { className: "text-gold-500 font-bold text-lg" }, t('settings')), React.createElement('div', { className: "space-y-3" }, React.createElement('label',{className:"text-xs text-gray-500"},t('name')), React.createElement(Input, { value: f.fullName, onChange: e=>setF({...f,fullName:e.target.value}) }), React.createElement('label',{className:"text-xs text-gray-500"},t('phone')), React.createElement(Input, { value: f.phone, onChange: e=>setF({...f,phone:e.target.value}) }), React.createElement(Button, { full: true, onClick: save }, t('confirm'))));
+        }
+
+        function AdminPanel({ user, logout }) {
+            const [tab, setTab] = useState('users'); const [data, setData] = useState({u:[], w:[], t:[]}); const [newTask, setNewTask] = useState({title:'', url:'', reward: 500});
+            useEffect(() => { if(!db) return; const u1 = onSnapshot(collection(db,"users"), s=>setData(p=>({...p, u:s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.role!=='admin')}))); const u2 = onSnapshot(collection(db,"withdrawals"), s=>setData(p=>({...p, w:s.docs.map(d=>({id:d.id,...d.data()}))}))); const u3 = onSnapshot(collection(db,"tasks"), s=>setData(p=>({...p, t:s.docs.map(d=>({id:d.id,...d.data()}))}))); return ()=>{u1();u2();u3();}; }, []);
+            const addTask = async () => { if(newTask.title){ await addDoc(collection(db,"tasks"),{...newTask, icon:'IG'}); setNewTask({title:'',url:'',reward:500}); } };
+            return React.createElement('div', { className: "min-h-screen bg-dark-900 p-4 text-xs space-y-4" }, React.createElement('div', { className: "flex justify-between items-center" }, React.createElement('h1', { className: "text-lg text-gold-500 font-bold" }, "ADMIN"), React.createElement('button', { onClick: logout, className: "text-red-500 border border-red-900 px-3 py-1 rounded" }, "Exit")), React.createElement('div', { className: "flex gap-2" }, ['users','withdrawals','tasks'].map(t=>React.createElement('button',{key:t, onClick:()=>setTab(t), className:`flex-1 py-2 rounded border capitalize ${tab===t?'bg-gold-500 text-black border-gold-500':'bg-dark-800 border-white/10 text-slate-500'}`},t))), tab==='users' && data.u.map(u => React.createElement('div', { key: u.id, className: "bg-dark-800 p-3 rounded flex justify-between items-center border border-white/5" }, React.createElement('div', {}, React.createElement('div', { className: "text-gold-500 font-bold" }, u.memberId), React.createElement('div', { className: "text-slate-400" }, u.fullName)), React.createElement('button', { onClick: ()=>updateDoc(doc(db,"users",u.id),{status:u.status==='active'?'pending':'active'}), className: `px-3 py-1 rounded font-bold ${u.status==='active'?'bg-red-900/20 text-red-500':'bg-green-900/20 text-green-500'}` }, u.status==='active'?'تجميد':'تفعيل'))), tab==='withdrawals' && data.w.map(w => React.createElement('div', { key: w.id, className: "bg-dark-800 p-3 rounded space-y-2 border border-white/5" }, React.createElement('div', { className: "flex justify-between" }, React.createElement('span', { className: "font-bold" }, w.userName), React.createElement('span', { className: "text-gold-500" }, `$${w.amount}`)), React.createElement('div', { className: "bg-black p-2 rounded text-slate-400 font-mono" }, `${w.method}: ${w.details}`), w.status==='pending' ? React.createElement(Button, { full: true, variant: "green", onClick: ()=>updateDoc(doc(db,"withdrawals",w.id),{status:'paid'}) }, "تأكيد الدفع") : React.createElement('div', { className: "text-center text-green-500 font-bold" }, "تم الدفع"))), tab==='tasks' && React.createElement('div', { className: "space-y-4" }, React.createElement('div', { className: "bg-dark-800 p-3 rounded space-y-2 border border-white/5" }, React.createElement(Input, { placeholder: "Title", value: newTask.title, onChange: e=>setNewTask({...newTask, title:e.target.value}) }), React.createElement(Input, { placeholder: "URL", value: newTask.url, onChange: e=>setNewTask({...newTask, url:e.target.value}) }), React.createElement('div',{className:"flex gap-2"},React.createElement('input',{type:"number",value:newTask.reward,onChange:e=>setNewTask({...newTask,reward:Number(e.target.value)}),className:"bg-black border border-white/10 p-3 rounded text-white w-20 text-center"}),React.createElement(Button, { full: true, onClick: addTask }, "Add"))), data.t.map(t => React.createElement('div', { key: t.id, className: "flex justify-between items-center bg-dark-800 p-3 rounded border border-white/5" }, React.createElement('div', {}, t.title, React.createElement('span',{className:"text-gold-500 text-[10px] ml-2"},t.reward)), React.createElement('button', { onClick: ()=>deleteDoc(doc(db,"tasks",t.id)), className: "text-red-500" }, React.createElement(Trash2, { size: 16 }))))));
         }
 
         const root = createRoot(document.getElementById('root'));
