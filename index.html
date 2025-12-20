@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Royal Club - Pro V11 (Surgical Update)</title>
+    <title>CD0777 Royal Club - VIP Activation Update</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -98,7 +98,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3 } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -135,7 +135,11 @@
                 recharge: "تعبئة الهاتف", network: "الشبكة", cnie: "رقم البطاقة الوطنية", rib: "رقم التعريف البنكي (RIB)",
                 wallet_addr: "عنوان المحفظة (USDT/Crypto)", select_network: "اختر الشبكة",
                 method_bank: "تحويل بنكي", method_cash: "كاش بلس / وافا", method_crypto: "عملات رقمية", method_recharge: "تعبئة رصيد",
-                win_chance: "فرصة الفوز"
+                win_chance: "احتمال الفوز", rtp: "نسبة العائد (RTP)",
+                pending_title: "تفعيل العضوية الملكية",
+                step_1: "سجل في 1xBet بكود: CD0777",
+                step_2: "انضم لقناة VIP تيليجرام",
+                wait_admin: "حسابك قيد المراجعة من الإدارة..."
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -156,7 +160,11 @@
                 recharge: "Mobile Recharge", network: "Network", cnie: "National ID (CNIE)", rib: "RIB / Account Num",
                 wallet_addr: "Wallet Address", select_network: "Select Network",
                 method_bank: "Bank Transfer", method_cash: "Cash Plus", method_crypto: "Crypto", method_recharge: "Mobile Recharge",
-                win_chance: "Win Chance"
+                win_chance: "Win Chance", rtp: "RTP",
+                pending_title: "Royal Membership Activation",
+                step_1: "Register 1xBet Code: CD0777",
+                step_2: "Join VIP Telegram",
+                wait_admin: "Account under admin review..."
             }
         };
 
@@ -179,6 +187,17 @@
             props.icon && React.createElement(props.icon, { size: 18, className: "absolute top-1/2 -translate-y-1/2 right-4 text-gray-500 group-focus-within:text-gold-500 transition-colors" }),
             React.createElement('input', { ...props, className: `w-full bg-dark-900 border border-white/10 p-4 ${props.icon?'pr-12':''} rounded-xl text-white outline-none focus:border-gold-500 focus:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all placeholder:text-gray-600 shadow-inner ${props.className}` })
         );
+
+        // NEW: Win Chance Badge Component
+        const WinChanceBadge = ({ type, value, label }) => {
+             return React.createElement('div', { className: "absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg" },
+                React.createElement(Percent, { size: 12, className: "text-gold-500" }),
+                React.createElement('div', { className: "flex flex-col leading-none" },
+                    React.createElement('span', { className: "text-[8px] text-gray-400 font-bold uppercase" }, label || "RTP"),
+                    React.createElement('span', { className: "text-[10px] font-mono font-bold text-white" }, value)
+                )
+             );
+        };
 
         const triggerConfetti = () => {
             const colors = ['#FFD700', '#FFFFFF', '#FFA500'];
@@ -263,6 +282,11 @@
             if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
+            // --- NEW: PENDING SCREEN (SURGICAL INSERTION) ---
+            if (user && user.status === 'pending') {
+                return React.createElement(PendingActivationScreen, { user, logout, t, isRTL });
+            }
+
             // --- ADMIN PANEL ---
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
@@ -300,6 +324,32 @@
                     React.createElement(NavBtn, { icon: Dices, label: t('casino'), active: view==='casino', onClick:()=>navTo('casino') }),
                     React.createElement(NavBtn, { icon: Trophy, label: t('tasks'), active: view==='tasks', onClick:()=>navTo('tasks') }),
                     React.createElement(NavBtn, { icon: Wallet, label: t('wallet'), active: view==='profile', onClick:()=>navTo('profile') })
+                )
+            );
+        }
+
+        // --- NEW: PENDING SCREEN COMPONENT ---
+        function PendingActivationScreen({ user, logout, t, isRTL }) {
+            return React.createElement('div', { className: "h-screen bg-dark-950 flex flex-col items-center justify-center p-6 text-center animate-fade-in", dir: isRTL?'rtl':'ltr' },
+                React.createElement(LockKeyhole, { size: 64, className: "text-gold-500 mb-6 animate-pulse" }),
+                React.createElement('h1', { className: "text-2xl font-black text-gold-500 mb-2 font-oswald uppercase tracking-wider" }, t('pending_title')),
+                React.createElement('p', { className: "text-gray-400 text-sm mb-8" }, t('wait_admin')),
+                
+                React.createElement('div', { className: "w-full max-w-sm bg-dark-900 border border-gold-500/30 rounded-2xl p-6 space-y-4 shadow-2xl" },
+                    React.createElement('div', { className: "flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10" },
+                        React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white text-xs" }, "1"),
+                        React.createElement('p', { className: "text-sm font-bold text-white text-right flex-1" }, t('step_1')),
+                        React.createElement('a', { href: "https://bit.ly/3X8X8X8", target: "_blank", className: "text-gold-500" }, React.createElement(ExternalLink, { size: 16 }))
+                    ),
+                    React.createElement('div', { className: "flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10" },
+                        React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center font-bold text-white text-xs" }, "2"),
+                        React.createElement('p', { className: "text-sm font-bold text-white text-right flex-1" }, t('step_2')),
+                        React.createElement('a', { href: "https://t.me/CD0777VIP", target: "_blank", className: "text-gold-500" }, React.createElement(ExternalLink, { size: 16 }))
+                    )
+                ),
+
+                React.createElement('button', { onClick: logout, className: "mt-8 text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors" }, 
+                    React.createElement(LogOut, { size: 16 }), t('logout')
                 )
             );
         }
@@ -353,7 +403,7 @@
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl text-gray-300 hover:bg-white/5 btn-press" }, React.createElement(Icon, { size: 20 }), React.createElement('span', {}, label));
         const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all ${active?'text-gold-500 -translate-y-1 scale-110':'text-gray-500'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold" }, label));
 
-        // --- AUTH ---
+        // --- AUTH (SURGICAL UPDATE: STATUS PENDING) ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
             const submit = async () => {
@@ -363,7 +413,8 @@
                     if(isReg) {
                         const q = query(collection(db, "users"), where("username", "==", f.u)); if(!(await getDocs(q)).empty) throw new Error('Username taken');
                         const sz = (await getDocs(collection(db, "users"))).size;
-                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'active', coins: 100, balance: 0, completedTasks: [] };
+                        // UPDATE: status is now 'pending' by default
+                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'pending', coins: 100, balance: 0, completedTasks: [] };
                         const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu});
                     } else {
                         const q = query(collection(db, "users"), where("username", "==", f.u), where("password", "==", f.p)); const s = await getDocs(q);
@@ -406,7 +457,7 @@
 
         // --- HOME ---
         function HomeScreen({ user, navTo, t }) {
-            const isPending = user.status === 'pending';
+            // isPending logic removed from here as it's handled by main guard
             return React.createElement('div', { className: "space-y-6 animate-pop" },
                 React.createElement('div', { className: "relative aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl border border-white/10 hover:border-gold-500/40 transition-all transform hover:rotate-1" },
                     React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-dark-900 to-black" },
@@ -415,7 +466,7 @@
                     React.createElement('div', { className: "relative z-10 h-full p-6 flex flex-col justify-between" },
                         React.createElement('div', { className: "flex justify-between items-start" },
                             React.createElement('div', { className: "flex items-center gap-2" }, React.createElement(ShieldCheck, { className: "text-gold-500", size: 26 }), React.createElement('h2', { className: "text-gold-500 font-oswald text-xl tracking-widest" }, "CD0777")),
-                            React.createElement('div', { className: `px-3 py-1 rounded-full text-[9px] font-black tracking-wider border ${!isPending?'border-green-500 text-green-400':'border-yellow-600 text-yellow-500'}` }, !isPending ? t('active') : t('review'))
+                            React.createElement('div', { className: `px-3 py-1 rounded-full text-[9px] font-black tracking-wider border border-green-500 text-green-400` }, "VIP MEMBER")
                         ),
                         React.createElement('div', { className: "flex justify-between items-center" },
                             React.createElement('div', {}, React.createElement('p', { className: "text-gray-400 text-[8px] uppercase tracking-widest mb-1 font-bold" }, "BALANCE"), React.createElement('p', { className: "font-mono text-3xl text-white flex gap-1" }, React.createElement('span', { className: "text-gold-500" }, "$"), Number(user.balance).toFixed(2))),
@@ -441,11 +492,11 @@
             return React.createElement('div', { className: "space-y-4 animate-pop" },
                 React.createElement('h2', { className: "text-gold-500 font-bold text-lg flex gap-2 items-center" }, React.createElement(Dices), t('casino')),
                 React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-                    React.createElement(GameCard, { title:t('crash'), sub:"Multiplier", color:"red", icon:Rocket, onClick:()=>navTo('game-crash') }),
-                    React.createElement(GameCard, { title:t('slots'), sub:"Jackpot", color:"purple", icon:Gem, onClick:()=>navTo('game-slots') }),
-                    React.createElement(GameCard, { title:t('limbo'), sub:"Fast Win", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
-                    React.createElement(GameCard, { title:t('keno'), sub:"Lottery", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
-                    React.createElement(GameCard, { title:t('coinflip'), sub:"50/50", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') })
+                    React.createElement(GameCard, { title:t('crash'), sub:"97% RTP", color:"red", icon:Rocket, onClick:()=>navTo('game-crash') }),
+                    React.createElement(GameCard, { title:t('slots'), sub:"95% RTP", color:"purple", icon:Gem, onClick:()=>navTo('game-slots') }),
+                    React.createElement(GameCard, { title:t('limbo'), sub:"Dynamic RTP", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
+                    React.createElement(GameCard, { title:t('keno'), sub:"High Risk", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
+                    React.createElement(GameCard, { title:t('coinflip'), sub:"50/50 Chance", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') })
                 )
             );
         }
@@ -734,7 +785,7 @@
                     ))
                 ),
 
-                // NEW: Users Management Tab
+                // NEW: Users Management Tab (Updated for Activation)
                 tab === 'users' && React.createElement('div', { className: "space-y-4" },
                     React.createElement('h3', { className: "text-xl text-white font-bold" }, `Total Users: ${users.length}`),
                     users.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col gap-3" },
@@ -745,7 +796,7 @@
                             ),
                             React.createElement('div', { className: "text-right" },
                                 React.createElement('p', { className: "text-gold-500 font-mono font-bold" }, u.coins),
-                                React.createElement('span', { className: `text-[10px] px-2 py-0.5 rounded ${u.status==='active'?'bg-green-500/20 text-green-500':'bg-red-500/20 text-red-500'}` }, u.status)
+                                React.createElement('span', { className: `text-[10px] px-2 py-0.5 rounded ${u.status==='active'?'bg-green-500/20 text-green-500':(u.status==='pending'?'bg-yellow-500/20 text-yellow-500':'bg-red-500/20 text-red-500')}` }, u.status)
                             )
                         ),
                         
@@ -755,9 +806,14 @@
                             React.createElement('button', { onClick:()=>setEditingUser(null), className:"text-gray-400" }, React.createElement(X))
                         ) : React.createElement('div', { className: "flex gap-2 mt-2" },
                             React.createElement('button', { onClick:()=>{setEditingUser(u.id); setNewBalance(u.coins)}, className: "flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(Edit3, {size:14}), "Balance"),
+                            
+                            // Activation Button for Pending Users
+                            u.status === 'pending' && React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "flex-1 bg-green-500/10 text-green-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-green-500/30" }, React.createElement(CheckCircle, {size:14}), "APPROVE"),
+                            
                             u.status === 'active' 
                                 ? React.createElement('button', { onClick:()=>updateUser(u.id, {status:'banned'}), className: "flex-1 bg-orange-500/10 text-orange-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(Ban, {size:14}), "Ban")
-                                : React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "flex-1 bg-green-500/10 text-green-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(CheckCircle, {size:14}), "Unban"),
+                                : (u.status === 'banned' && React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "flex-1 bg-green-500/10 text-green-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(CheckCircle, {size:14}), "Unban")),
+                            
                             React.createElement('button', { onClick:()=>deleteUser(u.id), className: "bg-red-500/10 text-red-500 p-2 rounded-lg" }, React.createElement(Trash2, {size:16}))
                         )
                     ))
@@ -869,6 +925,9 @@
                 
                 // Pure Space Visual
                 React.createElement('div', { className: "flex-1 relative flex flex-col items-center justify-center overflow-hidden star-bg" },
+                    // NEW: Win Chance Badge
+                    React.createElement(WinChanceBadge, { value: "97.5%", label: "Theoretical RTP" }),
+                    
                     // Rocket Centered
                     gameState === 'FLYING' && React.createElement('div', { className: "animate-rocket-fly mb-10 transition-transform duration-75", style: { transform: `scale(${1 + multiplier/10})` } },
                          React.createElement(Rocket, { size: 100, className: "text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)] fill-red-600 rotate-[-45deg]" })
@@ -955,7 +1014,10 @@
                     React.createElement('span', { className: "font-bold text-blue-500" }, "COIN FLIP (UPDATED)"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center gap-10 perspective-1000" },
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center gap-10 perspective-1000 relative" },
+                    // NEW: Win Chance Badge
+                    React.createElement(WinChanceBadge, { value: "50%", label: t('win_chance') }),
+                    
                     winAmt > 0 && React.createElement('div', { className: "absolute top-20 text-green-500 font-bold text-4xl animate-pop z-20 drop-shadow-lg" }, `+${winAmt}`),
                     
                     // 3D Coin
@@ -1048,7 +1110,10 @@
                     React.createElement('span', { className: "font-bold text-purple-500 tracking-widest" }, "ROYAL SLOTS"), 
                     React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')]" },
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] relative" },
+                    // NEW: Win Chance Badge
+                    React.createElement(WinChanceBadge, { value: "95%", label: "Machine RTP" }),
+                    
                     // Status Badge
                     React.createElement('div', { className: `mb-8 px-8 py-3 rounded-full font-black text-xl shadow-xl transition-all ${status.includes('WIN') ? 'bg-green-500 text-black scale-110' : (status==='NO LUCK' ? 'bg-red-500 text-white' : 'bg-dark-800 text-gold-500')}` }, status),
 
@@ -1068,12 +1133,15 @@
             );
         }
 
-        // --- UPDATED GAME: LIMBO (SURGICALLY UPDATED LOGIC) ---
+        // --- UPDATED GAME: LIMBO (SURGICALLY UPDATED LOGIC & WIN CHANCE) ---
         function LimboGame({ user, back, showMsg, ArrowIcon, t }) {
             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
             const [result, setResult] = useState(null); 
             const [playing, setPlaying] = useState(false);
+            
+            // Calculate Win Chance for Limbo: 99 / Target
+            const winChance = (99 / target).toFixed(2);
             
             const play = async (e) => {
                 e.preventDefault();
@@ -1082,20 +1150,9 @@
                 
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
-                // SURGICAL UPDATE: INVERSE PROBABILITY DISTRIBUTION (Standard Casino Logic)
-                // Result = 99 / (Math.random() * 100).
-                // Example: If random is 0.5 (very unlucky), result is ~198.
-                // If random is 99 (very lucky), result is ~1.0.
-                // Wait, standard is: House Edge 1%.
-                // Multiplier = 99 / (random number between 0 and 100).
-                // Let's implement: 
                 const r = Math.random() * 100; // 0.0 to 100.0
-                // Add tiny offset to avoid div by zero
                 const rawOutcome = 99 / (r + 0.01); 
                 const outcome = Math.max(1.00, rawOutcome).toFixed(2);
-                // NOTE: If Target is 2.0x, chance is 99/2 = 49.5%.
-                // If Target is 100x, chance is 0.99%.
-                // This fixes the "Always Win" bug.
                 
                 let count = 1.00;
                 
@@ -1103,7 +1160,7 @@
                     count += (Math.random() + (count * 0.1)); 
                     if(count >= outcome) {
                         clearInterval(interval);
-                        const isWin = Number(outcome) >= target; // In Limbo, Result must be >= Target to win.
+                        const isWin = Number(outcome) >= target; 
                         
                         const winAmt = isWin ? Math.floor(bet * target) : 0;
                         setResult({ val: Number(outcome), win: isWin });
@@ -1125,7 +1182,9 @@
                     React.createElement('span', { className: "font-bold text-orange-500" }, "LIMBO (PRO LOGIC)"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 text-center" },
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 text-center relative" },
+                    // NEW: Dynamic Win Chance Badge
+                    React.createElement(WinChanceBadge, { value: `${winChance}%`, label: t('win_chance') }),
                     
                     // Result Display
                     React.createElement('div', { className: "mb-10 relative" },
@@ -1238,7 +1297,10 @@
                     )
                 ),
 
-                React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center" },
+                React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center relative" },
+                    // NEW: Win Chance Badge
+                    React.createElement(WinChanceBadge, { value: "Risk: High", label: "Volatility" }),
+
                     React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm" },
                         Array(40).fill(0).map((_, i) => {
                             const n = i+1;
