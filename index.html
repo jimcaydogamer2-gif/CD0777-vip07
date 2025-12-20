@@ -114,12 +114,13 @@
                 country: "الدولة", home: "الرئيسية", casino: "كازينو", tasks: "المهام", wallet: "المحفظة",
                 balance: "الرصيد", id: "المعرف", active: "نشط", review: "مراجعة",
                 play: "لعب", withdraw: "سحب", convert: "تحويل",
-                crash: "صاروخ", plinko: "إسقاط", tower: "البرج",
+                crash: "صاروخ", plinko: "إسقاط", mines: "الألغام",
                 menu: "القائمة", lang: "اللغة", confirm: "تأكيد", cancel: "إلغاء",
                 inputs_err: "بيانات ناقصة", success: "تم بنجاح", no_balance: "رصيد غير كافي",
                 support: "الدعم الفني", help: "المساعدة", terms: "الشروط", policy: "السياسة",
                 conv_rate: "1000 نقطة = 1$", from_usd: "من دولار إلى نقاط", from_pts: "من نقاط إلى دولار",
-                tower_desc: "تجنب القنابل", next_round: "الجولة التالية", bet: "راهن"
+                mines_desc: "احذر المتفجرات", next_round: "الجولة التالية", bet: "راهن",
+                max_bet: "الحد الأقصى للرهان"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -127,12 +128,13 @@
                 country: "Country", home: "Home", casino: "Casino", tasks: "Tasks", wallet: "Wallet",
                 balance: "Balance", id: "ID", active: "Active", review: "Review",
                 play: "Play", withdraw: "Withdraw", convert: "Convert",
-                crash: "Crash", plinko: "Plinko", tower: "Tower",
+                crash: "Crash", plinko: "Plinko", mines: "Mines",
                 menu: "Menu", lang: "Language", confirm: "Confirm", cancel: "Cancel",
                 inputs_err: "Missing info", success: "Success", no_balance: "Insufficient funds",
                 support: "Support", help: "Help", terms: "Terms", policy: "Policy",
                 conv_rate: "1000 Pts = $1", from_usd: "USD to Points", from_pts: "Points to USD",
-                tower_desc: "Avoid Bombs", next_round: "Next Round", bet: "Bet"
+                mines_desc: "Avoid the bombs", next_round: "Next Round", bet: "Bet",
+                max_bet: "Max Bet is"
             }
         };
 
@@ -227,7 +229,7 @@
             // Games Views
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-plinko') return React.createElement(PlinkoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
-            if (view === 'game-tower') return React.createElement(TowerGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+            if (view === 'game-mines') return React.createElement(MinesGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
 
             return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
                 notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-2 animate-pop glass-panel w-max ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
@@ -374,7 +376,7 @@
                 React.createElement('div', { className: "grid gap-4" },
                     React.createElement(GameCard, { title:t('crash'), sub:"ROCKET • LIVE", color:"red", icon:Zap, onClick:()=>navTo('game-crash') }),
                     React.createElement(GameCard, { title:t('plinko'), sub:"DROP • HIGH WIN", color:"purple", icon:Gem, onClick:()=>navTo('game-plinko') }),
-                    React.createElement(GameCard, { title:t('tower'), sub:TEXTS.ar.tower_desc, color:"green", icon:ArrowUp, onClick:()=>navTo('game-tower') })
+                    React.createElement(GameCard, { title:t('mines'), sub:TEXTS.ar.mines_desc, color:"emerald", icon:Bomb, onClick:()=>navTo('game-mines') })
                 )
             );
         }
@@ -382,18 +384,21 @@
 
         // --- ENHANCED GAMES ---
         
-        // 1. Crash (Simulation Loop + Live Feel)
+        // 1. Crash (Simulation Loop + Live Feel - Fixed Timer/Betting)
         function CrashGame({ user, back, showMsg, ArrowIcon, t }) {
             const cvsRef = useRef(null); 
             const [bet, setBet] = useState(100); 
             const [status, setStatus] = useState('CONNECTING'); // CONNECTING, COUNTDOWN, RUNNING, CRASHED
             const [cashed, setCashed] = useState(false);
             const [timer, setTimer] = useState(0);
-            const [isBettingNext, setIsBettingNext] = useState(false);
-            const [activeBet, setActiveBet] = useState(0); // Bet for current active round
+            const [nextBet, setNextBet] = useState(0); // Bet for NEXT round
+            const [activeBet, setActiveBet] = useState(0); // Bet for CURRENT round
             const [winAmt, setWinAmt] = useState(0);
             const gm = useRef({s:0, c:0, a:null, m:1.0});
             const [fakeTick, setFakeTick] = useState("CD8832 Joined...");
+            
+            // Timer Ref to avoid closures issues
+            const timerRef = useRef(null);
 
             // Fake Live Feed
             useEffect(() => {
@@ -407,45 +412,64 @@
                 return () => clearInterval(interval);
             }, []);
 
-            // Game Loop (Auto Run)
+            // Game Logic
             useEffect(() => {
-                let roundTimeout;
-                const startRound = () => {
-                    setStatus('COUNTDOWN');
-                    setTimer(5);
-                    let c = 5;
-                    const cInt = setInterval(() => {
-                        c--; setTimer(c);
-                        if(c <= 0) {
-                            clearInterval(cInt);
-                            beginFlight();
-                        }
-                    }, 1000);
+                startCountDown();
+                return () => { 
+                    cancelAnimationFrame(gm.current.a); 
+                    clearInterval(timerRef.current);
                 };
+            }, []);
 
-                const beginFlight = () => {
-                    // Check if user has bet
-                    if(isBettingNext) {
-                        setActiveBet(bet);
-                        setIsBettingNext(false);
-                        // Deduct balance logic should happen here ideally or when placing bet
+            const startCountDown = () => {
+                setStatus('COUNTDOWN');
+                let count = 5;
+                setTimer(count);
+                
+                if(timerRef.current) clearInterval(timerRef.current);
+                
+                timerRef.current = setInterval(() => {
+                    count--;
+                    setTimer(count);
+                    if(count <= 0) {
+                        clearInterval(timerRef.current);
+                        beginFlight();
+                    }
+                }, 1000);
+            };
+
+            const beginFlight = () => {
+                // Check for next bet
+                // Access state via a trick or check the DOM input? No, we use a ref if needed, but here we can just check state logic
+                // React state inside interval might be stale, so we rely on the state update triggering a re-eval in a robust way? 
+                // Actually, since we trigger beginFlight from the interval closure, 'nextBet' might be stale.
+                // We will use a ref for nextBet.
+                
+                const currentNextBet = Number(document.getElementById('hidden-next-bet').value || 0);
+                
+                if (currentNextBet > 0) {
+                    if (Number(user.coins) >= currentNextBet) {
+                        updateDoc(doc(db, "users", user.id), { coins: Number(user.coins) - currentNextBet });
+                        setActiveBet(currentNextBet);
+                        setNextBet(0); // Clear next bet
                     } else {
                         setActiveBet(0);
+                        showMsg(t('no_balance'), 'error');
                     }
-                    setCashed(false);
-                    setStatus('RUNNING');
-                    
-                    let multiplierLimit = 0.99/(1-Math.random());
-                    if(Math.random()<0.05) multiplierLimit=1.0; 
-                    if(multiplierLimit>50) multiplierLimit=50;
-                    
-                    gm.current = { s: Date.now(), c: Math.max(1.0, multiplierLimit), a: null, m: 1.0 };
-                    loop();
-                };
+                } else {
+                    setActiveBet(0);
+                }
 
-                startRound();
-                return () => { cancelAnimationFrame(gm.current.a); };
-            }, [isBettingNext, bet]); // Re-bind not ideal for loop but simplifies for this demo
+                setCashed(false);
+                setStatus('RUNNING');
+                
+                let multiplierLimit = 0.99/(1-Math.random());
+                if(Math.random()<0.05) multiplierLimit=1.0; 
+                if(multiplierLimit>50) multiplierLimit=50;
+                
+                gm.current = { s: Date.now(), c: Math.max(1.0, multiplierLimit), a: null, m: 1.0 };
+                loop();
+            };
 
             const loop = () => { 
                 const ctx = cvsRef.current?.getContext('2d'); 
@@ -458,67 +482,26 @@
                 if(nm >= gm.current.c) { 
                     setStatus('CRASHED'); 
                     draw(ctx, w, h, gm.current.c, true); 
-                    setTimeout(() => {
-                        // Reset after crash
-                         setStatus('COUNTDOWN');
-                         setTimer(5);
-                         let c = 5;
-                         const cInt = setInterval(() => {
-                             c--; setTimer(c);
-                             if(c <= 0) {
-                                 clearInterval(cInt);
-                                 // Trigger next flight via logic inside effect or recursive
-                                 beginFlightInternal();
-                             }
-                         }, 1000);
-                    }, 3000);
+                    setTimeout(() => startCountDown(), 3000);
                     return; 
                 } 
                 draw(ctx, w, h, nm, false); 
                 gm.current.a = requestAnimationFrame(loop); 
             };
 
-            // Hacky internal restart to keep loop going without re-rendering component fully
-            const beginFlightInternal = async () => {
-                // Determine if user bet for THIS upcoming round
-                // We use a ref for immediate value access in loop
-                // For this demo, we rely on the state flow which might be slightly buggy in a pure loop
-                // simplified: just re-trigger state
+            const handleBetClick = () => {
+                if(Number(user.coins) < bet) return showMsg(t('no_balance'), 'error');
                 
-                // NOTE: In a real app, this logic needs to be decoupled from React render cycle
-                // For this single file, we will force a state update that triggers the effect? No, infinite loop.
-                // We will just run the logic here.
-                
-                // Consume bet
-                if(document.getElementById('next-bet-flag').innerText === 'true') {
-                     // Deduct coins
-                     if(Number(user.coins) >= bet) {
-                        await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-                        setActiveBet(bet);
-                        document.getElementById('next-bet-flag').innerText = 'false';
-                     } else {
-                         setActiveBet(0);
-                         showMsg(t('no_balance'), 'error');
-                     }
+                if (status === 'COUNTDOWN') {
+                    // Bet for current round
+                    setNextBet(bet); // Will be picked up by beginFlight
+                    showMsg("Bet Placed", "success");
                 } else {
-                    setActiveBet(0);
+                    // Bet for NEXT round
+                    setNextBet(bet);
+                    showMsg("Bet queued for next round", "success");
                 }
-
-                setCashed(false);
-                setStatus('RUNNING');
-                let multiplierLimit = 0.99/(1-Math.random()); 
-                if(Math.random()<0.05) multiplierLimit=1.0; 
-                if(multiplierLimit>50) multiplierLimit=50;
-                gm.current = { s: Date.now(), c: Math.max(1.0, multiplierLimit), a: null, m: 1.0 };
-                loop();
-            }
-
-            const placeBet = () => {
-                if(Number(user.coins)<bet) return showMsg(t('no_balance'), 'error');
-                setIsBettingNext(true);
-                // Use a hidden DOM element to bridge the interval loop state gap
-                setTimeout(() => { document.getElementById('next-bet-flag').innerText = 'true'; }, 10);
-            }
+            };
 
             const cash = async () => { 
                 if(status!=='RUNNING'||cashed||activeBet===0) return; 
@@ -532,47 +515,73 @@
             
             const draw = (ctx, w, h, val, isCr) => { 
                 ctx.fillStyle = '#020617'; ctx.fillRect(0,0,w,h);
+                // Grid
                 ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
                 for(let i=0; i<w; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke(); }
                 for(let i=0; i<h; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
                 
-                ctx.fillStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#fff'); ctx.font = 'bold 60px monospace'; ctx.textAlign = 'center'; ctx.fillText(`${val.toFixed(2)}x`, w/2, h/2);
-                if(isCr) { ctx.font='20px Cairo'; ctx.fillStyle='#ef4444'; ctx.fillText('CRASHED', w/2, h/2+40); }
+                // Text
+                if (status === 'RUNNING' || status === 'CRASHED') {
+                    ctx.fillStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#fff'); 
+                    ctx.font = 'bold 60px monospace'; ctx.textAlign = 'center'; 
+                    ctx.fillText(`${val.toFixed(2)}x`, w/2, h/2);
+                    if(isCr) { ctx.font='20px Cairo'; ctx.fillStyle='#ef4444'; ctx.fillText('CRASHED', w/2, h/2+40); }
+                }
 
-                const t = Math.min((val-1)/5, 1); const x = t*(w*0.8); const y = h - t*(h*0.8); 
-                ctx.beginPath(); ctx.moveTo(0,h); ctx.quadraticCurveTo(w/4, h, x, y); 
-                ctx.strokeStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#FFD700'); ctx.lineWidth = 5; ctx.stroke(); 
-                
-                if(!isCr) {
-                    ctx.save(); ctx.translate(x,y); ctx.rotate(-Math.PI/4); ctx.font='30px serif'; ctx.fillText('🚀',0,0); ctx.restore();
-                } else {
-                    ctx.font='40px serif'; ctx.fillText('💥', x, y);
+                // Graph
+                if (status === 'RUNNING' || status === 'CRASHED') {
+                    const t = Math.min((val-1)/5, 1); 
+                    const x = t*(w*0.8); 
+                    const y = h - t*(h*0.8); 
+                    ctx.beginPath(); ctx.moveTo(0,h); ctx.quadraticCurveTo(w/4, h, x, y); 
+                    ctx.strokeStyle = isCr ? '#ef4444' : (cashed ? '#10b981' : '#FFD700'); ctx.lineWidth = 5; ctx.stroke(); 
+                    
+                    if(!isCr) {
+                        ctx.save(); ctx.translate(x,y); ctx.rotate(-Math.PI/4); ctx.font='30px serif'; ctx.fillText('🚀',0,0); ctx.restore();
+                    } else {
+                        ctx.font='40px serif'; ctx.fillText('💥', x, y);
+                    }
                 }
             };
             
             useEffect(()=>{ if(cvsRef.current){cvsRef.current.width=cvsRef.current.offsetWidth; cvsRef.current.height=cvsRef.current.offsetHeight;} },[]);
             
             return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full ${status==='CRASHED'?'animate-shake-hard':''}` }, 
-                React.createElement('div', { id: 'next-bet-flag', className: 'hidden' }, 'false'),
+                // Hidden input to bridge state to interval loop
+                React.createElement('input', { id: 'hidden-next-bet', type: 'hidden', value: nextBet }),
+                
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/5 shrink-0" }, React.createElement('button', { onClick: back, className: "text-slate-400 active:scale-90" }, React.createElement(ArrowIcon)), React.createElement('div',{className:"flex flex-col items-center"}, React.createElement('span', { className: "font-bold text-gold-500 tracking-widest" }, "CRASH LIVE"), React.createElement('span', { className: "text-[10px] text-gray-500 animate-pulse" }, fakeTick)), React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)), 
+                
                 React.createElement('div', { className: "flex-1 relative w-full" }, 
                     React.createElement('canvas', { ref: cvsRef, className: "w-full h-full block" }), 
-                    status==='COUNTDOWN' && React.createElement('div',{className:"absolute inset-0 flex items-center justify-center bg-black/60 z-10"}, React.createElement('div',{className:"text-8xl font-black text-white animate-pop"}, timer)),
-                    status==='CRASHED' && React.createElement('div',{className:"absolute inset-0 bg-red-900/20 pointer-events-none"}),
-                    cashed && React.createElement('div',{className:"absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-black/50"},React.createElement('div',{className:"text-green-500 text-6xl font-black animate-pop"},"WIN"), React.createElement('div',{className:"text-white text-3xl font-mono mt-4 font-bold"}, `+${winAmt}`))
+                    
+                    // Countdown Overlay - Completely separate layer
+                    status==='COUNTDOWN' && React.createElement('div',{className:"absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 backdrop-blur-sm"}, 
+                        React.createElement('div',{className:"text-gold-500 text-xl font-bold mb-2"}, "NEXT ROUND IN"),
+                        React.createElement('div',{className:"text-8xl font-black text-white animate-pop font-mono"}, timer)
+                    ),
+
+                    // Win Overlay
+                    cashed && React.createElement('div',{className:"absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-black/20"},React.createElement('div',{className:"text-green-500 text-6xl font-black animate-pop"},"WIN"), React.createElement('div',{className:"text-white text-3xl font-mono mt-4 font-bold"}, `+${winAmt}`))
                 ), 
-                React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 shrink-0 pb-safe" }, React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), status === 'RUNNING' && activeBet > 0 && !cashed ? React.createElement(Button, { full: true, variant: "green", onClick: cash }, t('withdraw')) : React.createElement(Button, { full: true, disabled: isBettingNext || (status==='RUNNING' && activeBet===0), onClick: placeBet }, isBettingNext ? t('wait') : (activeBet > 0 ? "IN GAME" : t('bet'))))
+                
+                React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 shrink-0 pb-safe z-30 relative" }, 
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
+                    status === 'RUNNING' && activeBet > 0 && !cashed ? 
+                        React.createElement(Button, { full: true, variant: "green", onClick: cash }, t('withdraw') + ` (${(activeBet * gm.current.m).toFixed(0)})`) 
+                        : React.createElement(Button, { full: true, disabled: nextBet > 0, onClick: handleBetClick }, nextBet > 0 ? "Bet Queued..." : (status === 'RUNNING' ? "Bet (Next Round)" : "Bet"))
+                )
             );
         }
 
-        // 2. Plinko (Optimized: Always Win feeling + Disappear in cup + Flash Cup)
+        // 2. Plinko (Max Bet 100 limit added)
         function PlinkoGame({ user, back, showMsg, ArrowIcon, t }) {
             const cvsRef = useRef(null); const [bet, setBet] = useState(100); const eng = useRef({ balls: [] });
             
             const drop = async () => { 
+                if(bet > 100) return showMsg(t('max_bet') + ' 100', 'error');
                 if(Number(user.coins) < bet) return showMsg(t('no_balance'), 'error'); 
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet}); 
-                // x slightly randomized, y fixed top
                 eng.current.balls.push({x:cvsRef.current.width/2+(Math.random()*4-2), y:30, vx:Math.random()*2-1, vy:0, bet, trail:[], done: false}); 
             };
             
@@ -582,198 +591,188 @@
                 const ctx=cvs.getContext('2d'); const {width:w,height:h}=cvs; 
                 const ROWS=10; const GAP=w/(ROWS+2); 
                 const pegs=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<=r;c++) pegs.push({x:w/2+(c-r/2)*GAP, y:50+r*GAP}); 
-                // Enhanced Multipliers for "Always Win" feeling (center is > 1x)
                 const buckets=[10, 5, 2, 1.5, 1.2, 1.2, 1.5, 2, 5, 10].map((v,i)=>({x:(w-10*GAP)/2+i*GAP, y:50+ROWS*GAP+30, w:GAP, h:40, v, active:0})); 
                 let anim; 
                 
                 const update=()=>{ 
                     ctx.clearRect(0,0,w,h); 
-                    // Pegs
                     ctx.fillStyle='#fff'; pegs.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill()}); 
-                    // Buckets
                     buckets.forEach(b=>{ 
                         if(b.active > 0) b.active--;
                         const isFlash = b.active > 0;
                         const c = isFlash ? '#fff' : (b.v<1 ? '#222' : (b.v>=5 ? '#9333ea' : '#eab308')); 
-                        
                         if(isFlash) { ctx.shadowBlur=30; ctx.shadowColor='#FFD700'; } else { ctx.shadowBlur=0; }
-                        
                         ctx.fillStyle=c; 
-                        // Scale effect on hit
                         const hMod = isFlash ? 5 : 0;
                         ctx.fillRect(b.x+2,b.y-hMod,b.w-4,b.h+hMod); 
-                        
                         ctx.fillStyle= isFlash ? '#000' : '#fff'; ctx.font='bold 10px Arial'; ctx.textAlign='center'; ctx.fillText(`${b.v}x`, b.x+b.w/2, b.y+24); 
                         ctx.shadowBlur=0; 
                     }); 
-                    // Balls
                     eng.current.balls.forEach((b, idx)=>{ 
                         if(b.done) return;
                         b.vy+=0.25; b.vx*=0.98; b.x+=b.vx; b.y+=b.vy; 
                         b.trail.push({x:b.x, y:b.y}); if(b.trail.length>10) b.trail.shift();
-                        
-                        // Collisions with Pegs
                         pegs.forEach(p=>{
                             const dist = Math.sqrt((b.x-p.x)**2+(b.y-p.y)**2);
                             if(dist<8){
-                                // Physics tweak to guide towards center (higher win) slightly
                                 const bias = (w/2 - b.x) * 0.02; 
                                 b.vx=(Math.random()-0.5)*4 + bias; 
                                 b.vy*=0.6; b.y+=2; 
                                 ctx.fillStyle='#fff'; ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill(); 
                             }
                         }); 
-                        
-                        // Check Bucket Collision
                         if(b.y > 50+ROWS*GAP+10) {
                             const hit = buckets.find(k=>b.x>k.x && b.x<k.x+k.w);
                             if(hit) {
-                                hit.active = 20; // Flash frames
-                                b.done = true; // Remove ball logic
+                                hit.active = 20; 
+                                b.done = true; 
                                 const win = Math.floor(b.bet * hit.v);
                                 updateDoc(doc(db,"users",user.id),{coins: Number(user.coins) + win});
                                 if(win > b.bet) { showMsg(`+${win}`, 'success'); triggerConfetti(); }
                             }
                         }
-
-                        // Draw Trail
                         ctx.strokeStyle='rgba(234, 179, 8, 0.5)'; ctx.lineWidth=2; ctx.beginPath(); b.trail.forEach((t,i)=>{if(i===0)ctx.moveTo(t.x,t.y);else ctx.lineTo(t.x,t.y);}); ctx.stroke();
-                        // Draw Ball
                         ctx.fillStyle='#FFD700'; ctx.beginPath(); ctx.arc(b.x,b.y,6,0,Math.PI*2); ctx.fill(); 
                     }); 
                     eng.current.balls = eng.current.balls.filter(b=>!b.done && b.y < h+50);
                     anim=requestAnimationFrame(update); 
                 }; update(); return ()=>cancelAnimationFrame(anim); 
-            }, [user.coins]); // dependency to ensure user coins update inside closure? No, using firebase directly
+            }, [user.coins]); 
             
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full" }, React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 shrink-0" }, React.createElement('button',{onClick:back,className:"text-slate-400 active:scale-90"},React.createElement(ArrowIcon)), React.createElement('span',{className:"font-bold text-purple-500"},TEXTS.ar.plinko), React.createElement('span',{className:"text-xs font-mono bg-black px-2 py-1 rounded text-white"},user.coins)), React.createElement('div', { className: "flex-1 relative w-full" }, React.createElement('canvas', { ref: cvsRef, className: "w-full h-full block" })), React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 shrink-0 pb-safe" }, React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), React.createElement(Button, { full: true, onClick: drop }, TEXTS.ar.play)));
         }
 
-        // 3. Tower (Fixed: Pre-generated, Flip All on Loss, Cashout)
-        function TowerGame({ user, back, showMsg, ArrowIcon, t }) {
-            const [level, setLevel] = useState(0); 
-            const [bet, setBet] = useState(100); 
-            const [status, setStatus] = useState('IDLE'); 
-            const [gameBoard, setGameBoard] = useState([]); // Stores where bombs are
-            const [userPicks, setUserPicks] = useState([]); // Stores what user clicked
-            const [shaking, setShaking] = useState(false);
+        // 3. Mines (Replaces Tower - Professional Grid)
+        function MinesGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [grid, setGrid] = useState(Array(25).fill(null)); // null = covered, 'gem', 'bomb'
+            const [revealed, setRevealed] = useState(Array(25).fill(false));
+            const [mineCount, setMineCount] = useState(3);
+            const [bet, setBet] = useState(100);
+            const [playing, setPlaying] = useState(false);
+            const [mines, setMines] = useState([]); // Indices of mines
+            const [gameOver, setGameOver] = useState(false); // 'won' or 'lost'
             
-            // Generate board: 10 rows, 3 cols. 1 Bomb per row.
-            const generateBoard = () => {
-                const arr = [];
-                for(let i=0; i<10; i++) {
-                    const bombPos = Math.floor(Math.random() * 3);
-                    arr.push(bombPos);
-                }
-                return arr;
-            };
-
+            // Generate board on play
             const startGame = async () => {
-                if(Number(user.coins)<bet) return showMsg(TEXTS.ar.no_balance,'error');
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-                setGameBoard(generateBoard());
-                setUserPicks([]);
-                setLevel(0);
-                setStatus('PLAYING');
+                if(Number(user.coins) < bet) return showMsg(TEXTS.ar.no_balance, 'error');
+                await updateDoc(doc(db,"users",user.id),{coins: Number(user.coins) - bet});
+                
+                // Randomly place mines
+                const newMines = [];
+                while(newMines.length < mineCount) {
+                    const r = Math.floor(Math.random() * 25);
+                    if(!newMines.includes(r)) newMines.push(r);
+                }
+                setMines(newMines);
+                setRevealed(Array(25).fill(false));
+                setGameOver(false);
+                setPlaying(true);
             };
-            
-            const handleStep = async (rowIdx, colIdx) => {
-                if(status !== 'PLAYING' || rowIdx !== level) return;
-                
-                // Record pick
-                const newPicks = [...userPicks, {r: rowIdx, c: colIdx}];
-                setUserPicks(newPicks);
 
-                const isBomb = gameBoard[rowIdx] === colIdx;
+            const handleTileClick = (idx) => {
+                if(!playing || revealed[idx] || gameOver) return;
                 
-                if (isBomb) {
-                    setShaking(true); setTimeout(()=>setShaking(false), 500);
-                    setStatus('LOST');
-                    // Reveal all happens via render logic
+                const newRevealed = [...revealed];
+                newRevealed[idx] = true;
+                setRevealed(newRevealed);
+
+                if(mines.includes(idx)) {
+                    // Hit Mine
+                    setGameOver('lost');
+                    setPlaying(false);
+                    // Reveal all mines
+                    setRevealed(Array(25).fill(true)); 
                 } else {
-                    if (level === 9) {
-                        const win = bet * 10;
-                        await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                        setStatus('WON'); showMsg(`${TEXTS.ar.success} +${win}`); triggerConfetti();
-                    } else {
-                        setLevel(l => l + 1);
+                    // Hit Gem
+                    // Check if all gems found
+                    const revealedCount = newRevealed.filter((r, i) => r && !mines.includes(i)).length;
+                    const totalGems = 25 - mineCount;
+                    if(revealedCount === totalGems) {
+                        cashout(newRevealed);
                     }
                 }
             };
-            
-            const cashout = async () => {
-                if(status!=='PLAYING' || level===0) return;
-                const win = Math.floor(bet * (level * 1.5 + 1));
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                setStatus('CASHED'); showMsg(`${TEXTS.ar.success} +${win}`); triggerConfetti();
+
+            const getMultiplier = () => {
+                const moves = revealed.filter((r, i) => r && !mines.includes(i)).length;
+                // Simple simplified multiplier logic for demo
+                // Actual formula: Multiplier * (25 - mines) / (25 - mines - moves)
+                // We'll use a progressive approximation
+                let m = 1.0;
+                for(let i=0; i<moves; i++) {
+                    m = m * (1 + (mineCount / (25 - mineCount - i)));
+                }
+                return m;
             };
 
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full ${shaking?'animate-shake-hard':''}` },
+            const currentMultiplier = getMultiplier();
+            const currentWin = Math.floor(bet * currentMultiplier);
+
+            const cashout = async () => {
+                if(!playing) return;
+                await updateDoc(doc(db,"users",user.id),{coins: Number(user.coins) + currentWin});
+                setPlaying(false);
+                setGameOver('won');
+                setRevealed(Array(25).fill(true)); // Reveal all
+                showMsg(`${TEXTS.ar.success} +${currentWin}`, 'success');
+                triggerConfetti();
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full" },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 shrink-0" }, 
                     React.createElement('button',{onClick:back,className:"text-slate-400"},React.createElement(ArrowIcon)), 
-                    React.createElement('span',{className:"font-bold text-green-500"},TEXTS.ar.tower), 
+                    React.createElement('span',{className:"font-bold text-emerald-500"}, TEXTS.ar.mines), 
                     React.createElement('span',{className:"text-xs bg-black px-2 py-1 rounded"},user.coins)
                 ),
-                React.createElement('div', { className: "flex-1 flex flex-col-reverse p-6 gap-3 overflow-y-auto items-center justify-center relative" }, 
-                    status==='LOST' && React.createElement('div',{className:"absolute inset-0 bg-red-500/10 pointer-events-none z-0"}),
-                    Array(10).fill(0).map((_, rowIdx) => {
-                        const isCurrent = rowIdx === level;
-                        const isPast = rowIdx < level;
-                        const bombPos = gameBoard[rowIdx];
-                        
-                        return React.createElement('div', { key: rowIdx, className: `flex gap-4 w-full justify-center transition-all z-10 ${isCurrent ? 'scale-110 opacity-100' : (isPast ? 'opacity-40' : 'opacity-60')}` }, 
-                            Array(3).fill(0).map((_, colIdx) => {
-                                // Determine State
-                                let flipped = false;
-                                let content = "?";
-                                let bg = "bg-dark-800 border-white/10";
-                                
-                                // Did user pick this?
-                                const pick = userPicks.find(p => p.r === rowIdx && p.c === colIdx);
-                                
-                                if (pick) {
-                                    flipped = true;
-                                    if(gameBoard[rowIdx] === colIdx) {
-                                        content = "💣"; bg = "bg-red-600 border-red-500 shadow-[0_0_30px_red]";
-                                    } else {
-                                        content = "💎"; bg = "bg-green-600 border-green-500 shadow-[0_0_20px_#00ff00]";
-                                    }
-                                }
-                                
-                                // Reveal ALL if Game Over (Lost, Won, Cashed)
-                                if (status !== 'PLAYING' && status !== 'IDLE') {
-                                    flipped = true;
-                                    if(gameBoard[rowIdx] === colIdx) {
-                                        content = "💣";
-                                        if(!pick) bg = "bg-dark-800 border-red-500/50 opacity-80"; // Revealed bomb
-                                    } else {
-                                        content = "💎";
-                                        if(!pick) bg = "bg-dark-800 border-green-500/50 opacity-50";
-                                    }
-                                }
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-4 relative" },
+                    // Multiplier Badge
+                    playing && React.createElement('div', { className: "mb-4 bg-emerald-900/50 px-4 py-2 rounded-xl border border-emerald-500/30" },
+                        React.createElement('span', { className: "text-2xl font-bold text-white" }, `x${currentMultiplier.toFixed(2)}`),
+                        React.createElement('div', { className: "text-xs text-emerald-400 text-center" }, `Win: ${currentWin}`)
+                    ),
 
-                                return React.createElement('div', { 
-                                    className: "w-20 h-20 perspective-1000 cursor-pointer",
-                                    onClick: () => handleStep(rowIdx, colIdx) 
-                                },
-                                    React.createElement('div', { className: `relative w-full h-full text-3xl font-bold transition-all duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}` },
-                                        React.createElement('div', { className: `absolute w-full h-full backface-hidden flex items-center justify-center rounded-xl border bg-dark-800 border-white/10 hover:border-gold-500 shadow-lg` }, "?"),
-                                        React.createElement('div', { className: `absolute w-full h-full backface-hidden rotate-y-180 flex items-center justify-center rounded-xl border ${bg}` }, content)
-                                    )
-                                );
-                            })
-                        );
-                    })
+                    // GRID
+                    React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm aspect-square" },
+                        Array(25).fill(0).map((_, i) => {
+                            const isRevealed = revealed[i];
+                            const isMine = mines.includes(i);
+                            let content = null;
+                            let style = "bg-dark-800 hover:bg-dark-700 border-white/10";
+                            
+                            if (isRevealed) {
+                                if (isMine) {
+                                    content = React.createElement(Bomb, { className: "text-red-500 animate-pop", size: 24 });
+                                    style = "bg-red-900/20 border-red-500";
+                                } else {
+                                    content = React.createElement(Gem, { className: "text-emerald-400 animate-pop", size: 24 });
+                                    style = "bg-emerald-900/20 border-emerald-500";
+                                }
+                            }
+                            
+                            return React.createElement('button', {
+                                key: i,
+                                onClick: () => handleTileClick(i),
+                                disabled: !playing || isRevealed,
+                                className: `rounded-lg border flex items-center justify-center transition-all active:scale-95 ${style}`
+                            }, content);
+                        })
+                    )
                 ),
-                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-8" }, 
-                    status === 'PLAYING' && level > 0 ? React.createElement(Button, { full: true, variant: "green", onClick: cashout }, TEXTS.ar.withdraw + ` (${Math.floor(bet*(level*1.5+1))})`) 
-                    : (status === 'PLAYING' ? React.createElement('div',{className:"text-center w-full text-gold-500 animate-pulse"}, "اختر بطاقة...") 
-                    : React.createElement(Button, { full: true, onClick: startGame }, status==='IDLE' ? TEXTS.ar.play : "لعب مجدداً"))
-                ),
-                status === 'CASHED' && React.createElement('div',{className:"absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50 animate-pop backdrop-blur-sm"}, 
-                    React.createElement('h1',{className:"text-6xl mb-4"},"🎉"),
-                    React.createElement('h2',{className:"text-3xl text-green-500 font-bold"}, "مبروك!"),
-                    React.createElement('button',{onClick:()=>setStatus('IDLE'), className:"mt-8 bg-white text-black px-6 py-2 rounded-full font-bold"}, "متابعة")
+                
+                // CONTROLS
+                React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 space-y-3 pb-safe" },
+                    !playing ? React.createElement('div', { className: "flex gap-4" },
+                        React.createElement('div', { className: "flex-1" },
+                            React.createElement('label', { className: "text-xs text-gray-500 mb-1 block" }, "Mines (1-24)"),
+                            React.createElement('input', { type: "number", min: 1, max: 24, value: mineCount, onChange: e=>setMineCount(Math.min(24, Math.max(1, Number(e.target.value)))), className: "w-full bg-black border border-white/20 rounded-xl p-3 text-center text-white font-bold" })
+                        ),
+                        React.createElement('div', { className: "flex-1" },
+                            React.createElement('label', { className: "text-xs text-gray-500 mb-1 block" }, "Bet"),
+                            React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-full bg-black border border-white/20 rounded-xl p-3 text-center text-white font-bold" })
+                        )
+                    ) : React.createElement(Button, { full: true, variant: "green", onClick: cashout }, `CASHOUT ${currentWin}`),
+                    
+                    !playing && React.createElement(Button, { full: true, onClick: startGame }, "PLAY")
                 )
             );
         }
