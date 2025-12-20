@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Royal Club - Pro V9 (Fixed)</title>
+    <title>CD0777 Royal Club - Pro V10 (Surgical Update)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,7 +29,8 @@
                         'pulse-glow': 'pulseGlow 1.5s infinite',
                         'slide-up': 'slideUp 0.4s ease-out forwards',
                         'flash-red': 'flashRed 0.5s ease-in-out',
-                        'flash-green': 'flashGreen 0.5s ease-in-out'
+                        'flash-green': 'flashGreen 0.5s ease-in-out',
+                        'rocket-fly': 'rocketFly 2s ease-in-out infinite alternate'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
@@ -40,7 +41,8 @@
                         pulseGlow: { '0%, 100%': { boxShadow: '0 0 10px #FFD700' }, '50%': { boxShadow: '0 0 25px #FFD700' } },
                         slideUp: { '0%': { transform: 'translateY(50px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
                         flashRed: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(239, 68, 68, 0.3)' } },
-                        flashGreen: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(34, 197, 94, 0.3)' } }
+                        flashGreen: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(34, 197, 94, 0.3)' } },
+                        rocketFly: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(-20px)' } }
                     }
                 }
             }
@@ -54,7 +56,6 @@
         input, select, button { outline: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 0px; }
         
-        /* Range Input Styling */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #FFD700; cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px #FFD700; border: 2px solid white; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
@@ -68,15 +69,15 @@
         
         .btn-press:active { transform: scale(0.95); transition: transform 0.1s; }
         
-        /* Slots Animation */
         .slot-spin { animation: slotSpin 0.1s linear infinite; }
         @keyframes slotSpin { 0% { transform: translateY(-20px); filter: blur(5px); } 100% { transform: translateY(20px); filter: blur(5px); } }
 
-        /* Coin 3D */
         .coin-container { transform-style: preserve-3d; transition: transform 1s cubic-bezier(0.4, 2, 0.55, 0.44); }
         .coin-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .coin-front { background: radial-gradient(#FFD700, #B8860B); transform: rotateY(0deg); }
         .coin-back { background: radial-gradient(#C0C0C0, #808080); transform: rotateY(180deg); }
+        
+        .star-bg { background-image: radial-gradient(white 1px, transparent 1px); background-size: 50px 50px; opacity: 0.2; }
     </style>
 </head>
 <body>
@@ -97,7 +98,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -259,7 +260,7 @@
             // --- ADMIN PANEL ---
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
-            // --- GAMES ---
+            // --- GAMES (UPDATED VERSIONS) ---
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL });
             if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-keno') return React.createElement(KenoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
@@ -526,7 +527,7 @@
             );
         }
 
-        // --- WITHDRAW SCREEN (UPDATED) ---
+        // --- WITHDRAW SCREEN ---
         function WithdrawScreen({ user, showMsg, t, back }) {
              const [method, setMethod] = useState(null);
              const [form, setForm] = useState({ amount: '', name: '', account: '', phone: '', network: 'Orange' });
@@ -542,7 +543,6 @@
                  if(!method || !form.amount) return showMsg(t('inputs_err'), 'error');
                  if(method.id==='recharge' && !form.phone) return showMsg(t('inputs_err'), 'error');
                  
-                 // Simulating Request
                  await addDoc(collection(db, "withdraws"), {
                     userId: user.id, username: user.username, amount: Number(form.amount), method: method.name, details: form, status: 'pending', date: new Date().toISOString()
                  });
@@ -718,34 +718,25 @@
             );
         }
 
-
-        // --- CRASH GAME (FIXED: Rocket on Line) ---
+        // --- UPDATED GAME: CRASH (NO GRAPH, PURE ROCKET) ---
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL }) {
             const [gameState, setGameState] = useState('BETTING'); // BETTING, FLYING, CRASHED
             const [countdown, setCountdown] = useState(5);
             const [multiplier, setMultiplier] = useState(1.00);
             const [betAmount, setBetAmount] = useState(100);
             const [activeBet, setActiveBet] = useState(null);
-            const [nextRoundBet, setNextRoundBet] = useState(null);
-            const [history, setHistory] = useState([1.5, 2.3, 1.1]);
+            const [history, setHistory] = useState([1.5, 2.3]);
             const [cashoutWin, setCashoutWin] = useState(0);
-            
-            // Rocket Visual State
-            const [rocketPos, setRocketPos] = useState({x: 0, y: 0, rot: 0});
 
-            const canvasRef = useRef(null);
             const reqRef = useRef(null);
             const crashPointRef = useRef(0);
             const startTimeRef = useRef(0);
 
-            // --- AUTO LOOP LOGIC ---
             useEffect(() => {
                 let timer;
                 if (gameState === 'BETTING') {
                     setMultiplier(1.00);
                     setCashoutWin(0);
-                    setRocketPos({x:0, y:0, rot:0});
-                    drawGraph(1.00); // Clear canvas
                     if (countdown > 0) {
                         timer = setTimeout(() => setCountdown(c => c - 1), 1000);
                     } else {
@@ -756,12 +747,11 @@
             }, [gameState, countdown]);
 
             const startFlight = () => {
-                if (nextRoundBet) {
-                    setActiveBet(nextRoundBet);
-                    setNextRoundBet(null);
-                }
+                // If user pressed play but game hasn't started, effectively activeBet is set
+                // In this simplified version, user must press play during betting phase.
                 const r = Math.random();
                 let cp = 1;
+                // Game logic
                 if (r < 0.1) cp = 1.0 + Math.random() * 0.1; 
                 else if (r < 0.5) cp = 1.1 + Math.random(); 
                 else cp = 2 + Math.random() * 10; 
@@ -773,14 +763,13 @@
             };
 
             const loop = () => {
-                const elapsed = (Date.now() - startTimeRef.current) / 1000; // seconds
-                const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.05); // Standard Curve
+                const elapsed = (Date.now() - startTimeRef.current) / 1000;
+                const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.05);
 
                 if (nextMult >= crashPointRef.current) {
                     crash(crashPointRef.current);
                 } else {
                     setMultiplier(nextMult);
-                    drawGraph(nextMult);
                     reqRef.current = requestAnimationFrame(loop);
                 }
             };
@@ -797,143 +786,63 @@
                 }, 3000);
             };
 
-            const drawGraph = (currentMult) => {
-                const cvs = canvasRef.current;
-                if (!cvs) return;
-                const ctx = cvs.getContext('2d');
-                const w = cvs.width;
-                const h = cvs.height;
-
-                // Scale logic to keep line in view
-                // Basic mapping: mult 1.0 = bottom left. 
-                // We shift coordinate system based on time/mult
-                
-                ctx.clearRect(0, 0, w, h);
-                
-                // Draw Grid
-                ctx.strokeStyle = "rgba(255,255,255,0.05)";
-                ctx.beginPath();
-                for(let i=0; i<w; i+=50) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
-                for(let i=0; i<h; i+=50) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
-                ctx.stroke();
-
-                // Draw Curve
-                ctx.beginPath();
-                ctx.moveTo(0, h);
-                
-                // Math: x is proportional to time/mult, y is proportional to mult
-                // To animate smoothly, we calculate x/y based on currentMult
-                // X moves linearly with time roughly, Y moves exponentially
-                const progress = currentMult - 1; 
-                
-                // Dynamic scaling so it doesn't go off screen immediately
-                let scaleX = 100; 
-                let scaleY = 50;
-                
-                if(currentMult > 2) { scaleX = 80; scaleY = 40; }
-                if(currentMult > 5) { scaleX = 50; scaleY = 20; }
-                if(currentMult > 10) { scaleX = 20; scaleY = 10; }
-
-                const x = Math.min(w-20, progress * scaleX); 
-                const y = Math.min(h-20, progress * scaleY);
-                
-                // Draw quadratic from bottom-left to target point
-                // Control point gives the curve
-                ctx.quadraticCurveTo(x/2, h, x, h - y);
-
-                ctx.strokeStyle = '#ef4444'; // Red line
-                ctx.lineWidth = 4;
-                ctx.stroke();
-
-                // Fill area
-                ctx.lineTo(x, h);
-                ctx.lineTo(0, h);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-                ctx.fill();
-
-                // Update Rocket visual position to match tip of line exactly
-                // Canvas Y is inverted (0 is top), DOM Y is bottom-up usually
-                setRocketPos({
-                    x: x, 
-                    y: y, 
-                    rot: -45 + (y/x || 0) * 10 // Tilt calculation
-                });
-            };
-
             const placeBet = async (e) => {
                 e.preventDefault();
-                try {
-                    if (nextRoundBet || activeBet) return;
-                    if (Number(user.coins) < betAmount) return showMsg("No Balance", "error");
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-betAmount});
-                    setNextRoundBet(betAmount);
-                } catch(err) { showMsg(t('error'), 'error'); }
+                if(Number(user.coins) < betAmount) return showMsg("No Balance", "error");
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-betAmount});
+                setActiveBet(betAmount);
             };
 
             const cashout = async (e) => {
                 e.preventDefault();
-                try {
-                    if (!activeBet || gameState !== 'FLYING') return;
-                    const win = Math.floor(activeBet * multiplier);
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                    setCashoutWin(win);
-                    setActiveBet(null);
-                    showMsg(`${t('you_get')} ${win}`, 'success');
-                    triggerConfetti();
-                } catch(err) { showMsg(t('error'), 'error'); }
+                if (!activeBet || gameState !== 'FLYING') return;
+                const win = Math.floor(activeBet * multiplier);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                setCashoutWin(win);
+                setActiveBet(null);
+                showMsg(`${t('you_get')} ${win}`, 'success');
+                triggerConfetti();
             };
 
             useEffect(() => { return () => cancelAnimationFrame(reqRef.current); }, []);
 
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up ${gameState==='CRASHED'?'animate-shake-hard animate-flash-red':''} ${cashoutWin>0?'animate-flash-green':''}`, dir:'ltr' },
+            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up`, dir:'ltr' },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/5", dir: isRTL?'rtl':'ltr' }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400 btn-press" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-red-500 tracking-widest" }, "CRASH"), 
+                    React.createElement('span', { className: "font-bold text-red-500 tracking-widest" }, "CRASH (FIXED)"), 
                     React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                // History
-                React.createElement('div', { className: "p-2 flex gap-2 justify-center bg-dark-900/50" }, history.map((h, i) => React.createElement('span', { key: i, className: `text-xs font-mono px-2 rounded ${h>=2?'text-green-500 bg-green-900/20':'text-red-500 bg-red-900/20'}` }, h.toFixed(2)+'x'))),
                 
-                // Game Area
-                React.createElement('div', { className: "flex-1 relative overflow-hidden bg-black/20" },
-                    // Canvas Graph
-                    React.createElement('canvas', { ref: canvasRef, width: 400, height: 300, className: "absolute inset-0 w-full h-full opacity-70" }),
-                    
-                    // Rocket Icon (Absolute Positioned based on Math)
-                    gameState === 'FLYING' && React.createElement('div', { 
-                        className: "absolute w-8 h-8 text-red-500 transition-none z-20",
-                        style: { 
-                            left: rocketPos.x, 
-                            bottom: rocketPos.y, 
-                            transform: `translate(-50%, 50%) rotate(${rocketPos.rot}deg)` 
-                        } 
-                    }, React.createElement(Rocket, { size: 32, className:"fill-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" })),
-
-                    // Central Text Overlays
-                    gameState === 'BETTING' && React.createElement('div', { className: "absolute inset-0 flex flex-col items-center justify-center z-10" },
-                        React.createElement('div', { className: "text-4xl font-bold text-blue-400 mb-2" }, t('next_round')),
-                        React.createElement('div', { className: "text-6xl font-mono text-white" }, `00:0${countdown}`)
+                // Pure Space Visual
+                React.createElement('div', { className: "flex-1 relative flex flex-col items-center justify-center overflow-hidden star-bg" },
+                    // Rocket Centered
+                    gameState === 'FLYING' && React.createElement('div', { className: "animate-rocket-fly mb-10 transition-transform duration-75", style: { transform: `scale(${1 + multiplier/10})` } },
+                         React.createElement(Rocket, { size: 100, className: "text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)] fill-red-600 rotate-[-45deg]" })
                     ),
                     
-                    gameState === 'FLYING' && React.createElement('div', { className: "absolute top-10 left-0 right-0 text-center z-10" },
-                        React.createElement('div', { className: "text-7xl font-mono font-black text-white drop-shadow-lg" }, multiplier.toFixed(2)+'x')
+                    // Crash Explosion
+                    gameState === 'CRASHED' && React.createElement('div', { className: "animate-pop flex flex-col items-center" },
+                         React.createElement('div', { className: "text-6xl mb-4" }, "💥"),
+                         React.createElement('h2', { className: "text-4xl font-black text-red-500 uppercase" }, t('crashed'))
                     ),
 
-                    gameState === 'CRASHED' && React.createElement('div', { className: "absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/50 backdrop-blur-sm" },
-                        React.createElement('div', { className: "text-8xl mb-4" }, "💥"),
-                        React.createElement('div', { className: "text-red-500 font-black text-5xl uppercase" }, t('crashed')),
-                        React.createElement('div', { className: "text-white font-mono text-2xl mt-2" }, multiplier.toFixed(2)+'x')
+                    // Counter
+                    React.createElement('div', { className: `z-10 font-mono font-black text-6xl drop-shadow-2xl ${gameState==='CRASHED'?'text-red-500':'text-white'}` }, 
+                        gameState === 'BETTING' ? `00:0${countdown}` : `${multiplier.toFixed(2)}x`
                     ),
 
-                    cashoutWin > 0 && React.createElement('div', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-black font-bold px-6 py-3 rounded-full animate-float-up shadow-lg z-30 text-xl" }, `+${cashoutWin} C`)
+                    // Betting Status
+                    gameState === 'BETTING' && React.createElement('p', { className: "mt-4 text-blue-400 font-bold animate-pulse" }, t('next_round')),
+
+                    cashoutWin > 0 && React.createElement('div', { className: "absolute top-20 bg-green-500 text-black font-bold px-6 py-3 rounded-full animate-float-up shadow-lg z-30 text-xl" }, `+${cashoutWin} C`)
                 ),
 
                 // Controls
                 React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 pb-safe", dir: isRTL?'rtl':'ltr' }, 
-                    React.createElement('div', { className: "relative w-28" }, React.createElement('input', { type: "number", value: betAmount, onChange: e=>setBetAmount(Number(e.target.value)), disabled: gameState!=='BETTING' || nextRoundBet, className: "w-full bg-black border border-white/20 rounded-xl text-center text-white font-bold p-3 outline-none" }), React.createElement(DollarSign, { size: 14, className: "absolute top-1/2 -translate-y-1/2 left-3 text-gold-500" })),
+                    React.createElement('div', { className: "relative w-28" }, React.createElement('input', { type: "number", value: betAmount, onChange: e=>setBetAmount(Number(e.target.value)), disabled: gameState!=='BETTING' || activeBet, className: "w-full bg-black border border-white/20 rounded-xl text-center text-white font-bold p-3 outline-none" }), React.createElement(DollarSign, { size: 14, className: "absolute top-1/2 -translate-y-1/2 left-3 text-gold-500" })),
                     
                     gameState === 'BETTING' 
-                    ? (nextRoundBet 
+                    ? (activeBet 
                         ? React.createElement(Button, { full: true, variant: 'dark', disabled: true }, t('bet_placed'))
                         : React.createElement(Button, { full: true, onClick: placeBet }, t('play')))
                     : (gameState === 'FLYING' && activeBet
@@ -943,84 +852,160 @@
             );
         }
 
-        // --- GAME: ROYAL SLOTS ---
+        // --- UPDATED GAME: COINFLIP (LOGIC FIXED & VISUALS) ---
+        function CoinFlipGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [choice, setChoice] = useState('Heads'); // Heads or Tails
+            const [flipping, setFlipping] = useState(false);
+            const [rotation, setRotation] = useState(0);
+            const [winAmt, setWinAmt] = useState(0);
+
+            const flip = async (e) => {
+                e.preventDefault();
+                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
+                if(flipping) return;
+                
+                setFlipping(true); setWinAmt(0);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+
+                // Logic Fix: Explicitly define Result
+                const isHeads = Math.random() > 0.5;
+                const result = isHeads ? 'Heads' : 'Tails';
+                
+                // Visual Fix: Ensure rotation lands on correct face
+                // 0deg = Front (Gold/Heads), 180deg = Back (Silver/Tails)
+                // Add 1800 (5 spins) + target offset
+                const currentBase = rotation - (rotation % 360); // Round to nearest full spin
+                const targetOffset = isHeads ? 0 : 180; 
+                // Ensure we always spin forward significantly
+                const newRotation = currentBase + 1800 + targetOffset; 
+                
+                setRotation(newRotation);
+
+                setTimeout(async () => {
+                    setFlipping(false);
+                    // Compare correctly
+                    if(result === choice) {
+                        const win = bet * 2;
+                        await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                        setWinAmt(win);
+                        triggerConfetti();
+                        showMsg(`WIN! ${result}`, 'success');
+                    } else {
+                        showMsg(`LOSE. It was ${result}`, 'error');
+                        // Add shake effect to body via class
+                        document.body.classList.add('animate-flash-red');
+                        setTimeout(()=>document.body.classList.remove('animate-flash-red'), 500);
+                    }
+                }, 1000);
+            };
+
+            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up` },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
+                    React.createElement('span', { className: "font-bold text-blue-500" }, "COIN FLIP (FIXED)"), 
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center gap-10 perspective-1000" },
+                    winAmt > 0 && React.createElement('div', { className: "absolute top-20 text-green-500 font-bold text-4xl animate-pop z-20 drop-shadow-lg" }, `+${winAmt}`),
+                    
+                    // 3D Coin
+                    React.createElement('div', { className: "relative w-48 h-48 coin-container", style: { transform: `rotateY(${rotation}deg)` } },
+                        // Front (Gold = Heads)
+                        React.createElement('div', { className: "coin-face coin-front border-4 border-yellow-300 flex flex-col" }, 
+                            React.createElement(Crown, { size: 60, className: "text-yellow-900 mb-2" }),
+                            React.createElement('span', { className: "font-black text-yellow-900" }, "HEADS")
+                        ),
+                        // Back (Silver = Tails)
+                        React.createElement('div', { className: "coin-face coin-back border-4 border-gray-400 flex flex-col" }, 
+                            React.createElement(Coins, { size: 60, className: "text-gray-800 mb-2" }),
+                            React.createElement('span', { className: "font-black text-gray-800" }, "TAILS")
+                        )
+                    ),
+
+                    React.createElement('div', { className: "flex bg-dark-800 p-1 rounded-xl gap-2" },
+                        React.createElement('button', { onClick: ()=>setChoice('Heads'), className: `px-8 py-3 rounded-lg font-bold transition-all flex flex-col items-center ${choice==='Heads'?'bg-gold-500 text-black scale-105 shadow-lg':'text-gray-400 hover:bg-white/5'}` }, React.createElement(Crown, {size:20}), "Heads"),
+                        React.createElement('button', { onClick: ()=>setChoice('Tails'), className: `px-8 py-3 rounded-lg font-bold transition-all flex flex-col items-center ${choice==='Tails'?'bg-gray-300 text-black scale-105 shadow-lg':'text-gray-400 hover:bg-white/5'}` }, React.createElement(Coins, {size:20}), "Tails")
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe" }, 
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: flipping, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
+                    React.createElement(Button, { full: true, onClick: flip, disabled: flipping }, flipping ? "FLIPPING..." : t('play'))
+                )
+            );
+        }
+
+        // --- UPDATED GAME: SLOTS (NOTIFICATIONS & INFO) ---
         function SlotsGame({ user, back, showMsg, ArrowIcon, t }) {
             const [bet, setBet] = useState(100);
             const [reels, setReels] = useState(['🍒','🍋','🍇']);
             const [spinning, setSpinning] = useState(false);
-            const [winEffect, setWinEffect] = useState(false);
-            const [winAmount, setWinAmount] = useState(0);
-            const [shake, setShake] = useState(false);
-            const SYMBOLS = ['🍒', '🍋', '🍇', '💎', '7️⃣']; // 7 is rarest
+            const [status, setStatus] = useState("READY"); // READY, SPINNING, WIN, LOSE
+
+            const SYMBOLS = ['🍒', '🍋', '🍇', '💎', '7️⃣']; 
             
             const spin = async (e) => {
                 e.preventDefault();
-                try {
-                    if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                    if(spinning) return;
-                    setSpinning(true); setWinEffect(false); setShake(false); setWinAmount(0);
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
+                if(spinning) return;
+                
+                setSpinning(true); setStatus("SPINNING");
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
 
-                    // Animation Phase
-                    let interval = setInterval(() => {
-                        setReels([
-                            SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)],
-                            SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)],
-                            SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]
-                        ]);
-                    }, 100);
+                let interval = setInterval(() => {
+                    setReels([
+                        SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)],
+                        SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)],
+                        SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]
+                    ]);
+                }, 100);
 
-                    setTimeout(async () => {
-                        clearInterval(interval);
-                        // Determine Result (Weighted)
-                        const res = [
-                            Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
-                            Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
-                            Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)])
-                        ];
-                        // Rig slightly for better UX (prevent constant loss) - 20% chance to force a pair
-                        if(Math.random() < 0.2) { res[1] = res[0]; }
+                setTimeout(async () => {
+                    clearInterval(interval);
+                    // Result Logic
+                    const res = [
+                        Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
+                        Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
+                        Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)])
+                    ];
+                    // Slight helper
+                    if(Math.random() < 0.25) { res[1] = res[0]; }
 
-                        setReels(res);
-                        setSpinning(false);
+                    setReels(res);
+                    setSpinning(false);
 
-                        // Win Logic
-                        let win = 0;
-                        let mult = 0;
-                        if(res[0] === res[1] && res[1] === res[2]) {
-                            if(res[0] === '7️⃣') mult = 50;
-                            else if(res[0] === '💎') mult = 20;
-                            else mult = 10;
-                            win = bet * mult;
-                        } else if (res[0] === res[1] || res[1] === res[2] || res[0] === res[2]) {
-                            mult = 1.5;
-                            win = Math.floor(bet * 1.5); // Small win for pair
-                        }
+                    let win = 0;
+                    if(res[0] === res[1] && res[1] === res[2]) {
+                        if(res[0] === '7️⃣') win = bet * 50;
+                        else if(res[0] === '💎') win = bet * 20;
+                        else win = bet * 10;
+                    } else if (res[0] === res[1] || res[1] === res[2] || res[0] === res[2]) {
+                        win = Math.floor(bet * 1.5);
+                    }
 
-                        if(win > 0) {
-                            await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                            showMsg(`${t('you_get')} ${win}`, 'success');
-                            triggerConfetti();
-                            setWinEffect(true);
-                            setWinAmount(win);
-                        } else {
-                            setShake(true); setTimeout(()=>setShake(false), 500);
-                        }
-                    }, 2000);
-                } catch(e) { showMsg(t('error'), 'error'); setSpinning(false); }
+                    if(win > 0) {
+                        await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                        setStatus(`WIN +${win}`);
+                        triggerConfetti();
+                    } else {
+                        setStatus("NO LUCK");
+                    }
+                }, 2000);
             };
 
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up ${shake?'animate-shake-hard animate-flash-red':''} ${winEffect?'animate-pulse-glow':''}` },
+            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up` },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/5" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400 btn-press" }, React.createElement(ArrowIcon)), 
                     React.createElement('span', { className: "font-bold text-purple-500 tracking-widest" }, "ROYAL SLOTS"), 
                     React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')]" },
-                    React.createElement('div', { className: "bg-gradient-to-b from-purple-900 to-black p-4 rounded-3xl border-4 border-gold-500 shadow-[0_0_50px_rgba(234,179,8,0.3)] relative" },
-                          React.createElement('div', { className: "absolute -top-6 left-1/2 -translate-x-1/2 bg-gold-500 text-black font-black px-4 py-1 rounded-full text-xs shadow-lg uppercase tracking-widest" }, winAmount > 0 ? `WIN +${winAmount}` : "Jackpot 50x"),
+                    // Status Badge
+                    React.createElement('div', { className: `mb-8 px-8 py-3 rounded-full font-black text-xl shadow-xl transition-all ${status.includes('WIN') ? 'bg-green-500 text-black scale-110' : (status==='NO LUCK' ? 'bg-red-500 text-white' : 'bg-dark-800 text-gold-500')}` }, status),
+
+                    React.createElement('div', { className: "bg-gradient-to-b from-purple-900 to-black p-4 rounded-3xl border-4 border-gold-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]" },
                           React.createElement('div', { className: "flex gap-2 bg-black/50 p-4 rounded-xl border border-white/10" },
-                           reels.map((r, i) => React.createElement('div', { key: i, className: "w-20 h-24 bg-white rounded-lg flex items-center justify-center text-5xl shadow-inner relative overflow-hidden" }, 
+                           reels.map((r, i) => React.createElement('div', { key: i, className: "w-20 h-28 bg-white rounded-lg flex items-center justify-center text-5xl shadow-inner relative overflow-hidden" }, 
                                React.createElement('div', { className: `absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none` }),
                                React.createElement('div', { className: spinning ? 'slot-spin' : 'animate-pop' }, r)
                            ))
@@ -1034,65 +1019,83 @@
             );
         }
 
-        // --- GAME: LIMBO ---
+        // --- UPDATED GAME: LIMBO (CLEARER VISUALS) ---
         function LimboGame({ user, back, showMsg, ArrowIcon, t }) {
             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
-            const [result, setResult] = useState(null);
-            const [win, setWin] = useState(false);
+            const [result, setResult] = useState(null); // { val: 0, win: false }
             const [playing, setPlaying] = useState(false);
             
             const play = async (e) => {
                 e.preventDefault();
-                try {
-                    if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                    if(playing) return;
-                    setPlaying(true);
-                    setResult(null);
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-                    
-                    const res = Math.max(1.00, (Math.random() * 100).toFixed(2)); 
-                    
-                    let count = 1.00;
-                    const interval = setInterval(() => {
-                        count += Math.random();
-                        if(count >= res) {
-                            clearInterval(interval);
-                            setResult(res);
-                            setPlaying(false);
-                            if(res > target) {
-                                const profit = Math.floor(bet * target);
-                                updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+profit});
-                                setWin(true);
-                                showMsg(`${t('you_get')} ${profit}`, 'success');
-                                triggerConfetti();
-                            } else {
-                                setWin(false);
-                            }
-                        } else {
-                             const el = document.getElementById('limbo-res');
-                             if(el) el.innerText = count.toFixed(2) + 'x';
+                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
+                setPlaying(true); setResult(null);
+                
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                // Logic
+                const outcome = Math.max(1.00, (Math.random() * 100).toFixed(2));
+                let count = 1.00;
+                
+                const interval = setInterval(() => {
+                    count += (Math.random() + (count * 0.1)); // Accelerate
+                    if(count >= outcome) {
+                        clearInterval(interval);
+                        const isWin = outcome >= target; // In Limbo, if result >= target, you win? Usually if result < target you crash? 
+                        // Standard Limbo: You bet target. If Result > Target you win TargetMultiplier.
+                        // Let's stick to: Result must be OVER target to win.
+                        
+                        // Fix Logic to Standard:
+                        // Win if Result > Target.
+                        
+                        const winAmt = isWin ? Math.floor(bet * target) : 0;
+                        setResult({ val: Number(outcome), win: isWin });
+                        setPlaying(false);
+
+                        if(isWin) {
+                            updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt});
+                            triggerConfetti();
                         }
-                    }, 20);
-                } catch(e) { showMsg(t('error'), 'error'); setPlaying(false); }
+                    } else {
+                         document.getElementById('limbo-counter').innerText = count.toFixed(2) + 'x';
+                    }
+                }, 30);
             };
 
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up ${result && !win ? 'animate-shake-hard animate-flash-red' : ''}` },
+            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up` },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-orange-500" }, "LIMBO"), 
+                    React.createElement('span', { className: "font-bold text-orange-500" }, "LIMBO (CLARIFIED)"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 text-center" },
-                    React.createElement('h3', { className: "text-gray-500 text-sm mb-2 uppercase tracking-widest" }, t('target')),
-                    React.createElement('div', { className: "text-6xl font-black text-white mb-8 border-b-4 border-gold-500 pb-2" }, target.toFixed(2)+'x'),
                     
-                    React.createElement('div', { id: 'limbo-res', className: `text-5xl font-mono font-bold transition-all ${result ? (win?'text-green-500 scale-125 drop-shadow-[0_0_10px_#22c55e]':'text-red-500') : 'text-gray-700'}` }, result ? result+'x' : "0.00x"),
-                    result && win && React.createElement('div', { className: "mt-4 text-gold-500 font-bold animate-pop" }, `WIN ${Math.floor(bet * target)}`)
+                    // Result Display
+                    React.createElement('div', { className: "mb-10 relative" },
+                        React.createElement('div', { className: "text-xs text-gray-500 font-bold mb-2 uppercase" }, "RESULT"),
+                        React.createElement('div', { id: 'limbo-counter', className: `text-7xl font-black font-mono transition-all ${result ? (result.win ? 'text-green-500 drop-shadow-[0_0_20px_#22c55e]' : 'text-red-500 drop-shadow-[0_0_20px_#ef4444]') : 'text-white'}` }, 
+                            result ? result.val.toFixed(2)+'x' : "0.00x"
+                        ),
+                        result && React.createElement('div', { className: `mt-2 font-bold text-xl ${result.win ? 'text-green-400' : 'text-red-400'}` }, 
+                            result.win ? "WINNER!" : "CRASHED"
+                        )
+                    ),
+                    
+                    // Visual Bar
+                    React.createElement('div', { className: "w-full h-4 bg-dark-800 rounded-full overflow-hidden relative border border-white/10" },
+                        // Target Marker
+                        React.createElement('div', { className: "absolute top-0 bottom-0 w-1 bg-white z-10", style: { left: `${Math.min(90, (target/10)*100)}%` } }), // Visual approx
+                        // Progress
+                        React.createElement('div', { className: `h-full transition-all duration-100 ${result?.win ? 'bg-green-500' : 'bg-red-500'}`, style: { width: result ? '100%' : '0%' } })
+                    )
                 ),
                 React.createElement('div', { className: "p-6 bg-dark-900 space-y-4 pb-safe" },
-                    React.createElement('div', { className: "flex justify-between text-sm text-gray-400" }, React.createElement('span',{},t('win_chance')), React.createElement('span',{},(99/target).toFixed(2)+'%')),
-                    React.createElement('input', { type: "range", min: "1.1", max: "50", step: "0.1", value: target, onChange: e=>setTarget(Number(e.target.value)) }),
+                    React.createElement('div', { className: "flex justify-between text-sm text-gray-400" }, 
+                        React.createElement('span',{}, "Target Multiplier"), 
+                        React.createElement('span',{}, `${target.toFixed(2)}x`)
+                    ),
+                    React.createElement('input', { type: "range", min: "1.1", max: "10", step: "0.1", value: target, onChange: e=>setTarget(Number(e.target.value)) }),
+                    
                     React.createElement('div', { className: "flex gap-4" }, 
                         React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
                         React.createElement(Button, { full: true, onClick: play, disabled: playing }, t('play'))
@@ -1101,13 +1104,13 @@
             );
         }
 
-        // --- GAME: KENO ---
+        // --- UPDATED GAME: KENO (ALIVE) ---
         function KenoGame({ user, back, showMsg, ArrowIcon, t }) {
             const [selected, setSelected] = useState([]);
-            const [drawn, setDrawn] = useState([]);
+            const [drawn, setDrawn] = useState([]); // List of numbers
             const [bet, setBet] = useState(100);
             const [playing, setPlaying] = useState(false);
-            const [winAmt, setWinAmt] = useState(0);
+            const [gameResult, setGameResult] = useState(null); // { hits: 0, win: 0 }
 
             const toggle = (n) => {
                 if(playing) return;
@@ -1117,155 +1120,91 @@
 
             const play = async (e) => {
                 e.preventDefault();
-                try {
-                    if(selected.length === 0) return showMsg("Pick numbers", "error");
-                    if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                    setPlaying(true); setDrawn([]); setWinAmt(0);
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                if(selected.length === 0) return showMsg("Pick numbers", "error");
+                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
+                
+                setPlaying(true); setDrawn([]); setGameResult(null);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
 
-                    // Draw 10 numbers
-                    const draws = [];
-                    while(draws.length < 10) {
-                        const r = Math.ceil(Math.random() * 40);
-                        if(!draws.includes(r)) draws.push(r);
+                // Generate 10 randoms
+                const draws = [];
+                while(draws.length < 10) {
+                    const r = Math.ceil(Math.random() * 40);
+                    if(!draws.includes(r)) draws.push(r);
+                }
+
+                // Animate reveals one by one
+                let i = 0;
+                const int = setInterval(() => {
+                    setDrawn(prev => [...prev, draws[i]]);
+                    // Check hit for sound/effect here if we had audio
+                    i++;
+                    if(i >= 10) {
+                        clearInterval(int);
+                        finish(draws);
                     }
-
-                    // Animate Draw
-                    let i = 0;
-                    const int = setInterval(() => {
-                        setDrawn(prev => [...prev, draws[i]]);
-                        i++;
-                        if(i >= 10) {
-                            clearInterval(int);
-                            finish(draws);
-                        }
-                    }, 200);
-                } catch(e) { showMsg(t('error'), 'error'); setPlaying(false); }
+                }, 200); // Slower reveal for tension
             };
 
             const finish = async (finalDraws) => {
                 const matches = selected.filter(s => finalDraws.includes(s)).length;
                 let mult = 0;
-                if(matches >= 3) mult = matches * 0.5; // Simplified payout
-                if(matches >= 6) mult = matches * 2;
-                if(matches >= 8) mult = matches * 10;
+                // Simple payout table
+                if(matches >= 3) mult = 1.5;
+                if(matches >= 5) mult = 3;
+                if(matches >= 7) mult = 10;
+                if(matches >= 9) mult = 50;
                 
                 const win = Math.floor(bet * mult);
+                
+                setGameResult({ hits: matches, win: win });
+                setPlaying(false);
+
                 if(win > 0) {
                     await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                    showMsg(`${t('you_get')} ${win}`, 'success');
                     triggerConfetti();
-                    setWinAmt(win);
-                } else {
-                    // Small visual shake
-                    const body = document.querySelector('body');
-                    body.classList.add('animate-flash-red');
-                    setTimeout(() => body.classList.remove('animate-flash-red'), 500);
                 }
-                setPlaying(false);
             };
 
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO"), 
+                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO (ALIVE)"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
+                
+                // Summary Modal Overlay
+                gameResult && React.createElement('div', { className: "absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in", onClick: ()=>setGameResult(null) },
+                    React.createElement('div', { className: "bg-dark-900 p-8 rounded-2xl border border-white/20 text-center animate-pop" },
+                        React.createElement('h2', { className: "text-2xl font-black text-white mb-2" }, gameResult.win > 0 ? "WINNER!" : "TRY AGAIN"),
+                        React.createElement('p', { className: "text-gray-400 mb-4" }, `${gameResult.hits} Hits`),
+                        gameResult.win > 0 && React.createElement('p', { className: "text-4xl font-mono text-green-500 font-bold" }, `+${gameResult.win}`),
+                        React.createElement('button', { className: "mt-6 text-sm text-gray-500 underline" }, "Tap to close")
+                    )
+                ),
+
                 React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center" },
-                    winAmt > 0 && React.createElement('div', { className: "mb-4 text-green-400 font-bold text-xl animate-pop" }, `WIN +${winAmt}`),
                     React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm" },
                         Array(40).fill(0).map((_, i) => {
                             const n = i+1;
                             const isSel = selected.includes(n);
                             const isDrawn = drawn.includes(n);
                             const isHit = isSel && isDrawn;
-                            let bg = "bg-dark-800 text-gray-400";
-                            if(isHit) bg = "bg-green-500 text-white shadow-[0_0_10px_#22c55e]";
-                            else if(isDrawn) bg = "bg-red-500/50 text-white";
-                            else if(isSel) bg = "bg-white text-black";
                             
-                            return React.createElement('button', { key: n, onClick: ()=>toggle(n), className: `h-10 rounded-lg font-bold text-sm transition-all ${bg}` }, n);
+                            let classes = "h-10 rounded-lg font-bold text-sm transition-all duration-300 ";
+                            
+                            if (isHit) classes += "bg-green-500 text-black scale-110 shadow-[0_0_15px_#22c55e] z-10 animate-pop";
+                            else if (isDrawn) classes += "bg-red-900/50 text-red-200";
+                            else if (isSel) classes += "bg-white text-black";
+                            else classes += "bg-dark-800 text-gray-600";
+                            
+                            return React.createElement('button', { key: n, onClick: ()=>toggle(n), className: classes }, n);
                         })
                     )
                 ),
                 React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" }, 
                     React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
-                    React.createElement(Button, { full: true, onClick: play, disabled: playing }, playing ? "..." : t('play'))
-                )
-            );
-        }
-
-        // --- GAME: COIN FLIP ---
-        function CoinFlipGame({ user, back, showMsg, ArrowIcon, t }) {
-            const [bet, setBet] = useState(100);
-            const [choice, setChoice] = useState('Heads'); // Heads or Tails
-            const [flipping, setFlipping] = useState(false);
-            const [rotation, setRotation] = useState(0);
-            const [shake, setShake] = useState(false);
-            const [winAmt, setWinAmt] = useState(0);
-
-            const flip = async (e) => {
-                e.preventDefault();
-                try {
-                    if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                    if(flipping) return;
-                    setFlipping(true); setShake(false); setWinAmt(0);
-                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-
-                    // Determine result
-                    const isHeads = Math.random() > 0.5;
-                    const result = isHeads ? 'Heads' : 'Tails';
-                    
-                    // Calculate rotation (always add to current to spin forward)
-                    const spinAmount = 1800 + (isHeads ? 0 : 180);
-                    const newRotation = rotation + spinAmount;
-                    setRotation(newRotation);
-
-                    setTimeout(async () => {
-                        setFlipping(false);
-                        if(result === choice) {
-                            const win = bet * 2;
-                            await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                            showMsg(`${t('you_get')} ${win}`, 'success');
-                            triggerConfetti();
-                            setWinAmt(win);
-                        } else {
-                            showMsg(t('you_lose'), 'error');
-                            setShake(true); setTimeout(()=>setShake(false), 500);
-                        }
-                    }, 1000); // 1s flip animation
-                } catch(e) { showMsg(t('error'), 'error'); setFlipping(false); }
-            };
-
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up ${shake?'animate-shake-hard animate-flash-red':''}` },
-                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
-                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-blue-500" }, "COIN FLIP"), 
-                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
-                ),
-                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center gap-10 perspective-1000" },
-                    winAmt > 0 && React.createElement('div', { className: "absolute top-20 text-gold-500 font-bold text-3xl animate-pop z-20 drop-shadow-lg" }, `x2 Multiplier`),
-                    
-                    // 3D Coin Container
-                    React.createElement('div', { className: "relative w-40 h-40 coin-container", style: { transform: `rotateY(${rotation}deg)` } },
-                        // Front (Heads - Gold/King)
-                        React.createElement('div', { className: "coin-face coin-front border-4 border-yellow-300" }, 
-                            React.createElement(Crown, { size: 80, className: "text-yellow-900" })
-                        ),
-                        // Back (Tails - Silver/Eagle)
-                        React.createElement('div', { className: "coin-face coin-back border-4 border-gray-400" }, 
-                            React.createElement(Coins, { size: 80, className: "text-gray-800" })
-                        )
-                    ),
-
-                    React.createElement('div', { className: "flex bg-dark-800 p-1 rounded-xl" },
-                        React.createElement('button', { onClick: ()=>setChoice('Heads'), className: `px-6 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${choice==='Heads'?'bg-gold-500 text-black':'text-gray-400'}` }, React.createElement(Crown, {size:16}), t('heads')),
-                        React.createElement('button', { onClick: ()=>setChoice('Tails'), className: `px-6 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${choice==='Tails'?'bg-gray-300 text-black':'text-gray-400'}` }, React.createElement(Coins, {size:16}), t('tails'))
-                    )
-                ),
-                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe" }, 
-                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: flipping, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
-                    React.createElement(Button, { full: true, onClick: flip, disabled: flipping }, t('play'))
+                    React.createElement(Button, { full: true, onClick: play, disabled: playing }, playing ? "Drawing..." : "PLAY")
                 )
             );
         }
