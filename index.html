@@ -93,16 +93,6 @@
         const db = getFirestore(app);
 
         // --- CONSTANTS ---
-        const COUNTRIES = [
-            { code: 'MA', name: 'Morocco', dial: '+212', flag: '🇲🇦' },
-            { code: 'DZ', name: 'Algeria', dial: '+213', flag: '🇩🇿' },
-            { code: 'EG', name: 'Egypt', dial: '+20', flag: '🇪🇬' },
-            { code: 'SA', name: 'Saudi Arabia', dial: '+966', flag: '🇸🇦' },
-            { code: 'AE', name: 'UAE', dial: '+971', flag: '🇦🇪' },
-            { code: 'KW', name: 'Kuwait', dial: '+965', flag: '🇰🇼' },
-            { code: 'QA', name: 'Qatar', dial: '+974', flag: '🇶🇦' }
-        ];
-
         const TEXTS = {
             ar: {
                 welcome: "مرحباً", login: "دخول", register: "حساب جديد",
@@ -113,12 +103,12 @@
                 payment_info: "بيانات الدفع", upload_proof: "صورة الوصل", offers: "العروض",
                 mobile_recharge: "تعبئة الهاتف", bank: "البنك", cash_plus: "كاش بلس",
                 network: "الشبكة", phone_num: "رقم الهاتف", account_id: "رقم الحساب / RIB",
-                you_won: "ربحت", you_lost: "خسرت", multiplier: "المضاعف"
+                you_won: "ربحت", you_lost: "خسرت", multiplier: "المضاعف",
+                inputs_err: "الرجاء ملء جميع الحقول", you_lose: "لقد خسرت!"
             }
         };
 
         // --- UTILS ---
-        // Image Compressor to avoid Firestore Limits
         const compressImage = (file) => new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -151,25 +141,28 @@
             useEffect(() => { setTimeout(() => setSplash(false), 2500); }, []);
             useEffect(() => { if(db) onSnapshot(doc(db, "settings", "global"), (s) => s.exists() && setSettings(s.data())); }, []);
             
+            // --- FIX 1 & 2: تم تعديل هذا الجزء لحل مشكلة الخروج من الألعاب والدخول التلقائي ---
             useEffect(() => {
-                const uid = localStorage.getItem('cd0777_uid');
-                if (uid && db) {
-                    const unsub = onSnapshot(doc(db, "users", uid), (s) => {
+                // نراقب بيانات المستخدم فقط إذا تم تسجيل الدخول بالفعل (user موجود)
+                // هذا يمنع إعادة التوجيه التلقائي ويمنع الخروج من الألعاب عند تحديث الرصيد
+                if (user?.id && db) {
+                    const unsub = onSnapshot(doc(db, "users", user.id), (s) => {
                         if (s.exists()) {
-                            setUser({ id: s.id, ...s.data() });
-                            if(view === 'auth') setView(s.data().role==='admin'?'admin':'home');
-                        } else { setUser(null); setView('auth'); }
+                            // نقوم بتحديث بيانات المستخدم (الرصيد) فقط، ولا نغير الـ View
+                            setUser(prev => ({ ...prev, ...s.data() }));
+                        }
                     });
                     return () => unsub();
                 }
-            }, []);
+                // تمت إزالة كود التحقق من localStorage لفرض تسجيل الدخول في كل مرة
+            }, [user?.id]); 
 
             const showMsg = (msg, type='success') => { setNotify({msg, type}); setTimeout(()=>setNotify(null), 3000); };
             const navTo = (v) => { setView(v); setMenuOpen(false); };
             
             if (splash) return React.createElement(SplashScreen);
-            if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t });
-            if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{localStorage.clear(); window.location.reload()}, db });
+            if (!user || view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t });
+            if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{setUser(null); setView('auth');}, db });
 
             // Games
             if (view === 'game-dice') return React.createElement(DiceGame, { user, back: ()=>navTo('casino'), showMsg, t });
@@ -183,7 +176,7 @@
                 ),
                 
                 React.createElement(Header, { user, toggleMenu: ()=>setMenuOpen(true) }),
-                menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, settings }),
+                menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, settings, logout: ()=>{setUser(null); setView('auth');} }),
                 
                 React.createElement('main', { className: "flex-1 overflow-y-auto p-5 pb-28 scrollbar-hide" },
                     view === 'home' && React.createElement(HomeScreen, { user, navTo, t }),
@@ -250,7 +243,7 @@
                         React.createElement(SidebarBtn, { icon: Wallet, label: "المحفظة", onClick:()=>navTo('wallet') }),
                         React.createElement(SidebarBtn, { icon: Settings, label: "الإعدادات", onClick:()=>navTo('settings') }),
                     ),
-                    React.createElement('button', { onClick:()=>window.location.reload(), className: "mt-auto w-full flex items-center justify-center gap-2 text-red-400 p-4 bg-red-900/10 rounded-2xl font-bold" }, React.createElement(LogOut), "خروج")
+                    React.createElement('button', { onClick:logout, className: "mt-auto w-full flex items-center justify-center gap-2 text-red-400 p-4 bg-red-900/10 rounded-2xl font-bold" }, React.createElement(LogOut), "خروج")
                 )
             );
         }
@@ -261,17 +254,20 @@
             const [isReg, setIsReg] = useState(false); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
             const submit = async () => {
                 if(!f.u || !f.p) return showMsg(t('inputs_err'), 'error');
-                if(f.u==='admin' && f.p==='admin123') { localStorage.setItem('cd0777_uid', 'admin'); setUser({role:'admin'}); setView('admin'); return; }
+                if(f.u==='admin' && f.p==='admin123') { setUser({role:'admin'}); setView('admin'); return; }
                 try {
                     if(isReg) {
                         const sz = (await getDocs(collection(db, "users"))).size;
                         const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'active', coins: 100, balance: 0 };
-                        const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu}); setView('home');
+                        const ref = await addDoc(collection(db, "users"), nu); 
+                        // لا نحفظ في localStorage لتجنب الدخول التلقائي
+                        setUser({id:ref.id, ...nu}); setView('home');
                     } else {
                         const q = query(collection(db, "users"), where("username", "==", f.u), where("password", "==", f.p)); const s = await getDocs(q);
-                        if(s.empty) throw new Error('Error'); const d=s.docs[0]; localStorage.setItem('cd0777_uid', d.id); setUser({id:d.id, ...d.data()}); setView('home');
+                        if(s.empty) throw new Error('Error'); const d=s.docs[0]; 
+                        setUser({id:d.id, ...d.data()}); setView('home');
                     }
-                } catch(e) { showMsg("Error", 'error'); }
+                } catch(e) { showMsg("بيانات الدخول غير صحيحة", 'error'); }
             };
             return React.createElement('div', { className: "h-full flex flex-col items-center justify-center p-6 bg-dark-950 luxury-bg" },
                 React.createElement('div', { className: "w-32 h-32 rounded-3xl bg-gradient-to-tr from-gold-400 to-gold-700 flex items-center justify-center text-6xl font-black text-black mb-8 shadow-2xl border-4 border-gold-300" }, "CD"),
@@ -546,7 +542,7 @@
                 : React.createElement('div', { className: "space-y-4" },
                     React.createElement('h3', { className: "text-lg font-bold" }, method),
                     React.createElement(Input, { type: "number", placeholder: t('amount'), value: amt, onChange: e=>setAmt(e.target.value) }),
-                    method === 'Mobile' ? React.createElement(React.Fragment, null,
+                    method === 'Mobile' ? React.createElement(React.Fragment, null, 
                         React.createElement('select', { className: "w-full bg-dark-900 p-4 rounded-xl border border-white/10", onChange: e=>setInfo({...info, net:e.target.value}) }, React.createElement('option',{},t('network')), React.createElement('option',{value:"IAM"},"IAM"), React.createElement('option',{value:"Orange"},"Orange"), React.createElement('option',{value:"Inwi"},"Inwi")),
                         React.createElement(Input, { placeholder: t('phone_num'), onChange: e=>setInfo({...info, ph:e.target.value}) })
                     ) : React.createElement(Input, { placeholder: method==='PayPal'?'Email':t('account_id'), onChange: e=>setInfo({...info, val:e.target.value}) }),
