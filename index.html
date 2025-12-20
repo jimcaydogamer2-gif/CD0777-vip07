@@ -118,7 +118,9 @@
                 forgot_pass: "نسيت كلمة المرور؟", reset_req: "طلب استعادة",
                 change_pass: "تغيير كلمة المرور", old_pass: "كلمة المرور القديمة", new_pass: "كلمة المرور الجديدة",
                 admin_panel: "لوحة التحكم", approve: "قبول", reject: "رفض",
-                payment_info: "معلومات الدفع", offer_title: "عنوان العرض", offer_desc: "وصف العرض"
+                payment_info: "معلومات الدفع", offer_title: "عنوان العرض", offer_desc: "وصف العرض",
+                active: "نشط", review: "مراجعة", play: "لعب", done: "مكتمل", execute: "نفذ",
+                win_chance: "فرصة الفوز", payout: "العائد", roll_under: "تحت", inputs_err: "البيانات ناقصة"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -134,7 +136,9 @@
                 forgot_pass: "Forgot Password?", reset_req: "Request Reset",
                 change_pass: "Change Password", old_pass: "Old Password", new_pass: "New Password",
                 admin_panel: "Admin Panel", approve: "Approve", reject: "Reject",
-                payment_info: "Payment Info", offer_title: "Offer Title", offer_desc: "Offer Desc"
+                payment_info: "Payment Info", offer_title: "Offer Title", offer_desc: "Offer Desc",
+                active: "Active", review: "Review", play: "Play", done: "Done", execute: "Execute",
+                win_chance: "Win Chance", payout: "Payout", roll_under: "Roll Under", inputs_err: "Missing Inputs"
             }
         };
 
@@ -192,7 +196,6 @@
                     const unsub = onSnapshot(doc(db, "users", uid), (s) => {
                         if (s.exists()) {
                             setUser({ id: s.id, ...s.data() });
-                            // Don't auto-redirect if explicitly logged out, handled by view state logic mostly
                         } else {
                             setUser(null);
                             localStorage.removeItem('cd0777_uid');
@@ -213,7 +216,7 @@
                         if(user.role === 'admin') setView('admin');
                         else if(view === 'auth') setView('home');
                     } else {
-                        setView('auth');
+                        if(view !== 'forgot') setView('auth');
                     }
                 }
             }, [splash, user]);
@@ -574,6 +577,171 @@
             );
         }
 
+        // --- DICE GAME ---
+        function DiceGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [target, setTarget] = useState(50);
+            const [result, setResult] = useState(null);
+            const [rolling, setRolling] = useState(false);
+            const [win, setWin] = useState(false);
+
+            const multiplier = (98 / target).toFixed(4);
+            const winChance = target;
+
+            const roll = async () => {
+                if (Number(user.coins) < bet) return showMsg(t('no_balance'), 'error');
+                if (rolling) return;
+                setRolling(true); setResult(null); setWin(false);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                let frames = 0;
+                const anim = setInterval(() => {
+                    setResult(Math.floor(Math.random() * 100));
+                    frames++;
+                    if (frames > 20) {
+                        clearInterval(anim);
+                        finalizeRoll();
+                    }
+                }, 50);
+            };
+
+            const finalizeRoll = async () => {
+                const finalResult = Math.floor(Math.random() * 100); 
+                setResult(finalResult);
+                const isWin = finalResult < target;
+                if (isWin) {
+                    const winAmount = Math.floor(bet * multiplier);
+                    await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmount});
+                    setWin(true);
+                    showMsg(`${t('success')} +${winAmount}`, 'success');
+                }
+                setRolling(false);
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/5 shrink-0" }, 
+                    React.createElement('button', { onClick: back, className: "text-slate-400 btn-press" }, React.createElement(ArrowIcon)), 
+                    React.createElement('span', { className: "font-bold text-blue-500 tracking-widest" }, "DICE"), 
+                    React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 relative" },
+                    React.createElement('div', { className: "absolute top-10 flex flex-col items-center" },
+                        React.createElement('div', { className: `text-8xl font-black font-mono transition-all ${rolling ? 'opacity-50 blur-sm' : (win ? 'text-green-500 scale-110 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]' : (result!==null ? 'text-red-500' : 'text-white'))}` }, result !== null ? result : "00"),
+                        result !== null && !rolling && React.createElement('div', { className: `text-xl font-bold mt-2 ${win?'text-green-400':'text-red-400'}` }, win ? t('you_get') : t('you_lose'))
+                    ),
+                    React.createElement('div', { className: "w-full max-w-md mt-auto mb-10 bg-dark-800 p-6 rounded-3xl border border-white/10 shadow-2xl" },
+                        React.createElement('div', { className: "flex justify-between mb-6 bg-black/40 p-4 rounded-xl" },
+                            React.createElement('div', { className: "text-center" }, React.createElement('div', { className: "text-xs text-gray-500 uppercase" }, t('payout')), React.createElement('div', { className: "text-2xl font-bold text-gold-500" }, `${multiplier}x`)),
+                            React.createElement('div', { className: "text-center" }, React.createElement('div', { className: "text-xs text-gray-500 uppercase" }, t('win_chance')), React.createElement('div', { className: "text-2xl font-bold text-blue-400" }, `${winChance}%`))
+                        ),
+                        React.createElement('div', { className: "relative h-4 bg-dark-900 rounded-full mb-6 overflow-hidden border border-white/5" },
+                            React.createElement('div', { className: "absolute left-0 top-0 bottom-0 bg-green-500 transition-all duration-300", style: { width: `${target}%` } }),
+                            React.createElement('div', { className: "absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white] z-10 transition-all duration-300", style: { left: `${target}%` } }),
+                            result !== null && React.createElement('div', { className: "absolute top-[-4px] bottom-[-4px] w-2 bg-gold-500 z-20 border border-black rounded-full transition-all duration-500", style: { left: `${result}%` } })
+                        ),
+                        React.createElement('input', { type: "range", min: "2", max: "98", value: target, onChange: (e) => setTarget(Number(e.target.value)), disabled: rolling, className: "w-full accent-gold-500 h-2 bg-transparent appearance-none cursor-pointer" }),
+                        React.createElement('div', { className: "text-center text-xs text-gray-400 mt-2" }, `${t('roll_under')} ${target}`)
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 shrink-0 pb-safe" }, 
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
+                    React.createElement(Button, { full: true, disabled: rolling, onClick: roll }, rolling ? "..." : t('play'))
+                )
+            );
+        }
+
+        // --- MINES GAME ---
+        function MinesGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [revealed, setRevealed] = useState(Array(25).fill(false));
+            const [mineCount, setMineCount] = useState(3);
+            const [bet, setBet] = useState(100);
+            const [playing, setPlaying] = useState(false);
+            const [mines, setMines] = useState([]); 
+            
+            const startGame = async () => {
+                if(Number(user.coins) < bet) return showMsg(t('no_balance'), 'error');
+                await updateDoc(doc(db,"users",user.id),{coins: Number(user.coins) - bet});
+                const newMines = [];
+                while(newMines.length < mineCount) {
+                    const r = Math.floor(Math.random() * 25);
+                    if(!newMines.includes(r)) newMines.push(r);
+                }
+                setMines(newMines); setRevealed(Array(25).fill(false)); setPlaying(true);
+            };
+
+            const handleTileClick = (idx) => {
+                if(!playing || revealed[idx]) return;
+                const newRevealed = [...revealed]; newRevealed[idx] = true; setRevealed(newRevealed);
+                if(mines.includes(idx)) {
+                    setPlaying(false); setRevealed(Array(25).fill(true)); showMsg(t('you_lose'), 'error');
+                } else {
+                    const revealedCount = newRevealed.filter((r, i) => r && !mines.includes(i)).length;
+                    if(revealedCount === 25 - mineCount) cashout(newRevealed);
+                }
+            };
+
+            const getMultiplier = () => {
+                const moves = revealed.filter((r, i) => r && !mines.includes(i)).length;
+                let m = 1.0; for(let i=0; i<moves; i++) m = m * (1 + (mineCount / (25 - mineCount - i)));
+                return m;
+            };
+            const currentWin = Math.floor(bet * getMultiplier());
+
+            const cashout = async () => {
+                if(!playing) return;
+                await updateDoc(doc(db,"users",user.id),{coins: Number(user.coins) + currentWin});
+                setPlaying(false); setRevealed(Array(25).fill(true)); 
+                showMsg(`${t('you_get')} ${currentWin}`, 'success');
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 shrink-0" }, 
+                    React.createElement('button',{onClick:back,className:"text-slate-400 btn-press"},React.createElement(ArrowIcon)), 
+                    React.createElement('span',{className:"font-bold text-emerald-500"}, t('mines')), 
+                    React.createElement('span',{className:"text-xs bg-black px-2 py-1 rounded"},user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-4" },
+                    playing && React.createElement('div', { className: "mb-4 bg-emerald-900/50 px-4 py-2 rounded-xl border border-emerald-500/30" },
+                        React.createElement('span', { className: "text-2xl font-bold text-white" }, `x${getMultiplier().toFixed(2)}`),
+                        React.createElement('div', { className: "text-xs text-emerald-400 text-center" }, `Win: ${currentWin}`)
+                    ),
+                    React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm aspect-square" },
+                        Array(25).fill(0).map((_, i) => {
+                            const isRevealed = revealed[i]; const isMine = mines.includes(i);
+                            let content = null; let style = "bg-dark-800 hover:bg-dark-700 border-white/10";
+                            if (isRevealed) {
+                                if (isMine) { content = React.createElement(Bomb, { className: "text-red-500 animate-pop", size: 24 }); style = "bg-red-900/20 border-red-500"; }
+                                else { content = React.createElement(Gem, { className: "text-emerald-400 animate-pop", size: 24 }); style = "bg-emerald-900/20 border-emerald-500"; }
+                            }
+                            return React.createElement('button', { key: i, onClick: () => handleTileClick(i), disabled: !playing || isRevealed, className: `rounded-lg border flex items-center justify-center transition-all active:scale-95 ${style}` }, content);
+                        })
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 space-y-3 pb-safe" },
+                    !playing ? React.createElement('div', { className: "flex gap-4" },
+                        React.createElement('div', { className: "flex-1" }, React.createElement('input', { type: "number", min: 1, max: 24, value: mineCount, onChange: e=>setMineCount(Math.min(24, Math.max(1, Number(e.target.value)))), className: "w-full bg-black border border-white/20 rounded-xl p-3 text-center text-white font-bold" })),
+                        React.createElement('div', { className: "flex-1" }, React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), className: "w-full bg-black border border-white/20 rounded-xl p-3 text-center text-white font-bold" }))
+                    ) : React.createElement(Button, { full: true, variant: "green", onClick: cashout }, `CASHOUT ${currentWin}`),
+                    !playing && React.createElement(Button, { full: true, onClick: startGame }, t('play'))
+                )
+            );
+        }
+
+        // --- TASKS ---
+        function TasksScreen({ user, showMsg, t }) {
+            const [tasks, setTasks] = useState([]);
+            useEffect(() => { if(db) getDocs(collection(db, "tasks")).then(s => setTasks(s.docs.map(d=>({id:d.id, ...d.data()})))); }, []);
+            const handleTask = (task) => { 
+                window.open(task.url, '_blank'); 
+                setTimeout(async () => { 
+                    if(!db)return; const comp = user.completedTasks || []; 
+                    if(!comp.includes(task.id)) { await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+Number(task.reward),completedTasks:[...comp,task.id]}); showMsg(t('success')); } 
+                }, 3000); 
+            };
+            const comp = user.completedTasks || [];
+            return React.createElement('div', { className: "space-y-4 animate-slide-up" }, React.createElement('h2', { className: "text-gold-500 font-bold text-lg" }, t('tasks')), tasks.map(task => { const isDone = comp.includes(task.id); return React.createElement('div', { key: task.id, className: `bg-dark-800 border p-4 rounded-xl flex justify-between items-center ${isDone?'border-white/5 opacity-50':'border-gold-500/30'}` }, React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xl" }, task.icon==='IG'?React.createElement(Instagram):React.createElement(Facebook)), React.createElement('div', {}, React.createElement('div', { className: "font-bold text-sm" }, task.title), React.createElement('div', { className: "text-xs text-gold-500" }, `+${task.reward} C`))), isDone ? React.createElement('span', { className: "text-green-500 text-xs font-bold bg-green-900/10 px-3 py-1 rounded-lg flex items-center gap-1" }, React.createElement(Check), t('done')) : React.createElement('button', { onClick: ()=>handleTask(task), className: "bg-gold-500 text-black px-4 py-2 rounded-lg text-xs font-bold btn-press" }, t('execute'))); }));
+        }
+
         // --- DEPOSIT & OFFERS ---
         function DepositScreen({ user, showMsg, t, settings, back }) {
             const [tab, setTab] = useState('offers');
@@ -590,11 +758,11 @@
                     userId: user.id, username: user.username,
                     amount: finalAmount, 
                     method: modal.method,
-                    proof: proof, // Base64 or URL
+                    proof: proof, // Base64
                     status: 'pending',
                     date: new Date().toISOString()
                 });
-                showMsg("Request Sent!", "success");
+                showMsg(t('success'), "success");
                 setModal(null);
             };
 
@@ -662,7 +830,37 @@
             );
         }
 
-        // --- OTHER SCREENS (Admin, Settings, etc) ---
+        // --- WALLET & HOME ---
+        function WalletScreen({ user, showMsg, t, isRTL }) {
+            return React.createElement('div', { className: "space-y-6 animate-slide-up" },
+                React.createElement('div', { className: "bg-gradient-to-br from-dark-900 to-black p-6 rounded-2xl border border-white/10 text-center shadow-lg" },
+                    React.createElement('div', { className: "text-xs text-slate-500 uppercase tracking-widest" }, t('balance')),
+                    React.createElement('div', { className: "text-5xl font-mono font-bold text-gold-500 gold-glow" }, `$${Number(user.balance).toFixed(2)}`)
+                ),
+                React.createElement('div', { className: "grid grid-cols-2 gap-4" },
+                    React.createElement(Button, { variant: "green", onClick: ()=>window.location.hash='deposit' }, t('deposit')),
+                    React.createElement(Button, { variant: "dark" }, t('withdraw'))
+                )
+            );
+        }
+
+        function HomeScreen({ user, navTo, t }) {
+            return React.createElement('div', { className: "space-y-6 animate-pop" },
+                React.createElement('div', { className: "relative aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl border border-white/10" },
+                    React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-dark-900 to-black" }),
+                    React.createElement('div', { className: "absolute inset-0 flex flex-col justify-center items-center" },
+                        React.createElement('h1', { className: "text-4xl font-black text-gold-500 tracking-widest font-oswald" }, "ROYAL CLUB"),
+                        React.createElement('p', { className: "text-gray-400 text-sm" }, "Premium Casino Experience")
+                    )
+                ),
+                React.createElement(Button, { full: true, onClick: ()=>navTo('casino'), variant: "gold", icon: Gamepad2 }, t('play') + " NOW")
+            );
+        }
+
+        // --- HISTORY & SETTINGS ---
+        function HistoryScreen({ user, t }) { return React.createElement('div', {}, "History"); }
+        function InfoPage({ title, content }) { return React.createElement('div', { className: "p-4" }, React.createElement('h1', { className: "text-xl font-bold mb-4" }, title), content); }
+
         function SettingsScreen({ user, showMsg, t }) {
             const [f, setF] = useState({ fullName: user.fullName, phone: user.phone });
             const [pass, setPass] = useState({ old: '', new: '' });
@@ -705,10 +903,9 @@
             const updateStatus = (col, id, status, amount, userId) => {
                 updateDoc(doc(db, col, id), { status });
                 if(status === 'approved' && amount && userId) {
-                    // Transaction needed ideally, simplified here
                     getDoc(doc(db, "users", userId)).then(u => {
                         const current = Number(u.data().coins) || 0;
-                        updateDoc(doc(db, "users", userId), { coins: current + Number(amount)*1000 }); // 1$ = 1000 Coins logic
+                        updateDoc(doc(db, "users", userId), { coins: current + Number(amount)*1000 });
                     });
                 }
             };
@@ -746,51 +943,8 @@
                         r.status === 'pending' && React.createElement('button', { onClick: ()=>updateStatus('password_resets', r.id, 'processed'), className: "bg-blue-600 px-3 py-1 rounded text-xs" }, "Mark Done")
                     ))
                 )
-                // Settings tab implementation omitted for brevity, logic follows same pattern
             );
         }
-
-        // --- DICE, MINES, ETC (Keep previous logic but ensure styling is applied) ---
-        // (Included in previous response, ensuring Button/Input components are used)
-        function DiceGame({ user, back, showMsg, ArrowIcon, t }) {
-             // ... (Logic from previous V3 code, strictly maintained)
-             // Using visual components defined above
-             // Just render structure:
-             return React.createElement('div', {className:"text-center mt-10"}, "Dice Game Loaded"); // Placeholder for full logic
-        }
-        function MinesGame({ user, back, showMsg, ArrowIcon, t }) { return React.createElement('div', {className:"text-center mt-10"}, "Mines Game Loaded"); }
-
-        // Re-injecting Main Screens components from V3 for completeness in V4
-        function HomeScreen({ user, navTo, t }) {
-            return React.createElement('div', { className: "space-y-6 animate-pop" },
-                React.createElement('div', { className: "relative aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl border border-white/10" },
-                    React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-dark-900 to-black" }),
-                    React.createElement('div', { className: "absolute inset-0 flex flex-col justify-center items-center" },
-                        React.createElement('h1', { className: "text-4xl font-black text-gold-500 tracking-widest font-oswald" }, "ROYAL CLUB"),
-                        React.createElement('p', { className: "text-gray-400 text-sm" }, "Premium Casino Experience")
-                    )
-                ),
-                React.createElement(Button, { full: true, onClick: ()=>navTo('casino'), variant: "gold", icon: Gamepad2 }, t('play') + " NOW")
-            );
-        }
-
-        // --- 5. WALLET (Simple View) ---
-        function WalletScreen({ user, showMsg, t, isRTL }) {
-            return React.createElement('div', { className: "space-y-6 animate-slide-up" },
-                React.createElement('div', { className: "bg-gradient-to-br from-dark-900 to-black p-6 rounded-2xl border border-white/10 text-center shadow-lg" },
-                    React.createElement('div', { className: "text-xs text-slate-500 uppercase tracking-widest" }, t('balance')),
-                    React.createElement('div', { className: "text-5xl font-mono font-bold text-gold-500 gold-glow" }, `$${Number(user.balance).toFixed(2)}`)
-                ),
-                React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-                    React.createElement(Button, { variant: "green", onClick: ()=>window.location.hash='deposit' /* Trigger view change via prop usually */ }, t('deposit')),
-                    React.createElement(Button, { variant: "dark" }, t('withdraw'))
-                )
-            );
-        }
-
-        // --- HISTORY ---
-        function HistoryScreen({ user, t }) { return React.createElement('div', {}, "History"); }
-        function InfoPage({ title, content }) { return React.createElement('div', { className: "p-4" }, React.createElement('h1', { className: "text-xl font-bold mb-4" }, title), content); }
 
         const root = createRoot(document.getElementById('root'));
         root.render(React.createElement(App));
