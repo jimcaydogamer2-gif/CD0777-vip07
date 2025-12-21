@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Royal Club - Pro Admin & VIP Activation</title>
+    <title>CD0777 Elite Club - Pro Admin & VIP Activation</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -13,7 +13,8 @@
                 extend: {
                     colors: {
                         gold: { 100: '#FFF9C4', 300: '#FDD835', 400: '#FFD700', 500: '#FFC107', 600: '#FFB300', 700: '#FFA000', 800: '#C0A000', 900: '#3d2e07' },
-                        dark: { 950: '#020617', 900: '#0f172a', 800: '#1e293b' }
+                        dark: { 950: '#020617', 900: '#0f172a', 800: '#1e293b' },
+                        elite: { 500: '#e0e7ff', 900: '#312e81' } /* Elite Platinum Colors */
                     },
                     fontFamily: {
                         cairo: ['Cairo', 'sans-serif'],
@@ -78,7 +79,11 @@
         .coin-back { background: radial-gradient(#C0C0C0, #808080); transform: rotateY(180deg); }
         
         .star-bg { background-image: radial-gradient(white 1px, transparent 1px); background-size: 50px 50px; opacity: 0.2; }
-        .card-shine { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); background-size: 200% 100%; animation: shine 3s infinite linear; }
+        .card-shine { background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 25%, transparent 30%); animation: shine 3s infinite linear; background-size: 200% 100%; }
+        
+        /* Elite Card specific */
+        .elite-card-bg { background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); border: 1px solid rgba(255, 215, 0, 0.3); }
+        .hologram { background: linear-gradient(135deg, transparent 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%); }
     </style>
 </head>
 <body>
@@ -99,7 +104,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -116,6 +121,22 @@
         const db = getFirestore(app);
 
         // --- CONSTANTS & TEXTS ---
+        const COUNTRIES = [
+            { code: 'MA', name: 'Morocco', prefix: '+212', flag: '🇲🇦' },
+            { code: 'DZ', name: 'Algeria', prefix: '+213', flag: '🇩🇿' },
+            { code: 'TN', name: 'Tunisia', prefix: '+216', flag: '🇹🇳' },
+            { code: 'EG', name: 'Egypt', prefix: '+20', flag: '🇪🇬' },
+            { code: 'SA', name: 'Saudi Arabia', prefix: '+966', flag: '🇸🇦' },
+            { code: 'AE', name: 'UAE', prefix: '+971', flag: '🇦🇪' },
+            { code: 'QA', name: 'Qatar', prefix: '+974', flag: '🇶🇦' },
+            { code: 'KW', name: 'Kuwait', prefix: '+965', flag: '🇰🇼' },
+            { code: 'TR', name: 'Turkey', prefix: '+90', flag: '🇹🇷' },
+            { code: 'US', name: 'USA', prefix: '+1', flag: '🇺🇸' },
+            { code: 'FR', name: 'France', prefix: '+33', flag: '🇫🇷' },
+            { code: 'ES', name: 'Spain', prefix: '+34', flag: '🇪🇸' },
+            { code: 'IT', name: 'Italy', prefix: '+39', flag: '🇮🇹' }
+        ];
+
         const TEXTS = {
             ar: {
                 welcome: "مرحباً", login: "تسجيل الدخول", register: "إنشاء حساب",
@@ -141,7 +162,8 @@
                 step_1: "سجل في 1xBet بكود: CD0777",
                 step_2: "ارسل الايدي للادمن في تيليجرام",
                 wait_admin: "حسابك قيد المراجعة، يرجى الانتظار...",
-                admin_dash: "لوحة التحكم"
+                admin_dash: "لوحة التحكم",
+                select_country: "اختر الدولة"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -167,7 +189,8 @@
                 step_1: "Register 1xBet Code: CD0777",
                 step_2: "Send ID to Admin on Telegram",
                 wait_admin: "Account under review, please wait...",
-                admin_dash: "Dashboard"
+                admin_dash: "Dashboard",
+                select_country: "Select Country"
             }
         };
 
@@ -284,10 +307,9 @@
             if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
-            // --- CRITICAL CHECK: PENDING ---
-            // Updated to be Surgical and Precise with 1xBet conditions
+            // --- PENDING SCREEN (UPDATED) ---
             if (user && user.status === 'pending') {
-                return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg });
+                return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg, settings });
             }
 
             // --- ADMIN PANEL ---
@@ -331,90 +353,110 @@
             );
         }
 
-        // --- PENDING SCREEN (UPDATED: Membership & Conditions) ---
-        function PendingActivationScreen({ user, logout, t, isRTL, showMsg }) {
+        // --- PENDING SCREEN (ELITE PRO VERSION) ---
+        function PendingActivationScreen({ user, logout, t, isRTL, showMsg, settings }) {
+            // Get links from Admin Settings (or default)
+            const promoCode = settings?.promo_code || "CD0777";
+            const telegramLink = settings?.telegram_link || "https://t.me/your_admin_link";
+
             const copyCode = () => {
-                navigator.clipboard.writeText("CD0777");
-                showMsg("Promo Code Copied: CD0777");
+                navigator.clipboard.writeText(promoCode);
+                showMsg(`Copied: ${promoCode}`);
             };
             
-            // Link to telegram - Placeholder. Admin should set this, or use a generic one.
-            const telegramLink = "https://t.me/your_vip_admin_link"; 
-
-            return React.createElement('div', { className: "h-screen bg-dark-950 flex flex-col items-center justify-center p-6 relative overflow-hidden", dir: isRTL?'rtl':'ltr' },
+            return React.createElement('div', { className: "h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden", dir: isRTL?'rtl':'ltr' },
                 // Background Effects
-                React.createElement('div', { className: "absolute inset-0 luxury-bg" }),
-                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full star-bg opacity-30" }),
+                React.createElement('div', { className: "absolute inset-0 luxury-bg opacity-90" }),
+                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full star-bg opacity-40" }),
+                React.createElement('div', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] bg-gold-500/5 blur-[120px] rounded-full pointer-events-none" }),
                 
-                // --- MEMBERSHIP CARD ---
-                React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-flip perspective-1000" },
-                    React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-black to-dark-900 rounded-2xl border border-gold-500/50 shadow-2xl overflow-hidden flex flex-col p-6" },
-                        React.createElement('div', { className: "absolute inset-0 card-shine pointer-events-none" }),
-                        React.createElement('div', { className: "absolute top-0 right-0 p-4 opacity-10" }, React.createElement(Crown, { size: 100, className: "text-gold-500" })),
+                // --- ELITE MEMBERSHIP CARD ---
+                React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-flip perspective-1000 group cursor-pointer" },
+                    React.createElement('div', { className: "absolute inset-0 elite-card-bg rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 z-10 transition-transform transform group-hover:scale-105" },
+                        // Shine & Hologram
+                        React.createElement('div', { className: "absolute inset-0 card-shine pointer-events-none z-20 opacity-30" }),
+                        React.createElement('div', { className: "absolute inset-0 hologram pointer-events-none opacity-20" }),
                         
                         // Card Header
-                        React.createElement('div', { className: "flex justify-between items-start z-10" },
-                            React.createElement('div', { className: "flex items-center gap-2" },
-                                React.createElement('div', { className: "w-8 h-8 rounded bg-gold-500 flex items-center justify-center font-black text-black" }, "CD"),
-                                React.createElement('span', { className: "text-gold-500 font-oswald tracking-widest text-lg" }, "ROYAL CLUB")
+                        React.createElement('div', { className: "flex justify-between items-start z-30" },
+                            React.createElement('div', { className: "flex items-center gap-3" },
+                                React.createElement('div', { className: "w-10 h-10 rounded-full border-2 border-gold-500 flex items-center justify-center bg-black" },
+                                    React.createElement(Crown, { size: 20, className: "text-gold-500" })
+                                ),
+                                React.createElement('div', { className: "flex flex-col" },
+                                    React.createElement('span', { className: "text-white font-oswald tracking-[0.2em] text-lg font-bold italic" }, "ELITE"),
+                                    React.createElement('span', { className: "text-gold-500 text-[10px] tracking-[0.4em] uppercase" }, "PRESTIGE CLUB")
+                                )
                             ),
-                            React.createElement(Wifi, { size: 20, className: "text-gold-500/50 rotate-90" })
+                            React.createElement(Wifi, { size: 24, className: "text-white/50 rotate-90" })
                         ),
                         
-                        // Card Chip
-                        React.createElement('div', { className: "my-auto flex items-center gap-4 z-10" },
-                            React.createElement('div', { className: "w-12 h-9 rounded-md bg-gradient-to-tr from-yellow-200 to-yellow-600 border border-yellow-700 shadow-inner" }),
-                            React.createElement('span', { className: "text-xs font-mono text-gray-400 tracking-[0.2em]" }, user.memberId || "xxxx xxxx")
+                        // BONUS SECTION (The main feature)
+                        React.createElement('div', { className: "my-auto relative z-30" },
+                             React.createElement('div', { className: "flex items-center gap-3 mb-1" },
+                                React.createElement('div', { className: "bg-gold-500/20 px-3 py-1 rounded text-gold-400 text-xs font-bold border border-gold-500/50" }, "WELCOME BONUS"),
+                                React.createElement('div', { className: "h-px flex-1 bg-gradient-to-r from-gold-500/50 to-transparent" })
+                             ),
+                             React.createElement('div', { className: "flex items-baseline gap-2" },
+                                React.createElement('span', { className: "text-4xl font-black text-transparent bg-clip-text bg-gradient-to-t from-gold-600 to-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" }, "1000"),
+                                React.createElement('span', { className: "text-sm text-gold-300 font-bold" }, "COINS")
+                             ),
+                             React.createElement('p', { className: "text-[10px] text-gray-400 mt-1 flex items-center gap-1 animate-pulse" }, 
+                                React.createElement(RefreshCw, { size: 10 }), "Auto-convert to CASH upon approval"
+                             )
                         ),
                         
                         // Card Footer
-                        React.createElement('div', { className: "mt-auto flex justify-between items-end z-10" },
+                        React.createElement('div', { className: "mt-auto flex justify-between items-end z-30" },
                             React.createElement('div', {},
-                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold" }, "MEMBER NAME"),
-                                React.createElement('p', { className: "text-sm text-white font-mono uppercase tracking-wide" }, user.fullName || user.username)
+                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold tracking-widest" }, "MEMBER"),
+                                React.createElement('p', { className: "text-sm text-white font-mono uppercase tracking-wide drop-shadow-md" }, user.fullName || user.username)
                             ),
                             React.createElement('div', { className: "text-right" },
-                                React.createElement('p', { className: "text-[8px] text-gold-500 uppercase font-bold" }, "STATUS"),
-                                React.createElement('p', { className: "text-xs text-red-500 font-bold bg-red-900/20 px-2 py-0.5 rounded border border-red-900/50 animate-pulse" }, "PENDING")
+                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold" }, "ID"),
+                                React.createElement('p', { className: "text-sm font-mono text-white/80" }, user.memberId || "xxxx")
                             )
                         )
                     )
                 ),
 
-                // --- STEPS ---
+                // --- STEPS (Custom Links from Admin) ---
                 React.createElement('div', { className: "w-full max-w-sm space-y-4 relative z-10" },
                     React.createElement('div', { className: "bg-dark-900/80 backdrop-blur-md border border-white/10 p-5 rounded-2xl space-y-4" },
-                        React.createElement('h3', { className: "text-center text-gold-500 font-bold mb-2 uppercase tracking-wide" }, "VIP Activation Steps"),
+                        React.createElement('h3', { className: "text-center text-white font-bold mb-2 uppercase tracking-wide text-xs opacity-60" }, "Complete Activation"),
                         
                         // Step 1: 1xBet
                         React.createElement('div', { className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5" },
                             React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs" }, "1"),
+                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"),
                                 React.createElement('div', {},
                                     React.createElement('p', { className: "text-xs text-gray-300" }, "Register on 1xBet"),
-                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, "Code: CD0777")
+                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, `Code: ${promoCode}`)
                                 )
                             ),
-                            React.createElement('button', { onClick: copyCode, className: "p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/40 transition-colors" }, React.createElement(Copy, { size: 16 }))
+                            React.createElement('button', { onClick: copyCode, className: "p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors border border-blue-500/20" }, React.createElement(Copy, { size: 16 }))
                         ),
 
                         // Step 2: Telegram
-                        React.createElement('a', { href: telegramLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-blue-500/50 transition-all" },
+                        React.createElement('a', { href: telegramLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-blue-500/50 hover:bg-blue-900/10 transition-all" },
                             React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white" }, React.createElement(Send, { size: 14 })),
+                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-sky-300 flex items-center justify-center text-white shadow-lg" }, React.createElement(Send, { size: 14 })),
                                 React.createElement('div', {},
                                     React.createElement('p', { className: "text-xs text-gray-300" }, "Send ID to Admin"),
-                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, "Telegram VIP Group")
+                                    React.createElement('p', { className: "text-xs font-bold text-sky-400" }, "Telegram Verification")
                                 )
                             ),
                             React.createElement(ExternalLink, { size: 16, className: "text-gray-500 group-hover:text-white transition-colors" })
                         )
                     ),
 
-                    React.createElement('p', { className: "text-center text-xs text-gray-500" }, t('wait_admin')),
+                    React.createElement('div', { className: "flex items-center justify-center gap-2 text-xs text-gold-500/70" },
+                        React.createElement('div', { className: "w-2 h-2 rounded-full bg-gold-500 animate-pulse" }),
+                        t('wait_admin')
+                    ),
                     
-                    React.createElement('button', { onClick: logout, className: "w-full mt-4 text-red-400 text-sm font-bold flex items-center justify-center gap-2 hover:bg-red-900/20 px-4 py-3 rounded-xl transition-colors" }, 
-                        React.createElement(LogOut, { size: 16 }), t('logout')
+                    React.createElement('button', { onClick: logout, className: "w-full mt-4 text-gray-500 text-xs font-bold flex items-center justify-center gap-2 hover:text-white transition-colors" }, 
+                        React.createElement(LogOut, { size: 14 }), t('logout')
                     )
                 )
             );
@@ -428,7 +470,7 @@
                     React.createElement('div', { className: "absolute inset-2 border-2 border-white/20 rotate-45 rounded-lg" }),
                     React.createElement('h1', { className: "text-7xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-gold-300 to-gold-600 font-oswald tracking-tighter" }, "CD")
                 ),
-                React.createElement('div', { className: "mt-8 text-gold-500/50 text-sm tracking-[0.5em] font-light animate-pulse" }, "ROYAL CLUB")
+                React.createElement('div', { className: "mt-8 text-gold-500/50 text-sm tracking-[0.5em] font-light animate-pulse" }, "ELITE CLUB")
             );
         }
 
@@ -467,9 +509,19 @@
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl text-gray-300 hover:bg-white/5 btn-press" }, React.createElement(Icon, { size: 20 }), React.createElement('span', {}, label));
         const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all ${active?'text-gold-500 -translate-y-1 scale-110':'text-gray-500'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold" }, label));
 
-        // --- AUTH ---
+        // --- AUTH (UPDATED with Country & Auto-Prefix) ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
-            const [isReg, setIsReg] = useState(false); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
+            const [isReg, setIsReg] = useState(false); 
+            const [f, setF] = useState({ u:'', p:'', n:'', ph:'', country: 'MA' }); // Default Morocco
+            
+            // Effect to update phone prefix when country changes
+            useEffect(() => {
+                const c = COUNTRIES.find(c => c.code === f.country);
+                if(c && isReg) {
+                    setF(prev => ({ ...prev, ph: c.prefix }));
+                }
+            }, [f.country, isReg]);
+
             const submit = async () => {
                 if(!f.u || !f.p) return showMsg(t('inputs_err'), 'error');
                 if(f.u==='admin' && f.p==='admin123') { localStorage.setItem('cd0777_uid', 'admin'); setUser({role:'admin'}); setView('admin'); return; }
@@ -477,8 +529,7 @@
                     if(isReg) {
                         const q = query(collection(db, "users"), where("username", "==", f.u)); if(!(await getDocs(q)).empty) throw new Error('Username taken');
                         const sz = (await getDocs(collection(db, "users"))).size;
-                        // Force status to 'pending' on registration
-                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'pending', coins: 0, balance: 0, completedTasks: [] };
+                        const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, country: f.country, memberId: `CD${1001+sz}`, role: 'user', status: 'pending', coins: 0, balance: 0, completedTasks: [] };
                         const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu});
                     } else {
                         const q = query(collection(db, "users"), where("username", "==", f.u), where("password", "==", f.p)); const s = await getDocs(q);
@@ -486,13 +537,27 @@
                     }
                 } catch(e) { showMsg(e.message, 'error'); }
             };
+
             return React.createElement('div', { className: "h-full flex flex-col items-center justify-center p-6 bg-dark-950 luxury-bg relative animate-fade-in", dir: lang==='ar'?'rtl':'ltr' },
                 React.createElement('button', { onClick: ()=>setLang(lang==='ar'?'en':'ar'), className: "absolute top-6 right-6 text-xs bg-white/10 px-3 py-1 rounded-full text-gold-500 font-bold" }, lang.toUpperCase()),
                 React.createElement('div', { className: "w-32 h-32 rounded-3xl bg-gradient-to-tr from-gold-400 to-gold-700 flex items-center justify-center text-6xl font-black text-black mb-8 shadow-2xl shadow-gold-500/20 border-4 border-gold-300" }, "CD"),
                 React.createElement('div', { className: "w-full max-w-sm space-y-4" },
                     React.createElement('h1', { className: "text-3xl font-bold text-center text-gold-500 mb-6 font-oswald tracking-widest uppercase" }, isReg ? t('register') : t('login')),
+                    
                     isReg && React.createElement(Input, { icon: User, placeholder: t('name'), onChange: e=>setF({...f,n:e.target.value}) }),
-                    isReg && React.createElement(Input, { icon: Smartphone, placeholder: t('phone'), onChange: e=>setF({...f,ph:e.target.value}) }),
+                    
+                    // Country Select & Phone
+                    isReg && React.createElement('div', { className: "flex gap-2" },
+                        React.createElement('div', { className: "relative w-1/3" },
+                            React.createElement('select', { value: f.country, onChange: e=>setF({...f, country: e.target.value}), className: "w-full h-full bg-dark-900 border border-white/10 rounded-xl text-white outline-none px-2 appearance-none text-center text-xl" },
+                                COUNTRIES.map(c => React.createElement('option', { key: c.code, value: c.code }, c.flag))
+                            )
+                        ),
+                        React.createElement('div', { className: "w-2/3" },
+                            React.createElement(Input, { icon: Smartphone, placeholder: t('phone'), value: f.ph, onChange: e=>setF({...f,ph:e.target.value}) })
+                        )
+                    ),
+
                     React.createElement(Input, { icon: User, placeholder: t('user'), onChange: e=>setF({...f,u:e.target.value}) }),
                     React.createElement(Input, { icon: Lock, type: "password", placeholder: t('pass'), onChange: e=>setF({...f,p:e.target.value}) }),
                     React.createElement(Button, { full: true, onClick: submit }, isReg?t('register'):t('login')),
@@ -518,9 +583,9 @@
             );
         }
 
-        // --- ADMIN PANEL (SCROLL FIXED) ---
+        // --- ADMIN PANEL (UPDATED with Links Config & Bonus Logic) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
-            const [tab, setTab] = useState('deposits'); // deposits, pending_users, users, settings
+            const [tab, setTab] = useState('deposits'); 
             const [reqs, setReqs] = useState([]);
             const [usersList, setUsersList] = useState([]);
             const [conf, setConf] = useState({});
@@ -535,8 +600,18 @@
             }, []);
 
             const updateSt = async (uid, st) => {
-                await updateDoc(doc(db, "users", uid), {status: st});
-                showMsg(`User ${st}`);
+                // If activating, give the 1000 Bonus Coins + $10 automatically as promised on the card
+                const updates = { status: st };
+                if (st === 'active') {
+                    // Check if they already have coins to avoid double bonus if reactivating
+                    const targetUser = usersList.find(u => u.id === uid);
+                    if (targetUser && targetUser.coins === 0) {
+                         updates.coins = 1000;
+                         updates.balance = 10; // Auto convert bonus to $10
+                    }
+                }
+                await updateDoc(doc(db, "users", uid), updates);
+                showMsg(`User ${st} (Bonus Applied)`);
             };
 
             const handleDeposit = async (r, act) => {
@@ -552,15 +627,12 @@
             const pendingUsers = usersList.filter(u => u.status === 'pending');
             const activeUsers = usersList.filter(u => u.status !== 'pending');
 
-            // --- ADMIN PANEL SCROLL FIX: Use h-screen + flex + overflow-y-auto on content ---
             return React.createElement('div', { className: "h-screen flex flex-col bg-dark-950 p-6 font-sans overflow-hidden" },
-                // Header (Fixed)
                 React.createElement('div', { className: "flex justify-between items-center mb-8 shrink-0" },
                     React.createElement('h1', { className: "text-2xl font-bold text-gold-500 flex gap-2" }, React.createElement(LayoutDashboard), "ADMIN CONTROL"),
                     React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
                 ),
 
-                // Tabs (Fixed)
                 React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 shrink-0" },
                     React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-gold-500 text-black border-gold-500':'border-white/10 text-gray-400'}` }, `Deposits (${reqs.length})`),
                     React.createElement('button', { onClick:()=>setTab('pending_users'), className: `p-3 rounded-lg font-bold border ${tab==='pending_users'?'bg-yellow-500 text-black border-yellow-500':'border-white/10 text-gray-400'}` }, `New Users (${pendingUsers.length})`),
@@ -568,10 +640,7 @@
                     React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Settings`)
                 ),
 
-                // Scrollable Content Area
                 React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
-                    
-                    // --- TAB: DEPOSITS ---
                     tab === 'deposits' && (reqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits") :
                         reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
                             r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
@@ -589,11 +658,13 @@
                         ))
                     ),
 
-                    // --- TAB: PENDING USERS (QUICK APPROVAL) ---
                     tab === 'pending_users' && (pendingUsers.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending registrations") :
                         pendingUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
                             React.createElement('div', {},
-                                React.createElement('p', { className: "font-bold text-white" }, u.username),
+                                React.createElement('p', { className: "font-bold text-white flex gap-2 items-center" }, 
+                                    u.username,
+                                    React.createElement('span', {className:"text-[10px] bg-gray-700 px-1 rounded"}, u.country || "??")
+                                ),
                                 React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName || 'No Name'} • ${u.memberId}`)
                             ),
                             React.createElement('div', { className: "flex gap-2" },
@@ -603,7 +674,6 @@
                         ))
                     ),
 
-                    // --- TAB: ALL USERS ---
                     tab === 'users' && activeUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
                         React.createElement('div', {},
                             React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned' && React.createElement('span',{className:"text-red-500 text-[10px] ml-2"},"BANNED")),
@@ -621,14 +691,16 @@
                         )
                     )),
 
-                    // --- TAB: SETTINGS (UPDATED: All 4 Payment Methods) ---
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
-                        React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Payment Instructions"),
+                        // Added Activation Links Config
+                        React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
+                        React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
+                        React.createElement(Input, { placeholder: "Telegram Admin Link", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
                         
+                        React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "Payment Instructions"),
                         React.createElement(Input, { placeholder: "Attijari Info (Bank)", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
                         React.createElement(Input, { placeholder: "CashPlus Info (Cash)", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Binance/Crypto Info (USDT)", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
-                        React.createElement(Input, { placeholder: "Recharge/PayPal Info", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) }),
                         
                         React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
                     )
@@ -637,8 +709,6 @@
         }
 
         // --- HOUSE EDGE & LOGIC UPDATES ---
-
-        // 1. CRASH GAME (HOUSE EDGE: 4%)
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL }) {
             const [gameState, setGameState] = useState('BETTING');
             const [countdown, setCountdown] = useState(5);
@@ -666,8 +736,6 @@
                 if (Math.random() < 0.03) {
                     crashPointRef.current = 1.00;
                 } else {
-                    // Standard Casino Crash Curve (biased slightly down)
-                    // E = 0.99 / (Math.random() + 0.01) creates distribution
                     const r = 0.96 / (Math.random() + 0.04); 
                     crashPointRef.current = Math.max(1.00, Math.floor(r * 100) / 100);
                 }
@@ -740,14 +808,12 @@
             );
         }
 
-        // 2. SLOTS GAME (WEIGHTED RNG - HOUSE EDGE)
         function SlotsGame({ user, back, showMsg, ArrowIcon, t }) {
             const [bet, setBet] = useState(100);
             const [reels, setReels] = useState(['🍒','🍋','🍇']);
             const [spinning, setSpinning] = useState(false);
             const [status, setStatus] = useState("READY"); 
             
-            // WEIGHTED SYMBOLS: 7 and Diamond are rare
             const ITEMS = [
                 { s: '🍒', weight: 40 }, 
                 { s: '🍋', weight: 30 }, 
@@ -777,11 +843,8 @@
                 
                 setTimeout(async () => {
                     clearInterval(interval);
-                    // Determine final result based on weights
                     const finalReels = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
-                    // Force near miss occasionally to induce "gambler's fallacy" excitement
                     if(Math.random() < 0.15 && finalReels[0] === finalReels[1]) {
-                        // Keep first two, random third
                     }
                     
                     setReels(finalReels);
@@ -831,34 +894,27 @@
             );
         }
 
-        // 3. ROYAL LIMBO (COMPLETELY NEW DESIGN & HOUSE EDGE)
         function LimboGame({ user, back, showMsg, ArrowIcon, t }) {
             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
             const [result, setResult] = useState(null); 
             const [playing, setPlaying] = useState(false);
             
-            // House Edge Logic for Limbo
             const play = async () => {
                 if(Number(user.coins) < bet) return showMsg("No Balance", "error");
                 setPlaying(true); setResult(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
-                // MATH: Win Chance = 95 / Target (5% House Edge)
                 const winChance = 95 / target; 
                 const isWin = (Math.random() * 100) < winChance;
                 
-                // Generate visual result
                 let finalVal;
                 if (isWin) {
-                    // Generate a number ABOVE target
                     finalVal = target + (Math.random() * (100 - target)); 
                 } else {
-                    // Generate a number BELOW target
                     finalVal = 1.00 + (Math.random() * (target - 1.01));
                 }
                 
-                // Animation
                 let count = 1.00;
                 const interval = setInterval(() => {
                     count += Math.random() * 5; 
@@ -917,7 +973,6 @@
             );
         }
         
-        // 4. COIN FLIP (STANDARD) - kept simple but robust
         function CoinFlipGame({ user, back, showMsg, ArrowIcon, t }) {
             const [bet, setBet] = useState(100);
             const [choice, setChoice] = useState('Heads'); 
@@ -931,9 +986,6 @@
                 setFlipping(true); setWinAmt(0);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
 
-                // HOUSE EDGE: 2.0x payout is fair, but we can make RNG slightly biased if needed.
-                // For now, true 50/50 is fine if admin earns on Deposit/Withdraw fees or other games.
-                // Or make payout 1.95x
                 const isHeads = Math.random() > 0.5;
                 const result = isHeads ? 'Heads' : 'Tails';
                 const newRotation = rotation + 1800 + (isHeads ? 0 : 180); 
@@ -942,7 +994,7 @@
                 setTimeout(async () => {
                     setFlipping(false);
                     if(result === choice) {
-                        const win = bet * 2; // Can change to 1.95 for edge
+                        const win = bet * 2;
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setWinAmt(win);
                         triggerConfetti();
@@ -981,7 +1033,6 @@
             );
         }
 
-        // 5. KENO (SIMPLE)
         function KenoGame({ user, back, showMsg, ArrowIcon, t }) {
             const [selected, setSelected] = useState([]);
             const [drawn, setDrawn] = useState([]);
@@ -1001,8 +1052,6 @@
                 setPlaying(true); setDrawn([]); setGameResult(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
-                // HOUSE EDGE: Biased Drawing
-                // It draws 10 numbers. If player selected many, maybe reduce match probability slightly
                 const draws = [];
                 while(draws.length < 10) {
                     const r = Math.ceil(Math.random() * 40);
@@ -1015,11 +1064,10 @@
                     i++;
                     if(i >= 10) {
                         clearInterval(int);
-                        // Calculate Win
                         const matches = selected.filter(s => draws.includes(s)).length;
                         let mult = 0;
-                        if(matches >= 3) mult = 1.2; // Reduced form 1.5
-                        if(matches >= 5) mult = 2.5; // Reduced from 3
+                        if(matches >= 3) mult = 1.2; 
+                        if(matches >= 5) mult = 2.5; 
                         if(matches >= 7) mult = 8;
                         if(matches >= 9) mult = 40;
                         const win = Math.floor(bet * mult);
@@ -1070,7 +1118,6 @@
             );
         }
 
-        // --- HOME SCREEN COMPONENTS (Keep original visual but clean code) ---
         function HomeScreen({ user, navTo, t }) {
             return React.createElement('div', { className: "space-y-6 animate-pop" },
                 React.createElement('div', { className: "relative aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl border border-white/10 hover:border-gold-500/40 transition-all transform hover:rotate-1" },
