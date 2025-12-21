@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Royal Club - Pro Admin & House Edge Logic</title>
+    <title>CD0777 Royal Club - Pro Admin & VIP Activation</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,7 +28,8 @@
                         'float-up': 'floatUp 1.5s ease-out forwards',
                         'pulse-glow': 'pulseGlow 1.5s infinite',
                         'slide-up': 'slideUp 0.4s ease-out forwards',
-                        'rocket-fly': 'rocketFly 2s ease-in-out infinite alternate'
+                        'rocket-fly': 'rocketFly 2s ease-in-out infinite alternate',
+                        'shine': 'shine 2s infinite'
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
@@ -38,7 +39,8 @@
                         floatUp: { '0%': { transform: 'translateY(0) scale(1)', opacity: '1' }, '100%': { transform: 'translateY(-50px) scale(1.2)', opacity: '0' } },
                         pulseGlow: { '0%, 100%': { boxShadow: '0 0 10px #FFD700' }, '50%': { boxShadow: '0 0 25px #FFD700' } },
                         slideUp: { '0%': { transform: 'translateY(50px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-                        rocketFly: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(-20px)' } }
+                        rocketFly: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(-20px)' } },
+                        shine: { '0%': { backgroundPosition: '200% center' }, '100%': { backgroundPosition: '-200% center' } }
                     }
                 }
             }
@@ -50,7 +52,9 @@
         .glass-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.08); }
         .luxury-bg { background-image: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
         input, select, button { outline: none; -webkit-tap-highlight-color: transparent; }
-        ::-webkit-scrollbar { width: 0px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
         
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #FFD700; cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px #FFD700; border: 2px solid white; }
@@ -74,6 +78,7 @@
         .coin-back { background: radial-gradient(#C0C0C0, #808080); transform: rotateY(180deg); }
         
         .star-bg { background-image: radial-gradient(white 1px, transparent 1px); background-size: 50px 50px; opacity: 0.2; }
+        .card-shine { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); background-size: 200% 100%; animation: shine 3s infinite linear; }
     </style>
 </head>
 <body>
@@ -94,7 +99,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -280,8 +285,9 @@
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
             // --- CRITICAL CHECK: PENDING ---
+            // Updated to be Surgical and Precise with 1xBet conditions
             if (user && user.status === 'pending') {
-                return React.createElement(PendingActivationScreen, { user, logout, t, isRTL });
+                return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg });
             }
 
             // --- ADMIN PANEL ---
@@ -325,15 +331,91 @@
             );
         }
 
-        // --- PENDING SCREEN ---
-        function PendingActivationScreen({ user, logout, t, isRTL }) {
-            return React.createElement('div', { className: "h-screen bg-dark-950 flex flex-col items-center justify-center p-6 text-center animate-fade-in", dir: isRTL?'rtl':'ltr' },
-                React.createElement(LockKeyhole, { size: 64, className: "text-gold-500 mb-6 animate-pulse" }),
-                React.createElement('h1', { className: "text-2xl font-black text-gold-500 mb-2 font-oswald uppercase tracking-wider" }, t('pending_title')),
-                React.createElement('div', { className: "bg-red-500/10 text-red-400 px-4 py-1 rounded-full text-xs font-bold mb-6 border border-red-500/20" }, "STATUS: PENDING"),
-                React.createElement('p', { className: "text-gray-400 text-sm mb-8" }, t('wait_admin')),
-                React.createElement('button', { onClick: logout, className: "mt-8 text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors" }, 
-                    React.createElement(LogOut, { size: 16 }), t('logout')
+        // --- PENDING SCREEN (UPDATED: Membership & Conditions) ---
+        function PendingActivationScreen({ user, logout, t, isRTL, showMsg }) {
+            const copyCode = () => {
+                navigator.clipboard.writeText("CD0777");
+                showMsg("Promo Code Copied: CD0777");
+            };
+            
+            // Link to telegram - Placeholder. Admin should set this, or use a generic one.
+            const telegramLink = "https://t.me/your_vip_admin_link"; 
+
+            return React.createElement('div', { className: "h-screen bg-dark-950 flex flex-col items-center justify-center p-6 relative overflow-hidden", dir: isRTL?'rtl':'ltr' },
+                // Background Effects
+                React.createElement('div', { className: "absolute inset-0 luxury-bg" }),
+                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full star-bg opacity-30" }),
+                
+                // --- MEMBERSHIP CARD ---
+                React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-flip perspective-1000" },
+                    React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-black to-dark-900 rounded-2xl border border-gold-500/50 shadow-2xl overflow-hidden flex flex-col p-6" },
+                        React.createElement('div', { className: "absolute inset-0 card-shine pointer-events-none" }),
+                        React.createElement('div', { className: "absolute top-0 right-0 p-4 opacity-10" }, React.createElement(Crown, { size: 100, className: "text-gold-500" })),
+                        
+                        // Card Header
+                        React.createElement('div', { className: "flex justify-between items-start z-10" },
+                            React.createElement('div', { className: "flex items-center gap-2" },
+                                React.createElement('div', { className: "w-8 h-8 rounded bg-gold-500 flex items-center justify-center font-black text-black" }, "CD"),
+                                React.createElement('span', { className: "text-gold-500 font-oswald tracking-widest text-lg" }, "ROYAL CLUB")
+                            ),
+                            React.createElement(Wifi, { size: 20, className: "text-gold-500/50 rotate-90" })
+                        ),
+                        
+                        // Card Chip
+                        React.createElement('div', { className: "my-auto flex items-center gap-4 z-10" },
+                            React.createElement('div', { className: "w-12 h-9 rounded-md bg-gradient-to-tr from-yellow-200 to-yellow-600 border border-yellow-700 shadow-inner" }),
+                            React.createElement('span', { className: "text-xs font-mono text-gray-400 tracking-[0.2em]" }, user.memberId || "xxxx xxxx")
+                        ),
+                        
+                        // Card Footer
+                        React.createElement('div', { className: "mt-auto flex justify-between items-end z-10" },
+                            React.createElement('div', {},
+                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold" }, "MEMBER NAME"),
+                                React.createElement('p', { className: "text-sm text-white font-mono uppercase tracking-wide" }, user.fullName || user.username)
+                            ),
+                            React.createElement('div', { className: "text-right" },
+                                React.createElement('p', { className: "text-[8px] text-gold-500 uppercase font-bold" }, "STATUS"),
+                                React.createElement('p', { className: "text-xs text-red-500 font-bold bg-red-900/20 px-2 py-0.5 rounded border border-red-900/50 animate-pulse" }, "PENDING")
+                            )
+                        )
+                    )
+                ),
+
+                // --- STEPS ---
+                React.createElement('div', { className: "w-full max-w-sm space-y-4 relative z-10" },
+                    React.createElement('div', { className: "bg-dark-900/80 backdrop-blur-md border border-white/10 p-5 rounded-2xl space-y-4" },
+                        React.createElement('h3', { className: "text-center text-gold-500 font-bold mb-2 uppercase tracking-wide" }, "VIP Activation Steps"),
+                        
+                        // Step 1: 1xBet
+                        React.createElement('div', { className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5" },
+                            React.createElement('div', { className: "flex items-center gap-3" },
+                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs" }, "1"),
+                                React.createElement('div', {},
+                                    React.createElement('p', { className: "text-xs text-gray-300" }, "Register on 1xBet"),
+                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, "Code: CD0777")
+                                )
+                            ),
+                            React.createElement('button', { onClick: copyCode, className: "p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/40 transition-colors" }, React.createElement(Copy, { size: 16 }))
+                        ),
+
+                        // Step 2: Telegram
+                        React.createElement('a', { href: telegramLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-blue-500/50 transition-all" },
+                            React.createElement('div', { className: "flex items-center gap-3" },
+                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white" }, React.createElement(Send, { size: 14 })),
+                                React.createElement('div', {},
+                                    React.createElement('p', { className: "text-xs text-gray-300" }, "Send ID to Admin"),
+                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, "Telegram VIP Group")
+                                )
+                            ),
+                            React.createElement(ExternalLink, { size: 16, className: "text-gray-500 group-hover:text-white transition-colors" })
+                        )
+                    ),
+
+                    React.createElement('p', { className: "text-center text-xs text-gray-500" }, t('wait_admin')),
+                    
+                    React.createElement('button', { onClick: logout, className: "w-full mt-4 text-red-400 text-sm font-bold flex items-center justify-center gap-2 hover:bg-red-900/20 px-4 py-3 rounded-xl transition-colors" }, 
+                        React.createElement(LogOut, { size: 16 }), t('logout')
+                    )
                 )
             );
         }
@@ -436,7 +518,7 @@
             );
         }
 
-        // --- ADMIN PANEL (SURGICALLY OPTIMIZED FOR APPROVALS) ---
+        // --- ADMIN PANEL (SCROLL FIXED) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
             const [tab, setTab] = useState('deposits'); // deposits, pending_users, users, settings
             const [reqs, setReqs] = useState([]);
@@ -470,56 +552,59 @@
             const pendingUsers = usersList.filter(u => u.status === 'pending');
             const activeUsers = usersList.filter(u => u.status !== 'pending');
 
-            return React.createElement('div', { className: "min-h-screen bg-dark-950 p-6 font-sans" },
-                React.createElement('div', { className: "flex justify-between items-center mb-8" },
+            // --- ADMIN PANEL SCROLL FIX: Use h-screen + flex + overflow-y-auto on content ---
+            return React.createElement('div', { className: "h-screen flex flex-col bg-dark-950 p-6 font-sans overflow-hidden" },
+                // Header (Fixed)
+                React.createElement('div', { className: "flex justify-between items-center mb-8 shrink-0" },
                     React.createElement('h1', { className: "text-2xl font-bold text-gold-500 flex gap-2" }, React.createElement(LayoutDashboard), "ADMIN CONTROL"),
                     React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
                 ),
 
-                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-2 mb-6" },
+                // Tabs (Fixed)
+                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 shrink-0" },
                     React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-gold-500 text-black border-gold-500':'border-white/10 text-gray-400'}` }, `Deposits (${reqs.length})`),
                     React.createElement('button', { onClick:()=>setTab('pending_users'), className: `p-3 rounded-lg font-bold border ${tab==='pending_users'?'bg-yellow-500 text-black border-yellow-500':'border-white/10 text-gray-400'}` }, `New Users (${pendingUsers.length})`),
                     React.createElement('button', { onClick:()=>setTab('users'), className: `p-3 rounded-lg font-bold border ${tab==='users'?'bg-blue-500 text-black border-blue-500':'border-white/10 text-gray-400'}` }, `All Users`),
                     React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Settings`)
                 ),
 
-                // --- TAB: DEPOSITS ---
-                tab === 'deposits' && React.createElement('div', { className: "space-y-4" },
-                    reqs.length===0 && React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits"),
-                    reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
-                        r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
-                        React.createElement('div', { className: "flex-1" },
-                            React.createElement('div', { className: "flex justify-between" },
-                                React.createElement('span', { className: "font-bold text-white" }, r.username),
-                                React.createElement('span', { className: "text-gold-500 font-mono text-xl" }, `+${r.amount}`)
-                            ),
-                            React.createElement('p', { className: "text-xs text-gray-400 mb-4" }, `${r.method} • ${new Date(r.date).toLocaleString()}`),
-                            React.createElement('div', { className: "flex gap-2" },
-                                React.createElement(Button, { onClick:()=>handleDeposit(r,'app'), variant:'green', className:"py-2 px-4 text-xs" }, "Approve"),
-                                React.createElement(Button, { onClick:()=>handleDeposit(r,'rej'), variant:'red', className:"py-2 px-4 text-xs" }, "Reject")
+                // Scrollable Content Area
+                React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
+                    
+                    // --- TAB: DEPOSITS ---
+                    tab === 'deposits' && (reqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits") :
+                        reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
+                            r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
+                            React.createElement('div', { className: "flex-1" },
+                                React.createElement('div', { className: "flex justify-between" },
+                                    React.createElement('span', { className: "font-bold text-white" }, r.username),
+                                    React.createElement('span', { className: "text-gold-500 font-mono text-xl" }, `+${r.amount}`)
+                                ),
+                                React.createElement('p', { className: "text-xs text-gray-400 mb-4" }, `${r.method} • ${new Date(r.date).toLocaleString()}`),
+                                React.createElement('div', { className: "flex gap-2" },
+                                    React.createElement(Button, { onClick:()=>handleDeposit(r,'app'), variant:'green', className:"py-2 px-4 text-xs" }, "Approve"),
+                                    React.createElement(Button, { onClick:()=>handleDeposit(r,'rej'), variant:'red', className:"py-2 px-4 text-xs" }, "Reject")
+                                )
                             )
-                        )
-                    ))
-                ),
+                        ))
+                    ),
 
-                // --- TAB: PENDING USERS (QUICK APPROVAL) ---
-                tab === 'pending_users' && React.createElement('div', { className: "space-y-2" },
-                    pendingUsers.length===0 && React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending registrations"),
-                    pendingUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
-                        React.createElement('div', {},
-                            React.createElement('p', { className: "font-bold text-white" }, u.username),
-                            React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName || 'No Name'} • ${u.memberId}`)
-                        ),
-                        React.createElement('div', { className: "flex gap-2" },
-                            React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "bg-green-500 hover:bg-green-600 text-black font-bold py-2 px-4 rounded-lg flex items-center gap-1" }, React.createElement(CheckCircle, {size:16}), "ACCEPT"),
-                            React.createElement('button', { onClick:()=>deleteDoc(doc(db,"users",u.id)), className: "bg-red-500/20 text-red-500 p-2 rounded-lg" }, React.createElement(X, {size:20}))
-                        )
-                    ))
-                ),
+                    // --- TAB: PENDING USERS (QUICK APPROVAL) ---
+                    tab === 'pending_users' && (pendingUsers.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending registrations") :
+                        pendingUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
+                            React.createElement('div', {},
+                                React.createElement('p', { className: "font-bold text-white" }, u.username),
+                                React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName || 'No Name'} • ${u.memberId}`)
+                            ),
+                            React.createElement('div', { className: "flex gap-2" },
+                                React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "bg-green-500 hover:bg-green-600 text-black font-bold py-2 px-4 rounded-lg flex items-center gap-1" }, React.createElement(CheckCircle, {size:16}), "ACCEPT"),
+                                React.createElement('button', { onClick:()=>deleteDoc(doc(db,"users",u.id)), className: "bg-red-500/20 text-red-500 p-2 rounded-lg" }, React.createElement(X, {size:20}))
+                            )
+                        ))
+                    ),
 
-                // --- TAB: ALL USERS ---
-                tab === 'users' && React.createElement('div', { className: "space-y-2" },
-                    activeUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
+                    // --- TAB: ALL USERS ---
+                    tab === 'users' && activeUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
                         React.createElement('div', {},
                             React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned' && React.createElement('span',{className:"text-red-500 text-[10px] ml-2"},"BANNED")),
                             React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, u.coins)
@@ -534,14 +619,19 @@
                                 React.createElement('button', { onClick:()=>updateSt(u.id, 'banned'), className: "text-orange-500 bg-orange-500/10 p-2 rounded" }, React.createElement(Ban, {size:14})) :
                                 React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "text-green-500 bg-green-500/10 p-2 rounded" }, React.createElement(CheckCircle, {size:14}))
                         )
-                    ))
-                ),
+                    )),
 
-                // --- TAB: SETTINGS ---
-                tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
-                    React.createElement(Input, { placeholder: "Attijari Info", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
-                    React.createElement(Input, { placeholder: "CashPlus Info", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
-                    React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
+                    // --- TAB: SETTINGS (UPDATED: All 4 Payment Methods) ---
+                    tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
+                        React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Payment Instructions"),
+                        
+                        React.createElement(Input, { placeholder: "Attijari Info (Bank)", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
+                        React.createElement(Input, { placeholder: "CashPlus Info (Cash)", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
+                        React.createElement(Input, { placeholder: "Binance/Crypto Info (USDT)", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
+                        React.createElement(Input, { placeholder: "Recharge/PayPal Info", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) }),
+                        
+                        React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
+                    )
                 )
             );
         }
@@ -809,15 +899,15 @@
                     ),
 
                     React.createElement('div', { className: "w-full max-w-sm bg-dark-900 p-4 rounded-xl space-y-4 border border-white/5" },
-                         React.createElement('div', { className: "flex justify-between text-sm" },
-                             React.createElement('span', { className: "text-gray-400" }, "Target Multiplier"),
-                             React.createElement('span', { className: "text-gold-500 font-bold" }, target.toFixed(2)+"x")
-                         ),
-                         React.createElement('input', { type: "range", min: "1.1", max: "100", step: "0.1", value: target, onChange: e=>setTarget(Number(e.target.value)), className: "accent-gold-500" }),
-                         React.createElement('div', { className: "flex justify-between text-xs text-gray-500" },
-                             React.createElement('span', {}, "Win Chance:"),
-                             React.createElement('span', {}, (95/target).toFixed(2)+"%")
-                         )
+                          React.createElement('div', { className: "flex justify-between text-sm" },
+                              React.createElement('span', { className: "text-gray-400" }, "Target Multiplier"),
+                              React.createElement('span', { className: "text-gold-500 font-bold" }, target.toFixed(2)+"x")
+                          ),
+                          React.createElement('input', { type: "range", min: "1.1", max: "100", step: "0.1", value: target, onChange: e=>setTarget(Number(e.target.value)), className: "accent-gold-500" }),
+                          React.createElement('div', { className: "flex justify-between text-xs text-gray-500" },
+                              React.createElement('span', {}, "Win Chance:"),
+                              React.createElement('span', {}, (95/target).toFixed(2)+"%")
+                          )
                     )
                 ),
                 React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" }, 
