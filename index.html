@@ -14,7 +14,7 @@
                     colors: {
                         gold: { 100: '#FFF9C4', 300: '#FDD835', 400: '#FFD700', 500: '#FFC107', 600: '#FFB300', 700: '#FFA000', 800: '#C0A000', 900: '#3d2e07' },
                         dark: { 950: '#020617', 900: '#0f172a', 800: '#1e293b' },
-                        elite: { 500: '#e0e7ff', 900: '#312e81' }
+                        elite: { 500: '#e0e7ff', 900: '#312e81' } /* Elite Platinum Colors */
                     },
                     fontFamily: {
                         cairo: ['Cairo', 'sans-serif'],
@@ -81,6 +81,7 @@
         .star-bg { background-image: radial-gradient(white 1px, transparent 1px); background-size: 50px 50px; opacity: 0.2; }
         .card-shine { background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 25%, transparent 30%); animation: shine 3s infinite linear; background-size: 200% 100%; }
         
+        /* Elite Card specific */
         .elite-card-bg { background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); border: 1px solid rgba(255, 215, 0, 0.3); }
         .hologram { background: linear-gradient(135deg, transparent 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%); }
     </style>
@@ -357,12 +358,8 @@
             // Get links from Admin Settings (or default)
             const promoCode = settings?.promo_code || "CD0777";
             const telegramLink = settings?.telegram_link || "https://t.me/your_admin_link";
-            // MODIFIED: Added 1XBET Link retrieval
-            const xbetLink = settings?.xbet_link || "https://refpa7921972.top/L?tag=d_3162621m_1573c_&site=3162621&ad=1573";
 
-            const copyCode = (e) => {
-                e.stopPropagation(); // Prevent triggering link
-                e.preventDefault();
+            const copyCode = () => {
                 navigator.clipboard.writeText(promoCode);
                 showMsg(`Copied: ${promoCode}`);
             };
@@ -373,9 +370,8 @@
                 React.createElement('div', { className: "absolute top-0 left-0 w-full h-full star-bg opacity-40" }),
                 React.createElement('div', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] bg-gold-500/5 blur-[120px] rounded-full pointer-events-none" }),
                 
-                // --- ELITE MEMBERSHIP CARD (MODIFIED: Removed animate-flip) ---
-                // Removed 'animate-flip' and replaced with 'animate-fade-in' to prevent upside-down text
-                React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-fade-in perspective-1000 group cursor-pointer" },
+                // --- ELITE MEMBERSHIP CARD ---
+                React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-flip perspective-1000 group cursor-pointer" },
                     React.createElement('div', { className: "absolute inset-0 elite-card-bg rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 z-10 transition-transform transform group-hover:scale-105" },
                         // Shine & Hologram
                         React.createElement('div', { className: "absolute inset-0 card-shine pointer-events-none z-20 opacity-30" }),
@@ -429,18 +425,16 @@
                     React.createElement('div', { className: "bg-dark-900/80 backdrop-blur-md border border-white/10 p-5 rounded-2xl space-y-4" },
                         React.createElement('h3', { className: "text-center text-white font-bold mb-2 uppercase tracking-wide text-xs opacity-60" }, "Complete Activation"),
                         
-                        // MODIFIED: Step 1: 1xBet - Wrapped in Link to 1XBET
-                        React.createElement('a', { href: xbetLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-green-500/50 hover:bg-green-900/10 transition-all cursor-pointer" },
+                        // Step 1: 1xBet
+                        React.createElement('div', { className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5" },
                             React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-green-600 to-green-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"),
+                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"),
                                 React.createElement('div', {},
-                                    React.createElement('p', { className: "text-xs text-white font-bold" }, "Register on 1xBet"),
-                                    React.createElement('p', { className: "text-[10px] text-gray-400" }, "You MUST use Promo Code:")
+                                    React.createElement('p', { className: "text-xs text-gray-300" }, "Register on 1xBet"),
+                                    React.createElement('p', { className: "text-xs font-bold text-blue-400" }, `Code: ${promoCode}`)
                                 )
                             ),
-                            React.createElement('button', { onClick: copyCode, className: "flex items-center gap-2 px-2 py-1 bg-green-500/20 text-green-400 rounded-lg border border-green-500/30 font-mono font-bold text-xs hover:bg-green-500/30" }, 
-                                promoCode, React.createElement(Copy, { size: 12 })
-                            )
+                            React.createElement('button', { onClick: copyCode, className: "p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors border border-blue-500/20" }, React.createElement(Copy, { size: 16 }))
                         ),
 
                         // Step 2: Telegram
@@ -701,7 +695,6 @@
                         // Added Activation Links Config
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
                         React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
-                        React.createElement(Input, { placeholder: "1XBET Reg Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Telegram Admin Link", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
                         
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "Payment Instructions"),
@@ -1291,13 +1284,13 @@
                     (method.id === 'recharge') && React.createElement(React.Fragment, null,
                          React.createElement(Input, { placeholder: t('phone'), value: form.phone, onChange: e=>setForm({...form, phone:e.target.value}), icon: Smartphone }),
                          React.createElement('div', { className: "space-y-2" },
-                           React.createElement('label', {className:"text-xs text-gray-400"}, t('network')),
-                           React.createElement('select', { value: form.network, onChange: e=>setForm({...form, network:e.target.value}), className: "w-full bg-dark-950 border border-white/10 p-3 rounded-xl text-white outline-none" },
-                               React.createElement('option', {value:"Orange"}, "Orange"),
-                               React.createElement('option', {value:"Maroc Telecom"}, "Maroc Telecom"),
-                               React.createElement('option', {value:"Inwi"}, "Inwi")
-                           )
-                        )
+                            React.createElement('label', {className:"text-xs text-gray-400"}, t('network')),
+                            React.createElement('select', { value: form.network, onChange: e=>setForm({...form, network:e.target.value}), className: "w-full bg-dark-950 border border-white/10 p-3 rounded-xl text-white outline-none" },
+                                React.createElement('option', {value:"Orange"}, "Orange"),
+                                React.createElement('option', {value:"Maroc Telecom"}, "Maroc Telecom"),
+                                React.createElement('option', {value:"Inwi"}, "Inwi")
+                            )
+                         )
                     ),
                     (method.id === 'crypto') && React.createElement(React.Fragment, null,
                         React.createElement(Input, { placeholder: t('wallet_addr'), value: form.account, onChange: e=>setForm({...form, account:e.target.value}), icon: Disc })
