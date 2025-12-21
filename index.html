@@ -578,20 +578,27 @@
             );
         }
 
-        // --- ADMIN PANEL (UPDATED - APPROVED DEPOSIT GOES TO BALANCE) ---
+        // --- ADMIN PANEL (FIXED: WITHDRAWALS & DEPOSITS LOGIC) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
             const [tab, setTab] = useState('deposits'); 
-            const [reqs, setReqs] = useState([]);
+            const [depositReqs, setDepositReqs] = useState([]);
+            const [withdrawReqs, setWithdrawReqs] = useState([]); // NEW: State for withdrawals
             const [usersList, setUsersList] = useState([]);
             const [conf, setConf] = useState({});
             const [editId, setEditId] = useState(null);
             const [balInput, setBalInput] = useState('');
 
             useEffect(() => {
-                const unsubR = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending")), s => setReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                // Fetch Pending Deposits
+                const unsubDep = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending")), s => setDepositReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                // Fetch Pending Withdrawals
+                const unsubWith = onSnapshot(query(collection(db, "withdraws"), where("status", "==", "pending")), s => setWithdrawReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                // Fetch Users
                 const unsubU = onSnapshot(collection(db, "users"), s => setUsersList(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                
                 getDoc(doc(db, "settings", "global")).then(s => s.exists() && setConf(s.data()));
-                return () => { unsubR(); unsubU(); };
+                
+                return () => { unsubDep(); unsubWith(); unsubU(); };
             }, []);
 
             const updateSt = async (uid, st) => {
@@ -604,17 +611,36 @@
                     }
                 }
                 await updateDoc(doc(db, "users", uid), updates);
-                showMsg(`User ${st} (Bonus Applied)`);
+                showMsg(`User ${st}`);
             };
 
+            // Handle Deposit: Add to User Balance ($)
             const handleDeposit = async (r, act) => {
                 if(act === 'app') {
                     const u = usersList.find(x => x.id === r.userId);
-                    // *** CRITICAL UPDATE: Add to BALANCE ($) NOT COINS ***
                     if(u) await updateDoc(doc(db, "users", r.userId), { balance: Number(u.balance || 0) + Number(r.amount) });
                     await updateDoc(doc(db, "deposits", r.id), { status: 'approved' });
+                    showMsg("Deposit Approved & Balance Updated");
                 } else {
                     await updateDoc(doc(db, "deposits", r.id), { status: 'rejected' });
+                    showMsg("Deposit Rejected");
+                }
+            };
+
+            // Handle Withdrawal: Approve (Just status) or Reject (Refund)
+            const handleWithdraw = async (r, act) => {
+                if (act === 'app') {
+                    // Money already deducted at request time, just approve status
+                    await updateDoc(doc(db, "withdraws", r.id), { status: 'approved' });
+                    showMsg("Withdrawal Approved");
+                } else {
+                    // Reject: REFUND money to user balance
+                    const u = usersList.find(x => x.id === r.userId);
+                    if(u) {
+                        await updateDoc(doc(db, "users", r.userId), { balance: Number(u.balance || 0) + Number(r.amount) });
+                        await updateDoc(doc(db, "withdraws", r.id), { status: 'rejected' });
+                        showMsg("Withdrawal Rejected & Refunded");
+                    }
                 }
             };
 
@@ -627,21 +653,23 @@
                     React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
                 ),
 
-                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 shrink-0" },
-                    React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-gold-500 text-black border-gold-500':'border-white/10 text-gray-400'}` }, `Deposits (${reqs.length})`),
+                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 shrink-0" },
+                    React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-green-500 text-black border-green-500':'border-white/10 text-gray-400'}` }, `Deposits (${depositReqs.length})`),
+                    React.createElement('button', { onClick:()=>setTab('withdraws'), className: `p-3 rounded-lg font-bold border ${tab==='withdraws'?'bg-red-500 text-black border-red-500':'border-white/10 text-gray-400'}` }, `Withdraws (${withdrawReqs.length})`),
                     React.createElement('button', { onClick:()=>setTab('pending_users'), className: `p-3 rounded-lg font-bold border ${tab==='pending_users'?'bg-yellow-500 text-black border-yellow-500':'border-white/10 text-gray-400'}` }, `New Users (${pendingUsers.length})`),
                     React.createElement('button', { onClick:()=>setTab('users'), className: `p-3 rounded-lg font-bold border ${tab==='users'?'bg-blue-500 text-black border-blue-500':'border-white/10 text-gray-400'}` }, `All Users`),
                     React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Settings`)
                 ),
 
                 React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
-                    tab === 'deposits' && (reqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits") :
-                        reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
+                    // --- DEPOSITS TAB ---
+                    tab === 'deposits' && (depositReqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits") :
+                        depositReqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
                             r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
                             React.createElement('div', { className: "flex-1" },
                                 React.createElement('div', { className: "flex justify-between" },
                                     React.createElement('span', { className: "font-bold text-white" }, r.username),
-                                    React.createElement('span', { className: "text-gold-500 font-mono text-xl" }, `+${r.amount}`)
+                                    React.createElement('span', { className: "text-green-500 font-mono text-xl" }, `+${r.amount}$`)
                                 ),
                                 React.createElement('p', { className: "text-xs text-gray-400 mb-4" }, `${r.method} • ${new Date(r.date).toLocaleString()}`),
                                 React.createElement('div', { className: "flex gap-2" },
@@ -652,6 +680,24 @@
                         ))
                     ),
 
+                    // --- WITHDRAWALS TAB ---
+                    tab === 'withdraws' && (withdrawReqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending withdrawals") :
+                        withdrawReqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-red-900/30 flex flex-col gap-2" },
+                            React.createElement('div', { className: "flex justify-between items-center" },
+                                React.createElement('div', {},
+                                    React.createElement('span', { className: "font-bold text-white block" }, r.username),
+                                    React.createElement('span', { className: "text-xs text-gray-400" }, `${r.method} • ${r.details?.phone || r.details?.account || 'N/A'}`)
+                                ),
+                                React.createElement('span', { className: "text-red-500 font-mono text-xl font-bold" }, `-${r.amount}$`)
+                            ),
+                            React.createElement('div', { className: "flex gap-2 mt-2" },
+                                React.createElement(Button, { onClick:()=>handleWithdraw(r,'app'), variant:'green', className:"py-2 px-4 text-xs flex-1" }, "Approve"),
+                                React.createElement(Button, { onClick:()=>handleWithdraw(r,'rej'), variant:'red', className:"py-2 px-4 text-xs flex-1" }, "Reject (Refund)")
+                            )
+                        ))
+                    ),
+
+                    // --- NEW USERS TAB ---
                     tab === 'pending_users' && (pendingUsers.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending registrations") :
                         pendingUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
                             React.createElement('div', {},
@@ -668,10 +714,11 @@
                         ))
                     ),
 
+                    // --- ALL USERS TAB ---
                     tab === 'users' && activeUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
                         React.createElement('div', {},
                             React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned' && React.createElement('span',{className:"text-red-500 text-[10px] ml-2"},"BANNED")),
-                            React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, u.coins)
+                            React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, `Coins: ${u.coins} | Bal: $${u.balance || 0}`)
                         ),
                         editId === u.id ? React.createElement('div', { className: "flex gap-1 bg-black p-1 rounded" },
                             React.createElement('input', { type:"number", className: "w-20 bg-transparent text-white text-xs px-1", placeholder: "Coins", onChange:e=>setBalInput(e.target.value) }),
@@ -685,6 +732,7 @@
                         )
                     )),
 
+                    // --- SETTINGS TAB ---
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
                         React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
@@ -1324,6 +1372,7 @@
             );
         }
 
+        // --- WITHDRAW SCREEN (FIXED: DEDUCTS BALANCE & CREATES REQUEST) ---
         function WithdrawScreen({ user, showMsg, t, back }) {
              const [method, setMethod] = useState(null);
              const [form, setForm] = useState({ amount: '', name: '', account: '', phone: '', network: 'Orange' });
@@ -1339,8 +1388,18 @@
                  if(!method || !form.amount) return showMsg(t('inputs_err'), 'error');
                  if(method.id==='recharge' && !form.phone) return showMsg(t('inputs_err'), 'error');
                  
+                 const amt = Number(form.amount);
+                 if(amt <= 0) return showMsg("Invalid Amount", 'error');
+                 if(Number(user.balance) < amt) return showMsg("Insufficient Balance", 'error');
+
+                 // 1. Deduct Balance Immediately
+                 await updateDoc(doc(db, "users", user.id), {
+                     balance: Number(user.balance) - amt
+                 });
+
+                 // 2. Create Withdraw Request
                  await addDoc(collection(db, "withdraws"), {
-                    userId: user.id, username: user.username, amount: Number(form.amount), method: method.name, details: form, status: 'pending', date: new Date().toISOString()
+                    userId: user.id, username: user.username, amount: amt, method: method.name, details: form, status: 'pending', date: new Date().toISOString()
                  });
                  showMsg(t('success')); back();
              };
