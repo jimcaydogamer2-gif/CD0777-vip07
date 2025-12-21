@@ -52,7 +52,7 @@
         body { background-color: #020617; color: #fff; overflow: hidden; touch-action: manipulation; }
         .glass-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.08); }
         .luxury-bg { background-image: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
-        input, select, button { outline: none; -webkit-tap-highlight-color: transparent; }
+        input, select, button, textarea { outline: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
@@ -83,6 +83,10 @@
         
         .elite-card-bg { background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); border: 1px solid rgba(255, 215, 0, 0.3); }
         .hologram { background: linear-gradient(135deg, transparent 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%); }
+        
+        /* Checkbox styling */
+        .checkbox-wrapper input:checked + div { background-color: #FFD700; border-color: #FFD700; }
+        .checkbox-wrapper input:checked + div svg { display: block; }
     </style>
 </head>
 <body>
@@ -103,7 +107,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -120,6 +124,10 @@
         const db = getFirestore(app);
 
         // --- CONSTANTS & TEXTS ---
+        // DEFAULT CONTENT IF ADMIN HAS NOT SET IT
+        const DEFAULT_TERMS = "مرحباً بكم في CD0777 Elite Club.\n\n1. الأهلية: يجب أن يكون عمرك 18 عامًا على الأقل لاستخدام خدماتنا.\n2. الحساب: أنت مسؤول عن الحفاظ على سرية معلومات حسابك.\n3. اللعب العادل: يمنع استخدام أي برامج أو أدوات للغش. سيتم حظر الحسابات المخالفة فوراً دون استرداد الأموال.\n4. المدفوعات: جميع عمليات الإيداع والسحب تخضع للمراجعة الإدارية.\n5. التعديلات: تحتفظ الإدارة بالحق في تعديل هذه الشروط في أي وقت.";
+        const DEFAULT_POLICY = "نحن في CD0777 Elite Club نلتزم بحماية خصوصيتك.\n\n1. جمع البيانات: نقوم بجمع المعلومات التي تقدمها عند التسجيل (الاسم، الهاتف) لأغراض التحقق من الهوية.\n2. استخدام البيانات: نستخدم بياناتك لتحسين خدماتنا ومعالجة المعاملات المالية.\n3. الأمان: نستخدم تقنيات تشفير متقدمة لحماية بياناتك.\n4. المشاركة: لا نشارك بياناتك مع أطراف ثالثة إلا بموجب القانون.";
+
         const COUNTRIES = [
             { code: 'MA', name: 'Morocco', prefix: '+212', flag: '🇲🇦' },
             { code: 'DZ', name: 'Algeria', prefix: '+213', flag: '🇩🇿' },
@@ -164,7 +172,10 @@
                 admin_dash: "لوحة التحكم",
                 select_country: "اختر الدولة",
                 exchange: "تحويل العملات", exchange_rate: "سعر الصرف", convert: "تحويل",
-                processing: "جاري المعالجة...", execute: "تنفيذ العملية", req_sent: "تم إرسال الطلب بنجاح", req_wait: "سيتم مراجعة طلبك والموافقة عليه قريباً."
+                processing: "جاري المعالجة...", execute: "تنفيذ العملية", req_sent: "تم إرسال الطلب بنجاح", req_wait: "سيتم مراجعة طلبك والموافقة عليه قريباً.",
+                agree_terms: "أوافق على الشروط والأحكام وسياسة الخصوصية",
+                must_agree: "يجب الموافقة على الشروط والأحكام",
+                reset_req: "استعادة كلمة المرور"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -193,7 +204,10 @@
                 admin_dash: "Dashboard",
                 select_country: "Select Country",
                 exchange: "Exchange", exchange_rate: "Exchange Rate", convert: "Convert",
-                processing: "Processing...", execute: "Execute", req_sent: "Request Sent", req_wait: "Your request is under review."
+                processing: "Processing...", execute: "Execute", req_sent: "Request Sent", req_wait: "Your request is under review.",
+                agree_terms: "I agree to Terms & Privacy Policy",
+                must_agree: "You must agree to the Terms",
+                reset_req: "Password Reset"
             }
         };
 
@@ -358,8 +372,9 @@
                     view === 'exchange' && React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
                     view === 'history' && React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') }),
                     view === 'settings' && React.createElement(SettingsScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
-                    view === 'terms' && React.createElement(InfoPage, { title: t('terms'), content: settings.terms || "Terms...", back: ()=>navTo('profile') }),
-                    view === 'policy' && React.createElement(InfoPage, { title: t('policy'), content: settings.policy || "Policy...", back: ()=>navTo('profile') })
+                    // UPDATED: Use settings from Firestore with fallback defaults
+                    view === 'terms' && React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>navTo('profile') }),
+                    view === 'policy' && React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>navTo('profile') })
                 ),
 
                 React.createElement('nav', { className: "fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl z-40 flex justify-around items-center shadow-2xl border border-white/10 backdrop-blur-md" },
@@ -526,6 +541,8 @@
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); 
             const [f, setF] = useState({ u:'', p:'', n:'', ph:'', country: 'MA' });
+            // UPDATED: Terms Agreement State
+            const [agreeTerms, setAgreeTerms] = useState(false);
             
             useEffect(() => {
                 const c = COUNTRIES.find(c => c.code === f.country);
@@ -536,6 +553,12 @@
 
             const submit = async () => {
                 if(!f.u || !f.p) return showMsg(t('inputs_err'), 'error');
+                
+                // UPDATED: Check for Terms Agreement
+                if(isReg && !agreeTerms) {
+                    return showMsg(t('must_agree'), 'error');
+                }
+
                 if(f.u==='admin' && f.p==='admin123') { localStorage.setItem('cd0777_uid', 'admin'); setUser({role:'admin'}); setView('admin'); return; }
                 try {
                     if(isReg) {
@@ -565,14 +588,25 @@
                             )
                         ),
                         React.createElement('div', { className: "w-2/3" },
-                            React.createElement(Input, { icon: Smartphone, placeholder: t('phone'), value: f.ph, onChange: e=>setF({...f,ph:e.target.value}) })
+                            React.createElement('Input', { icon: Smartphone, placeholder: t('phone'), value: f.ph, onChange: e=>setF({...f,ph:e.target.value}) })
                         )
                     ),
 
                     React.createElement(Input, { icon: User, placeholder: t('user'), onChange: e=>setF({...f,u:e.target.value}) }),
                     React.createElement(Input, { icon: Lock, type: "password", placeholder: t('pass'), onChange: e=>setF({...f,p:e.target.value}) }),
+                    
+                    // UPDATED: Checkbox for Terms
+                    isReg && React.createElement('label', { className: "flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors checkbox-wrapper" },
+                        React.createElement('input', { type: "checkbox", checked: agreeTerms, onChange: e=>setAgreeTerms(e.target.checked), className: "hidden" }),
+                        React.createElement('div', { className: `w-5 h-5 rounded border border-gray-500 flex items-center justify-center transition-colors ${agreeTerms ? 'bg-gold-500 border-gold-500' : 'bg-transparent'}` },
+                            React.createElement(Check, { size: 14, className: `text-black ${agreeTerms ? 'block' : 'hidden'}` })
+                        ),
+                        React.createElement('span', { className: "text-xs text-gray-300 select-none" }, t('agree_terms'))
+                    ),
+
                     React.createElement(Button, { full: true, onClick: submit }, isReg?t('register'):t('login')),
-                    React.createElement('button', { onClick: ()=>setIsReg(!isReg), className: "w-full text-center text-xs text-slate-500 mt-4 hover:text-gold-500 transition-colors" }, isReg?t('welcome'):t('register'))
+                    React.createElement('button', { onClick: ()=>setIsReg(!isReg), className: "w-full text-center text-xs text-slate-500 mt-4 hover:text-gold-500 transition-colors" }, isReg?t('welcome'):t('register')),
+                    !isReg && React.createElement('button', { onClick: ()=>setView('forgot'), className: "w-full text-center text-xs text-slate-500 mt-2 hover:text-gold-500 transition-colors" }, "Forgot Password?")
                 )
             );
         }
@@ -594,22 +628,19 @@
             );
         }
 
-        // --- ADMIN PANEL (FIXED: WITHDRAWALS & DEPOSITS LOGIC) ---
+        // --- ADMIN PANEL (UPDATED WITH PROTOCOLS EDITING) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
             const [tab, setTab] = useState('deposits'); 
             const [depositReqs, setDepositReqs] = useState([]);
-            const [withdrawReqs, setWithdrawReqs] = useState([]); // NEW: State for withdrawals
+            const [withdrawReqs, setWithdrawReqs] = useState([]);
             const [usersList, setUsersList] = useState([]);
             const [conf, setConf] = useState({});
             const [editId, setEditId] = useState(null);
             const [balInput, setBalInput] = useState('');
 
             useEffect(() => {
-                // Fetch Pending Deposits
                 const unsubDep = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending")), s => setDepositReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                // Fetch Pending Withdrawals
                 const unsubWith = onSnapshot(query(collection(db, "withdraws"), where("status", "==", "pending")), s => setWithdrawReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                // Fetch Users
                 const unsubU = onSnapshot(collection(db, "users"), s => setUsersList(s.docs.map(d => ({id: d.id, ...d.data()}))));
                 
                 getDoc(doc(db, "settings", "global")).then(s => s.exists() && setConf(s.data()));
@@ -630,7 +661,6 @@
                 showMsg(`User ${st}`);
             };
 
-            // Handle Deposit: Add to User Balance ($)
             const handleDeposit = async (r, act) => {
                 if(act === 'app') {
                     const u = usersList.find(x => x.id === r.userId);
@@ -643,14 +673,11 @@
                 }
             };
 
-            // Handle Withdrawal: Approve (Just status) or Reject (Refund)
             const handleWithdraw = async (r, act) => {
                 if (act === 'app') {
-                    // Money already deducted at request time, just approve status
                     await updateDoc(doc(db, "withdraws", r.id), { status: 'approved' });
                     showMsg("Withdrawal Approved");
                 } else {
-                    // Reject: REFUND money to user balance
                     const u = usersList.find(x => x.id === r.userId);
                     if(u) {
                         await updateDoc(doc(db, "users", r.userId), { balance: Number(u.balance || 0) + Number(r.amount) });
@@ -748,7 +775,7 @@
                         )
                     )),
 
-                    // --- SETTINGS TAB ---
+                    // --- SETTINGS TAB (UPDATED WITH TEXT EDITOR FOR TERMS/POLICY) ---
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
                         React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
@@ -760,6 +787,14 @@
                         React.createElement(Input, { placeholder: "CashPlus Info (Cash)", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Binance/Crypto Info (USDT)", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
                         
+                        // NEW: Protocols Editing
+                        React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "App Protocols (Info Pages)"),
+                        React.createElement('label', { className: "text-xs text-gray-500" }, "Terms of Service"),
+                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Terms Content...", value: conf.terms || DEFAULT_TERMS, onChange: e=>setConf({...conf, terms:e.target.value}) }),
+                        
+                        React.createElement('label', { className: "text-xs text-gray-500" }, "Privacy Policy"),
+                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Privacy Policy Content...", value: conf.policy || DEFAULT_POLICY, onChange: e=>setConf({...conf, policy:e.target.value}) }),
+
                         React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
                     )
                 )
@@ -1226,10 +1261,9 @@
             );
         }
 
-        // --- NEW EXCHANGE SCREEN ---
         function ExchangeScreen({ user, showMsg, t, back }) {
             const [amount, setAmount] = useState('');
-            const [mode, setMode] = useState('to_coins'); // 'to_coins' ($ -> C) or 'to_usd' (C -> $)
+            const [mode, setMode] = useState('to_coins'); 
             
             const RATE = 100; // 1 USD = 100 COINS
 
@@ -1238,7 +1272,6 @@
                 if(!val || val <= 0) return showMsg("Invalid Amount", "error");
 
                 if (mode === 'to_coins') {
-                    // USD -> Coins
                     if (Number(user.balance) < val) return showMsg("Insufficient Balance ($)", "error");
                     const coinsToAdd = val * RATE;
                     await updateDoc(doc(db,"users",user.id), {
@@ -1247,7 +1280,6 @@
                     });
                     showMsg(`Exchanged $${val} to ${coinsToAdd} Coins`, 'success');
                 } else {
-                    // Coins -> USD
                     if (Number(user.coins) < val) return showMsg("Insufficient Coins", "error");
                     const usdToAdd = val / RATE;
                     await updateDoc(doc(db,"users",user.id), {
@@ -1264,7 +1296,6 @@
                 React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gold-500" }, t('exchange')),
                 
                 React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl border border-white/10 space-y-6" },
-                    // Rate Display
                     React.createElement('div', { className: "flex justify-center" },
                          React.createElement('div', { className: "bg-black/40 px-4 py-2 rounded-full border border-white/5 text-xs text-gray-400 flex items-center gap-2" },
                             React.createElement(DollarSign, { size: 12, className: "text-green-500" }),
@@ -1275,7 +1306,6 @@
                          )
                     ),
 
-                    // Inputs
                     React.createElement('div', { className: "relative" },
                          React.createElement('div', { className: "flex justify-between text-xs text-gray-400 mb-1 px-1" },
                              React.createElement('span', {}, mode === 'to_coins' ? "From (USD Balance)" : "From (Game Coins)"),
@@ -1284,14 +1314,12 @@
                          React.createElement(Input, { type: "number", value: amount, onChange: e=>setAmount(e.target.value), icon: mode==='to_coins'?DollarSign:Gem, placeholder: "Amount to convert" })
                     ),
 
-                    // Switcher
                     React.createElement('div', { className: "flex justify-center" },
                         React.createElement('button', { onClick: ()=>setMode(mode==='to_coins'?'to_usd':'to_coins'), className: "p-3 bg-gold-500 rounded-full text-black shadow-lg hover:scale-110 transition-transform" },
-                             React.createElement(ArrowUp, { size: 20, className: "rotate-0" }) // Using ArrowUp as vertical switch icon equivalent
+                             React.createElement(ArrowUp, { size: 20, className: "rotate-0" }) 
                         )
                     ),
                     
-                    // Result Preview
                     React.createElement('div', { className: "bg-black/40 p-4 rounded-xl text-center border border-white/5" },
                         React.createElement('p', { className: "text-xs text-gray-500 mb-1" }, "You Receive"),
                         React.createElement('p', { className: "text-2xl font-black font-mono text-white flex items-center justify-center gap-2" },
@@ -1317,7 +1345,6 @@
                     )
                 ),
                 
-                // Exchange Button
                 React.createElement('button', { onClick: ()=>navTo('exchange'), className: "w-full bg-dark-800 p-4 rounded-xl border border-gold-500/30 flex items-center justify-between group hover:bg-dark-700 transition-all" },
                     React.createElement('div', { className: "flex items-center gap-3" },
                         React.createElement('div', { className: "p-2 bg-gold-500/10 rounded-lg text-gold-500" }, React.createElement(ArrowLeftRight, { size: 20 })),
@@ -1337,7 +1364,6 @@
             );
         }
 
-        // --- DEPOSIT SCREEN (UPDATED: PROCESSING FEEDBACK + MODAL) ---
         function DepositScreen({ user, showMsg, t, settings, back }) {
              const [method, setMethod] = useState(null);
              const [amount, setAmount] = useState('');
@@ -1353,12 +1379,11 @@
              ];
 
              const submit = async () => {
-                 if(loading) return; // Prevent Double Click
+                 if(loading) return; 
                  if(!method || !amount || !imgFile) return showMsg(t('inputs_err'), 'error');
                  setLoading(true);
                  try {
                      const base64Img = await convertToBase64(imgFile);
-                     // Using specific collection 'deposits' that admin reads
                      await addDoc(collection(db, "deposits"), {
                          userId: user.id, username: user.username, amount: Number(amount), method: method.name, status: 'pending', image: base64Img, date: new Date().toISOString()
                      });
@@ -1398,7 +1423,6 @@
             );
         }
 
-        // --- WITHDRAW SCREEN (UPDATED: PROCESSING FEEDBACK + MODAL) ---
         function WithdrawScreen({ user, showMsg, t, back }) {
              const [method, setMethod] = useState(null);
              const [form, setForm] = useState({ amount: '', name: '', account: '', phone: '', network: 'Orange' });
@@ -1413,7 +1437,7 @@
              ];
 
              const submit = async () => {
-                 if(loading) return; // Prevent double click
+                 if(loading) return; 
                  if(!method || !form.amount) return showMsg(t('inputs_err'), 'error');
                  if(method.id==='recharge' && !form.phone) return showMsg(t('inputs_err'), 'error');
                  
@@ -1423,12 +1447,10 @@
 
                  setLoading(true);
                  try {
-                     // 1. Deduct Balance Immediately
                      await updateDoc(doc(db, "users", user.id), {
                          balance: Number(user.balance) - amt
                      });
 
-                     // 2. Create Withdraw Request
                      await addDoc(collection(db, "withdraws"), {
                         userId: user.id, username: user.username, amount: amt, method: method.name, details: form, status: 'pending', date: new Date().toISOString()
                      });
@@ -1482,7 +1504,6 @@
             );
         }
 
-        // --- HISTORY SCREEN (UPDATED: SHOWS DEPOSITS AND WITHDRAWS) ---
         function HistoryScreen({ user, t, back }) {
             const [list, setList] = useState([]);
             
@@ -1545,7 +1566,7 @@
             return React.createElement('div', { className: "animate-pop" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), "Back"),
                 React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gold-500" }, title),
-                React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap" }, content)
+                React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-cairo border border-white/5" }, content)
             );
         }
         
