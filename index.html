@@ -163,7 +163,8 @@
                 wait_admin: "حسابك قيد المراجعة، يرجى الانتظار...",
                 admin_dash: "لوحة التحكم",
                 select_country: "اختر الدولة",
-                exchange: "تحويل العملات", exchange_rate: "سعر الصرف", convert: "تحويل"
+                exchange: "تحويل العملات", exchange_rate: "سعر الصرف", convert: "تحويل",
+                processing: "جاري المعالجة...", execute: "تنفيذ العملية", req_sent: "تم إرسال الطلب بنجاح", req_wait: "سيتم مراجعة طلبك والموافقة عليه قريباً."
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -191,7 +192,8 @@
                 wait_admin: "Account under review, please wait...",
                 admin_dash: "Dashboard",
                 select_country: "Select Country",
-                exchange: "Exchange", exchange_rate: "Exchange Rate", convert: "Convert"
+                exchange: "Exchange", exchange_rate: "Exchange Rate", convert: "Convert",
+                processing: "Processing...", execute: "Execute", req_sent: "Request Sent", req_wait: "Your request is under review."
             }
         };
 
@@ -223,6 +225,20 @@
                     React.createElement('span', { className: "text-[10px] font-mono font-bold text-white" }, value)
                 )
              );
+        };
+
+        // --- NEW STATUS MODAL COMPONENT ---
+        const StatusModal = ({ title, msg, type='success', onClose }) => {
+            return React.createElement('div', { className: "fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in" },
+                React.createElement('div', { className: "bg-dark-900 border border-gold-500/30 w-full max-w-sm rounded-2xl p-6 relative animate-pop text-center" },
+                    React.createElement('div', { className: "w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center" },
+                        React.createElement(CheckCircle, { size: 40, className: "text-green-500 animate-pop" })
+                    ),
+                    React.createElement('h2', { className: "text-2xl font-bold text-white mb-2" }, title),
+                    React.createElement('p', { className: "text-gray-400 mb-6 text-sm" }, msg),
+                    React.createElement(Button, { full: true, onClick: onClose }, "OK")
+                )
+            );
         };
 
         const triggerConfetti = () => {
@@ -1321,11 +1337,13 @@
             );
         }
 
+        // --- DEPOSIT SCREEN (UPDATED: PROCESSING FEEDBACK + MODAL) ---
         function DepositScreen({ user, showMsg, t, settings, back }) {
              const [method, setMethod] = useState(null);
              const [amount, setAmount] = useState('');
              const [imgFile, setImgFile] = useState(null);
              const [loading, setLoading] = useState(false);
+             const [showSuccess, setShowSuccess] = useState(false);
 
              const METHODS = [
                  { id: 'attijari', name: t('method_bank'), color: 'text-orange-500', bg: 'bg-orange-500/10', icon: Landmark },
@@ -1335,17 +1353,25 @@
              ];
 
              const submit = async () => {
+                 if(loading) return; // Prevent Double Click
                  if(!method || !amount || !imgFile) return showMsg(t('inputs_err'), 'error');
                  setLoading(true);
                  try {
                      const base64Img = await convertToBase64(imgFile);
+                     // Using specific collection 'deposits' that admin reads
                      await addDoc(collection(db, "deposits"), {
                          userId: user.id, username: user.username, amount: Number(amount), method: method.name, status: 'pending', image: base64Img, date: new Date().toISOString()
                      });
-                     showMsg(t('success')); back();
+                     setShowSuccess(true);
                  } catch(e) { showMsg(t('error'), 'error'); }
                  setLoading(false);
              };
+
+             if (showSuccess) return React.createElement(StatusModal, { 
+                 title: t('req_sent'), 
+                 msg: t('req_wait'), 
+                 onClose: () => { setShowSuccess(false); back(); } 
+             });
 
              return React.createElement('div', { className: "animate-pop h-full flex flex-col" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
@@ -1366,16 +1392,18 @@
                             React.createElement(Upload, { className: "mx-auto text-gray-500 mb-2" }),
                             React.createElement('p', { className: "text-xs text-gray-400" }, imgFile ? imgFile.name : t('upload_proof'))
                         ),
-                        React.createElement(Button, { full: true, onClick: submit, disabled: loading }, loading ? "..." : t('execute'))
+                        React.createElement(Button, { full: true, onClick: submit, disabled: loading }, loading ? t('processing') : t('execute'))
                     )
                 )
             );
         }
 
-        // --- WITHDRAW SCREEN (FIXED: DEDUCTS BALANCE & CREATES REQUEST) ---
+        // --- WITHDRAW SCREEN (UPDATED: PROCESSING FEEDBACK + MODAL) ---
         function WithdrawScreen({ user, showMsg, t, back }) {
              const [method, setMethod] = useState(null);
              const [form, setForm] = useState({ amount: '', name: '', account: '', phone: '', network: 'Orange' });
+             const [loading, setLoading] = useState(false);
+             const [showSuccess, setShowSuccess] = useState(false);
              
              const METHODS = [
                  { id: 'bank', name: t('method_bank'), icon: Landmark, color: 'text-orange-500' },
@@ -1385,6 +1413,7 @@
              ];
 
              const submit = async () => {
+                 if(loading) return; // Prevent double click
                  if(!method || !form.amount) return showMsg(t('inputs_err'), 'error');
                  if(method.id==='recharge' && !form.phone) return showMsg(t('inputs_err'), 'error');
                  
@@ -1392,17 +1421,29 @@
                  if(amt <= 0) return showMsg("Invalid Amount", 'error');
                  if(Number(user.balance) < amt) return showMsg("Insufficient Balance", 'error');
 
-                 // 1. Deduct Balance Immediately
-                 await updateDoc(doc(db, "users", user.id), {
-                     balance: Number(user.balance) - amt
-                 });
+                 setLoading(true);
+                 try {
+                     // 1. Deduct Balance Immediately
+                     await updateDoc(doc(db, "users", user.id), {
+                         balance: Number(user.balance) - amt
+                     });
 
-                 // 2. Create Withdraw Request
-                 await addDoc(collection(db, "withdraws"), {
-                    userId: user.id, username: user.username, amount: amt, method: method.name, details: form, status: 'pending', date: new Date().toISOString()
-                 });
-                 showMsg(t('success')); back();
+                     // 2. Create Withdraw Request
+                     await addDoc(collection(db, "withdraws"), {
+                        userId: user.id, username: user.username, amount: amt, method: method.name, details: form, status: 'pending', date: new Date().toISOString()
+                     });
+                     setShowSuccess(true);
+                 } catch (e) {
+                     showMsg(t('error'), 'error');
+                 }
+                 setLoading(false);
              };
+
+             if (showSuccess) return React.createElement(StatusModal, { 
+                 title: t('req_sent'), 
+                 msg: t('req_wait'), 
+                 onClose: () => { setShowSuccess(false); back(); } 
+             });
 
              return React.createElement('div', { className: "animate-pop" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
@@ -1436,17 +1477,31 @@
                     (method.id === 'crypto') && React.createElement(React.Fragment, null,
                         React.createElement(Input, { placeholder: t('wallet_addr'), value: form.account, onChange: e=>setForm({...form, account:e.target.value}), icon: Disc })
                     ),
-                    React.createElement(Button, { full:true, onClick: submit }, t('execute'))
+                    React.createElement(Button, { full:true, onClick: submit, disabled: loading }, loading ? t('processing') : t('execute'))
                 )
             );
         }
 
+        // --- HISTORY SCREEN (UPDATED: SHOWS DEPOSITS AND WITHDRAWS) ---
         function HistoryScreen({ user, t, back }) {
             const [list, setList] = useState([]);
+            
             useEffect(() => {
-                const q = query(collection(db, "deposits"), where("userId", "==", user.id), orderBy("date", "desc"));
-                onSnapshot(q, s => setList(s.docs.map(d => d.data())));
+                const fetchHistory = async () => {
+                    const dQ = query(collection(db, "deposits"), where("userId", "==", user.id));
+                    const wQ = query(collection(db, "withdraws"), where("userId", "==", user.id));
+                    
+                    const [dSnap, wSnap] = await Promise.all([getDocs(dQ), getDocs(wQ)]);
+                    
+                    const dData = dSnap.docs.map(d => ({...d.data(), type: 'deposit'}));
+                    const wData = wSnap.docs.map(d => ({...d.data(), type: 'withdraw'}));
+                    
+                    const combined = [...dData, ...wData].sort((a,b) => new Date(b.date) - new Date(a.date));
+                    setList(combined);
+                };
+                fetchHistory();
             }, []);
+
             return React.createElement('div', { className: "animate-pop" },
                 React.createElement('div', { className: "flex items-center gap-2 mb-4" }, 
                      back && React.createElement('button', { onClick: back, className: "text-gold-500" }, React.createElement(ChevronRight)),
@@ -1455,9 +1510,18 @@
                 list.length === 0 
                 ? React.createElement('div', { className: "bg-dark-900 rounded-2xl p-6 text-center text-gray-500" }, "No records found")
                 : React.createElement('div', { className: "space-y-2" }, list.map((item, i) => 
-                    React.createElement('div', { key: i, className: "bg-dark-900 p-4 rounded-xl flex justify-between items-center" },
-                        React.createElement('div', {}, React.createElement('p', { className: "text-white font-bold" }, item.method), React.createElement('p', { className: "text-xs text-gray-500" }, new Date(item.date).toLocaleDateString())),
-                        React.createElement('div', { className: "text-right" }, React.createElement('p', { className: "text-gold-500 font-mono" }, `+${item.amount}`), React.createElement('p', { className: `text-[10px] ${item.status==='pending'?'text-yellow-500':'text-green-500'}` }, item.status))
+                    React.createElement('div', { key: i, className: "bg-dark-900 p-4 rounded-xl flex justify-between items-center border border-white/5" },
+                        React.createElement('div', {}, 
+                            React.createElement('p', { className: `font-bold ${item.type==='deposit'?'text-green-400':'text-red-400'}` }, 
+                                item.type === 'deposit' ? 'DEPOSIT' : 'WITHDRAW'
+                            ),
+                            React.createElement('p', { className: "text-xs text-white/80" }, item.method), 
+                            React.createElement('p', { className: "text-[10px] text-gray-500" }, new Date(item.date).toLocaleDateString())
+                        ),
+                        React.createElement('div', { className: "text-right" }, 
+                            React.createElement('p', { className: "text-white font-mono font-bold" }, item.type==='deposit' ? `+${item.amount}$` : `-${item.amount}$`), 
+                            React.createElement('span', { className: `text-[9px] px-2 py-0.5 rounded ${item.status==='pending'?'bg-yellow-500/20 text-yellow-500':(item.status==='approved'?'bg-green-500/20 text-green-500':'bg-red-500/20 text-red-500')}` }, item.status)
+                        )
                     )
                 ))
             );
