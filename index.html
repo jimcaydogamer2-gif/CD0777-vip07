@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Royal Club - VIP Activation Update</title>
+    <title>CD0777 Royal Club - Pro Admin & Odds Update</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -98,7 +98,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -135,11 +135,12 @@
                 recharge: "تعبئة الهاتف", network: "الشبكة", cnie: "رقم البطاقة الوطنية", rib: "رقم التعريف البنكي (RIB)",
                 wallet_addr: "عنوان المحفظة (USDT/Crypto)", select_network: "اختر الشبكة",
                 method_bank: "تحويل بنكي", method_cash: "كاش بلس / وافا", method_crypto: "عملات رقمية", method_recharge: "تعبئة رصيد",
-                win_chance: "احتمال الفوز", rtp: "نسبة العائد (RTP)",
+                win_chance: "احتمال الفوز", odd: "المعامل (ODD)",
                 pending_title: "تفعيل العضوية الملكية",
                 step_1: "سجل في 1xBet بكود: CD0777",
-                step_2: "انضم لقناة VIP تيليجرام",
-                wait_admin: "حسابك قيد المراجعة من الإدارة..."
+                step_2: "ارسل الايدي للادمن في تيليجرام",
+                wait_admin: "حسابك قيد المراجعة، يرجى الانتظار...",
+                admin_dash: "لوحة التحكم"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -160,11 +161,12 @@
                 recharge: "Mobile Recharge", network: "Network", cnie: "National ID (CNIE)", rib: "RIB / Account Num",
                 wallet_addr: "Wallet Address", select_network: "Select Network",
                 method_bank: "Bank Transfer", method_cash: "Cash Plus", method_crypto: "Crypto", method_recharge: "Mobile Recharge",
-                win_chance: "Win Chance", rtp: "RTP",
+                win_chance: "Win Chance", odd: "ODD",
                 pending_title: "Royal Membership Activation",
                 step_1: "Register 1xBet Code: CD0777",
-                step_2: "Join VIP Telegram",
-                wait_admin: "Account under admin review..."
+                step_2: "Send ID to Admin on Telegram",
+                wait_admin: "Account under review, please wait...",
+                admin_dash: "Dashboard"
             }
         };
 
@@ -188,12 +190,12 @@
             React.createElement('input', { ...props, className: `w-full bg-dark-900 border border-white/10 p-4 ${props.icon?'pr-12':''} rounded-xl text-white outline-none focus:border-gold-500 focus:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all placeholder:text-gray-600 shadow-inner ${props.className}` })
         );
 
-        // NEW: Win Chance Badge Component
-        const WinChanceBadge = ({ type, value, label }) => {
-             return React.createElement('div', { className: "absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg" },
-                React.createElement(Percent, { size: 12, className: "text-gold-500" }),
+        // UPDATED: Odds Badge Component (Displays Multiplier/ODD instead of %)
+        const OddsBadge = ({ value, label }) => {
+             return React.createElement('div', { className: "absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-gold-500/30 shadow-lg" },
+                React.createElement(Target, { size: 12, className: "text-gold-500" }),
                 React.createElement('div', { className: "flex flex-col leading-none" },
-                    React.createElement('span', { className: "text-[8px] text-gray-400 font-bold uppercase" }, label || "RTP"),
+                    React.createElement('span', { className: "text-[8px] text-gray-400 font-bold uppercase" }, label || "ODD"),
                     React.createElement('span', { className: "text-[10px] font-mono font-bold text-white" }, value)
                 )
              );
@@ -246,6 +248,7 @@
                     const unsub = onSnapshot(doc(db, "users", uid), (s) => {
                         if (s.exists()) {
                             setUser({ id: s.id, ...s.data() });
+                            // Banned check moved here
                             if(s.data().status === 'banned') {
                                 localStorage.removeItem('cd0777_uid');
                                 setUser(null);
@@ -282,7 +285,8 @@
             if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
-            // --- NEW: PENDING SCREEN (SURGICAL INSERTION) ---
+            // --- CRITICAL UPDATE: PENDING CHECK BEFORE MAIN APP ---
+            // This ensures users with 'pending' status CANNOT see the main app.
             if (user && user.status === 'pending') {
                 return React.createElement(PendingActivationScreen, { user, logout, t, isRTL });
             }
@@ -290,7 +294,7 @@
             // --- ADMIN PANEL ---
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
-            // --- GAMES (UPDATED VERSIONS) ---
+            // --- GAMES ---
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL });
             if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-keno') return React.createElement(KenoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
@@ -328,11 +332,13 @@
             );
         }
 
-        // --- NEW: PENDING SCREEN COMPONENT ---
+        // --- PENDING SCREEN (LOCKED UNTIL ADMIN APPROVES) ---
         function PendingActivationScreen({ user, logout, t, isRTL }) {
             return React.createElement('div', { className: "h-screen bg-dark-950 flex flex-col items-center justify-center p-6 text-center animate-fade-in", dir: isRTL?'rtl':'ltr' },
                 React.createElement(LockKeyhole, { size: 64, className: "text-gold-500 mb-6 animate-pulse" }),
                 React.createElement('h1', { className: "text-2xl font-black text-gold-500 mb-2 font-oswald uppercase tracking-wider" }, t('pending_title')),
+                React.createElement('div', { className: "bg-red-500/10 text-red-400 px-4 py-1 rounded-full text-xs font-bold mb-6 border border-red-500/20" }, "STATUS: PENDING"),
+                
                 React.createElement('p', { className: "text-gray-400 text-sm mb-8" }, t('wait_admin')),
                 
                 React.createElement('div', { className: "w-full max-w-sm bg-dark-900 border border-gold-500/30 rounded-2xl p-6 space-y-4 shadow-2xl" },
@@ -403,7 +409,7 @@
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl text-gray-300 hover:bg-white/5 btn-press" }, React.createElement(Icon, { size: 20 }), React.createElement('span', {}, label));
         const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all ${active?'text-gold-500 -translate-y-1 scale-110':'text-gray-500'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold" }, label));
 
-        // --- AUTH (SURGICAL UPDATE: STATUS PENDING) ---
+        // --- AUTH (UPDATED: SETS STATUS TO PENDING) ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); const [f, setF] = useState({ u:'', p:'', n:'', ph:'' });
             const submit = async () => {
@@ -413,7 +419,7 @@
                     if(isReg) {
                         const q = query(collection(db, "users"), where("username", "==", f.u)); if(!(await getDocs(q)).empty) throw new Error('Username taken');
                         const sz = (await getDocs(collection(db, "users"))).size;
-                        // UPDATE: status is now 'pending' by default
+                        // NEW: Force status to 'pending' on registration
                         const nu = { username: f.u, password: f.p, fullName: f.n, phone: f.ph, memberId: `CD${1001+sz}`, role: 'user', status: 'pending', coins: 100, balance: 0, completedTasks: [] };
                         const ref = await addDoc(collection(db, "users"), nu); localStorage.setItem('cd0777_uid', ref.id); setUser({id:ref.id, ...nu});
                     } else {
@@ -457,7 +463,6 @@
 
         // --- HOME ---
         function HomeScreen({ user, navTo, t }) {
-            // isPending logic removed from here as it's handled by main guard
             return React.createElement('div', { className: "space-y-6 animate-pop" },
                 React.createElement('div', { className: "relative aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl border border-white/10 hover:border-gold-500/40 transition-all transform hover:rotate-1" },
                     React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-dark-900 to-black" },
@@ -492,11 +497,11 @@
             return React.createElement('div', { className: "space-y-4 animate-pop" },
                 React.createElement('h2', { className: "text-gold-500 font-bold text-lg flex gap-2 items-center" }, React.createElement(Dices), t('casino')),
                 React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-                    React.createElement(GameCard, { title:t('crash'), sub:"97% RTP", color:"red", icon:Rocket, onClick:()=>navTo('game-crash') }),
-                    React.createElement(GameCard, { title:t('slots'), sub:"95% RTP", color:"purple", icon:Gem, onClick:()=>navTo('game-slots') }),
-                    React.createElement(GameCard, { title:t('limbo'), sub:"Dynamic RTP", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
-                    React.createElement(GameCard, { title:t('keno'), sub:"High Risk", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
-                    React.createElement(GameCard, { title:t('coinflip'), sub:"50/50 Chance", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') })
+                    React.createElement(GameCard, { title:t('crash'), sub:"3.00 ODD", color:"red", icon:Rocket, onClick:()=>navTo('game-crash') }),
+                    React.createElement(GameCard, { title:t('slots'), sub:"50.0 ODD", color:"purple", icon:Gem, onClick:()=>navTo('game-slots') }),
+                    React.createElement(GameCard, { title:t('limbo'), sub:"User ODD", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
+                    React.createElement(GameCard, { title:t('keno'), sub:"High ODD", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
+                    React.createElement(GameCard, { title:t('coinflip'), sub:"2.00 ODD", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') })
                 )
             );
         }
@@ -696,13 +701,13 @@
         const SettingsBtn = ({ icon: Icon, label, onClick, arrow, isRTL }) => React.createElement('button', { onClick, className: "w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-xl group transition-all" }, React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "p-2 bg-dark-950 rounded-lg text-gold-500 group-hover:scale-110 transition-transform" }, React.createElement(Icon, { size: 18 })), React.createElement('span', { className: "font-medium text-sm" }, label)), arrow && (isRTL ? React.createElement(ChevronLeft, { size: 16, className: "text-gray-600" }) : React.createElement(ChevronRight, { size: 16, className: "text-gray-600" })));
 
 
-        // --- ADMIN PANEL (SURGICALLY UPDATED) ---
+        // --- ADMIN PANEL (SURGICALLY UPDATED: DASHBOARD & ACTIVATION) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
-            const [tab, setTab] = useState('req'); // req, settings, users
+            const [tab, setTab] = useState('req'); // req, users, settings
             const [reqs, setReqs] = useState([]);
             const [users, setUsers] = useState([]);
             const [conf, setConf] = useState({ attijari_info: '', cashplus_info: '', paypal_info: '', binance_info: '' });
-            const [editingUser, setEditingUser] = useState(null); // ID of user being edited
+            const [editingUser, setEditingUser] = useState(null); // ID
             const [newBalance, setNewBalance] = useState('');
 
             useEffect(() => {
@@ -751,76 +756,92 @@
             };
 
             return React.createElement('div', { className: "min-h-screen bg-dark-950 p-6" },
+                // Header
                 React.createElement('div', { className: "flex justify-between items-center mb-8" },
-                    React.createElement('h1', { className: "text-3xl font-bold text-gold-500" }, "ADMIN CONTROL"),
+                    React.createElement('h1', { className: "text-3xl font-bold text-gold-500 flex items-center gap-2" }, React.createElement(LayoutDashboard), "DASHBOARD"),
                     React.createElement('button', { onClick: logout, className: "bg-red-900/20 text-red-500 p-2 rounded-lg" }, React.createElement(LogOut))
                 ),
                 
-                // Tabs
-                React.createElement('div', { className: "flex gap-2 mb-6" },
-                    React.createElement(Button, { onClick: ()=>setTab('req'), variant: tab==='req'?'gold':'dark', className: "flex-1" }, "Requests"),
-                    React.createElement(Button, { onClick: ()=>setTab('users'), variant: tab==='users'?'gold':'dark', className: "flex-1" }, "Users"),
-                    React.createElement(Button, { onClick: ()=>setTab('settings'), variant: tab==='settings'?'gold':'dark', className: "flex-1" }, "Settings")
+                // Stats Cards
+                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" },
+                    React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                        React.createElement('p', { className: "text-gray-400 text-xs uppercase" }, "Total Users"),
+                        React.createElement('p', { className: "text-2xl font-bold text-white" }, users.length)
+                    ),
+                    React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                        React.createElement('p', { className: "text-gray-400 text-xs uppercase" }, "Pending Deposits"),
+                        React.createElement('p', { className: "text-2xl font-bold text-gold-500" }, reqs.length)
+                    ),
+                    React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                        React.createElement('p', { className: "text-gray-400 text-xs uppercase" }, "Pending Users"),
+                        React.createElement('p', { className: "text-2xl font-bold text-yellow-500" }, users.filter(u=>u.status==='pending').length)
+                    )
                 ),
 
-                // Content
+                // Navigation Tabs
+                React.createElement('div', { className: "flex gap-2 mb-6 border-b border-white/10 pb-2" },
+                    React.createElement('button', { onClick: ()=>setTab('req'), className: `px-6 py-2 rounded-lg font-bold transition-all ${tab==='req'?'bg-gold-500 text-black':'text-gray-400 hover:bg-white/5'}` }, "Requests"),
+                    React.createElement('button', { onClick: ()=>setTab('users'), className: `px-6 py-2 rounded-lg font-bold transition-all ${tab==='users'?'bg-gold-500 text-black':'text-gray-400 hover:bg-white/5'}` }, "Users"),
+                    React.createElement('button', { onClick: ()=>setTab('settings'), className: `px-6 py-2 rounded-lg font-bold transition-all ${tab==='settings'?'bg-gold-500 text-black':'text-gray-400 hover:bg-white/5'}` }, "Settings")
+                ),
+
+                // --- TAB: REQUESTS ---
                 tab === 'req' && React.createElement('div', { className: "space-y-4" },
-                    reqs.length === 0 && React.createElement('div', { className: "text-center text-gray-500 py-10" }, "No pending requests"),
-                    reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
-                        React.createElement('div', { className: "flex justify-between mb-2" },
-                            React.createElement('span', { className: "font-bold text-white" }, r.username),
-                            React.createElement('span', { className: "text-gold-500 font-mono" }, `+${r.amount}`)
-                        ),
-                        React.createElement('div', { className: "flex justify-between text-xs text-gray-400 mb-4" },
-                            React.createElement('span', {}, r.method),
-                            React.createElement('span', {}, new Date(r.date).toLocaleString())
-                        ),
-                        // Image Preview (Simple)
-                        r.image && React.createElement('img', { src: r.image, className: "w-full h-32 object-cover rounded-lg mb-4 bg-black" }),
-                        
-                        React.createElement('div', { className: "flex gap-2" },
-                            React.createElement(Button, { onClick: ()=>handleReq(r, 'approve'), variant: 'green', full:true, className: "py-2" }, t('approve')),
-                            React.createElement(Button, { onClick: ()=>handleReq(r, 'reject'), variant: 'red', full:true, className: "py-2" }, t('reject'))
+                    reqs.length === 0 && React.createElement('div', { className: "text-center text-gray-500 py-10 italic" }, "No pending deposit requests"),
+                    reqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row gap-4" },
+                        r.image && React.createElement('img', { src: r.image, className: "w-full md:w-32 h-32 object-cover rounded-lg bg-black" }),
+                        React.createElement('div', { className: "flex-1" },
+                            React.createElement('div', { className: "flex justify-between mb-2" },
+                                React.createElement('span', { className: "font-bold text-white text-lg" }, r.username),
+                                React.createElement('span', { className: "text-gold-500 font-mono text-xl" }, `+${r.amount}`)
+                            ),
+                            React.createElement('div', { className: "text-sm text-gray-400 mb-4" },
+                                React.createElement('p', {}, `Method: ${r.method}`),
+                                React.createElement('p', {}, `Date: ${new Date(r.date).toLocaleString()}`)
+                            ),
+                            React.createElement('div', { className: "flex gap-2" },
+                                React.createElement(Button, { onClick: ()=>handleReq(r, 'approve'), variant: 'green', className: "py-2 px-6 text-xs" }, t('approve')),
+                                React.createElement(Button, { onClick: ()=>handleReq(r, 'reject'), variant: 'red', className: "py-2 px-6 text-xs" }, t('reject'))
+                            )
                         )
                     ))
                 ),
 
-                // NEW: Users Management Tab (Updated for Activation)
-                tab === 'users' && React.createElement('div', { className: "space-y-4" },
-                    React.createElement('h3', { className: "text-xl text-white font-bold" }, `Total Users: ${users.length}`),
-                    users.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col gap-3" },
-                        React.createElement('div', { className: "flex justify-between items-center" },
-                            React.createElement('div', {}, 
+                // --- TAB: USERS (WITH ACTIVATION) ---
+                tab === 'users' && React.createElement('div', { className: "space-y-2" },
+                    users.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex items-center justify-between gap-4" },
+                        React.createElement('div', {}, 
+                            React.createElement('div', { className: "flex items-center gap-2" },
                                 React.createElement('p', { className: "text-white font-bold" }, u.username),
-                                React.createElement('p', { className: "text-xs text-gray-500" }, u.memberId || 'No ID')
+                                u.status === 'pending' && React.createElement('span', { className: "bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded font-bold" }, "PENDING"),
+                                u.status === 'banned' && React.createElement('span', { className: "bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded font-bold" }, "BANNED")
                             ),
-                            React.createElement('div', { className: "text-right" },
-                                React.createElement('p', { className: "text-gold-500 font-mono font-bold" }, u.coins),
-                                React.createElement('span', { className: `text-[10px] px-2 py-0.5 rounded ${u.status==='active'?'bg-green-500/20 text-green-500':(u.status==='pending'?'bg-yellow-500/20 text-yellow-500':'bg-red-500/20 text-red-500')}` }, u.status)
-                            )
+                            React.createElement('p', { className: "text-xs text-gray-500" }, u.memberId || 'No ID'),
+                            React.createElement('p', { className: "text-gold-500 font-mono font-bold text-sm" }, `${u.coins} Coins`)
                         ),
                         
                         editingUser === u.id ? React.createElement('div', { className: "flex gap-2 items-center bg-black/20 p-2 rounded-lg" },
-                            React.createElement('input', { type:"number", placeholder:"New Balance", className:"bg-black border border-white/20 p-2 rounded w-full text-white", onChange:e=>setNewBalance(e.target.value) }),
-                            React.createElement(Button, { onClick:()=>updateUser(u.id, {coins: Number(newBalance)}), variant:'green', className:"py-2 px-4" }, "Save"),
-                            React.createElement('button', { onClick:()=>setEditingUser(null), className:"text-gray-400" }, React.createElement(X))
-                        ) : React.createElement('div', { className: "flex gap-2 mt-2" },
-                            React.createElement('button', { onClick:()=>{setEditingUser(u.id); setNewBalance(u.coins)}, className: "flex-1 bg-blue-500/10 text-blue-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(Edit3, {size:14}), "Balance"),
+                            React.createElement('input', { type:"number", placeholder:"New Balance", className:"bg-black border border-white/20 p-2 rounded w-20 text-white text-xs", onChange:e=>setNewBalance(e.target.value) }),
+                            React.createElement(Button, { onClick:()=>updateUser(u.id, {coins: Number(newBalance)}), variant:'green', className:"py-1 px-3 text-xs" }, "Save"),
+                            React.createElement('button', { onClick:()=>setEditingUser(null), className:"text-gray-400" }, React.createElement(X, {size:16}))
+                        ) : React.createElement('div', { className: "flex gap-2" },
+                            React.createElement('button', { onClick:()=>{setEditingUser(u.id); setNewBalance(u.coins)}, className: "bg-blue-500/10 text-blue-500 p-2 rounded-lg hover:bg-blue-500/20" }, React.createElement(Edit3, {size:16})),
                             
-                            // Activation Button for Pending Users
-                            u.status === 'pending' && React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "flex-1 bg-green-500/10 text-green-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-green-500/30" }, React.createElement(CheckCircle, {size:14}), "APPROVE"),
+                            // ACTIVATION BUTTON
+                            u.status === 'pending' && React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "bg-green-500/10 text-green-500 py-1 px-3 rounded-lg font-bold text-xs flex items-center gap-1 border border-green-500/30 hover:bg-green-500/20" }, React.createElement(CheckCircle, {size:14}), "ACTIVATE"),
                             
-                            u.status === 'active' 
-                                ? React.createElement('button', { onClick:()=>updateUser(u.id, {status:'banned'}), className: "flex-1 bg-orange-500/10 text-orange-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(Ban, {size:14}), "Ban")
-                                : (u.status === 'banned' && React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "flex-1 bg-green-500/10 text-green-500 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1" }, React.createElement(CheckCircle, {size:14}), "Unban")),
+                            u.status !== 'banned' 
+                                ? React.createElement('button', { onClick:()=>updateUser(u.id, {status:'banned'}), className: "bg-orange-500/10 text-orange-500 p-2 rounded-lg hover:bg-orange-500/20" }, React.createElement(Ban, {size:16}))
+                                : React.createElement('button', { onClick:()=>updateUser(u.id, {status:'active'}), className: "bg-green-500/10 text-green-500 p-2 rounded-lg hover:bg-green-500/20" }, React.createElement(CheckCircle, {size:16})),
                             
-                            React.createElement('button', { onClick:()=>deleteUser(u.id), className: "bg-red-500/10 text-red-500 p-2 rounded-lg" }, React.createElement(Trash2, {size:16}))
+                            React.createElement('button', { onClick:()=>deleteUser(u.id), className: "bg-red-500/10 text-red-500 p-2 rounded-lg hover:bg-red-500/20" }, React.createElement(Trash2, {size:16}))
                         )
                     ))
                 ),
 
-                tab === 'settings' && React.createElement('div', { className: "space-y-4" },
-                    React.createElement('p', { className: "text-gray-400 text-sm mb-4" }, "Set account numbers that users will see when depositing."),
+                // --- TAB: SETTINGS ---
+                tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md mx-auto" },
+                    React.createElement('p', { className: "text-gray-400 text-sm mb-4" }, "Configure Deposit Account Info"),
                     React.createElement(Input, { placeholder: "Attijari RIB/Info", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
                     React.createElement(Input, { placeholder: "Cash Plus Info", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
                     React.createElement(Input, { placeholder: "PayPal Email", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) }),
@@ -830,7 +851,7 @@
             );
         }
 
-        // --- UPDATED GAME: CRASH (NO GRAPH, PURE ROCKET) ---
+        // --- UPDATED GAME: CRASH (ODD UPDATE) ---
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL }) {
             const [gameState, setGameState] = useState('BETTING'); // BETTING, FLYING, CRASHED
             const [countdown, setCountdown] = useState(5);
@@ -861,12 +882,10 @@
             const startFlight = () => {
                 const r = Math.random();
                 let cp = 1;
-                // Game logic
                 if (r < 0.1) cp = 1.0 + Math.random() * 0.1; 
                 else if (r < 0.5) cp = 1.1 + Math.random(); 
                 else cp = 2 + Math.random() * 10; 
                 crashPointRef.current = cp;
-                
                 startTimeRef.current = Date.now();
                 setGameState('FLYING');
                 loop();
@@ -875,7 +894,6 @@
             const loop = () => {
                 const elapsed = (Date.now() - startTimeRef.current) / 1000;
                 const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.05);
-
                 if (nextMult >= crashPointRef.current) {
                     crash(crashPointRef.current);
                 } else {
@@ -922,38 +940,25 @@
                     React.createElement('span', { className: "font-bold text-red-500 tracking-widest" }, "CRASH (FIXED)"), 
                     React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                
-                // Pure Space Visual
                 React.createElement('div', { className: "flex-1 relative flex flex-col items-center justify-center overflow-hidden star-bg" },
-                    // NEW: Win Chance Badge
-                    React.createElement(WinChanceBadge, { value: "97.5%", label: "Theoretical RTP" }),
+                    // ODD Badge
+                    React.createElement(OddsBadge, { value: "3.00x", label: "Max ODD" }), // Example static high ODD hint
                     
-                    // Rocket Centered
                     gameState === 'FLYING' && React.createElement('div', { className: "animate-rocket-fly mb-10 transition-transform duration-75", style: { transform: `scale(${1 + multiplier/10})` } },
                          React.createElement(Rocket, { size: 100, className: "text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)] fill-red-600 rotate-[-45deg]" })
                     ),
-                    
-                    // Crash Explosion
                     gameState === 'CRASHED' && React.createElement('div', { className: "animate-pop flex flex-col items-center" },
                          React.createElement('div', { className: "text-6xl mb-4" }, "💥"),
                          React.createElement('h2', { className: "text-4xl font-black text-red-500 uppercase" }, t('crashed'))
                     ),
-
-                    // Counter
                     React.createElement('div', { className: `z-10 font-mono font-black text-6xl drop-shadow-2xl ${gameState==='CRASHED'?'text-red-500':'text-white'}` }, 
                         gameState === 'BETTING' ? `00:0${countdown}` : `${multiplier.toFixed(2)}x`
                     ),
-
-                    // Betting Status
                     gameState === 'BETTING' && React.createElement('p', { className: "mt-4 text-blue-400 font-bold animate-pulse" }, t('next_round')),
-
                     cashoutWin > 0 && React.createElement('div', { className: "absolute top-20 bg-green-500 text-black font-bold px-6 py-3 rounded-full animate-float-up shadow-lg z-30 text-xl" }, `+${cashoutWin} C`)
                 ),
-
-                // Controls
                 React.createElement('div', { className: "p-4 bg-dark-900 border-t border-white/10 flex gap-4 pb-safe", dir: isRTL?'rtl':'ltr' }, 
                     React.createElement('div', { className: "relative w-28" }, React.createElement('input', { type: "number", value: betAmount, onChange: e=>setBetAmount(Number(e.target.value)), disabled: gameState!=='BETTING' || activeBet, className: "w-full bg-black border border-white/20 rounded-xl text-center text-white font-bold p-3 outline-none" }), React.createElement(DollarSign, { size: 14, className: "absolute top-1/2 -translate-y-1/2 left-3 text-gold-500" })),
-                    
                     gameState === 'BETTING' 
                     ? (activeBet 
                         ? React.createElement(Button, { full: true, variant: 'dark', disabled: true }, t('bet_placed'))
@@ -965,14 +970,14 @@
             );
         }
 
-        // --- UPDATED GAME: COINFLIP (SURGICALLY UPDATED) ---
+        // --- UPDATED GAME: COINFLIP (ODD UPDATE) ---
         function CoinFlipGame({ user, back, showMsg, ArrowIcon, t }) {
             const [bet, setBet] = useState(100);
             const [choice, setChoice] = useState('Heads'); 
             const [flipping, setFlipping] = useState(false);
             const [rotation, setRotation] = useState(0);
             const [winAmt, setWinAmt] = useState(0);
-            const [shake, setShake] = useState(false); // UPDATED: State for loss effect
+            const [shake, setShake] = useState(false);
 
             const flip = async (e) => {
                 e.preventDefault();
@@ -984,11 +989,9 @@
 
                 const isHeads = Math.random() > 0.5;
                 const result = isHeads ? 'Heads' : 'Tails';
-                
                 const currentBase = rotation - (rotation % 360); 
                 const targetOffset = isHeads ? 0 : 180; 
                 const newRotation = currentBase + 1800 + targetOffset; 
-                
                 setRotation(newRotation);
 
                 setTimeout(async () => {
@@ -1000,7 +1003,6 @@
                         triggerConfetti();
                         showMsg(`WIN! ${result}`, 'success');
                     } else {
-                        // UPDATED: LOSS EFFECT HERE
                         showMsg(`LOSE. It was ${result}`, 'error');
                         setShake(true); 
                         setTimeout(()=>setShake(false), 500);
@@ -1011,29 +1013,24 @@
             return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up ${shake ? 'animate-shake-hard animate-flash-red' : ''}` },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-blue-500" }, "COIN FLIP (UPDATED)"), 
+                    React.createElement('span', { className: "font-bold text-blue-500" }, "COIN FLIP"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center gap-10 perspective-1000 relative" },
-                    // NEW: Win Chance Badge
-                    React.createElement(WinChanceBadge, { value: "50%", label: t('win_chance') }),
+                    // ODD Badge
+                    React.createElement(OddsBadge, { value: "2.00x", label: "Fixed ODD" }),
                     
                     winAmt > 0 && React.createElement('div', { className: "absolute top-20 text-green-500 font-bold text-4xl animate-pop z-20 drop-shadow-lg" }, `+${winAmt}`),
-                    
-                    // 3D Coin
                     React.createElement('div', { className: "relative w-48 h-48 coin-container", style: { transform: `rotateY(${rotation}deg)` } },
-                        // Front (Gold = Heads)
                         React.createElement('div', { className: "coin-face coin-front border-4 border-yellow-300 flex flex-col" }, 
                             React.createElement(Crown, { size: 60, className: "text-yellow-900 mb-2" }),
                             React.createElement('span', { className: "font-black text-yellow-900" }, "HEADS")
                         ),
-                        // Back (Silver = Tails)
                         React.createElement('div', { className: "coin-face coin-back border-4 border-gray-400 flex flex-col" }, 
                             React.createElement(Coins, { size: 60, className: "text-gray-800 mb-2" }),
                             React.createElement('span', { className: "font-black text-gray-800" }, "TAILS")
                         )
                     ),
-
                     React.createElement('div', { className: "flex bg-dark-800 p-1 rounded-xl gap-2" },
                         React.createElement('button', { onClick: ()=>setChoice('Heads'), className: `px-8 py-3 rounded-lg font-bold transition-all flex flex-col items-center ${choice==='Heads'?'bg-gold-500 text-black scale-105 shadow-lg':'text-gray-400 hover:bg-white/5'}` }, React.createElement(Crown, {size:20}), "Heads"),
                         React.createElement('button', { onClick: ()=>setChoice('Tails'), className: `px-8 py-3 rounded-lg font-bold transition-all flex flex-col items-center ${choice==='Tails'?'bg-gray-300 text-black scale-105 shadow-lg':'text-gray-400 hover:bg-white/5'}` }, React.createElement(Coins, {size:20}), "Tails")
@@ -1052,17 +1049,14 @@
             const [reels, setReels] = useState(['🍒','🍋','🍇']);
             const [spinning, setSpinning] = useState(false);
             const [status, setStatus] = useState("READY"); 
-
             const SYMBOLS = ['🍒', '🍋', '🍇', '💎', '7️⃣']; 
             
             const spin = async (e) => {
                 e.preventDefault();
                 if(Number(user.coins) < bet) return showMsg("No Balance", "error");
                 if(spinning) return;
-                
                 setSpinning(true); setStatus("SPINNING");
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-
                 let interval = setInterval(() => {
                     setReels([
                         SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)],
@@ -1070,21 +1064,16 @@
                         SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]
                     ]);
                 }, 100);
-
                 setTimeout(async () => {
                     clearInterval(interval);
-                    // Result Logic
                     const res = [
                         Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
                         Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)]),
                         Math.random() > 0.8 ? '7️⃣' : (Math.random()>0.6 ? '💎' : SYMBOLS[Math.floor(Math.random()*3)])
                     ];
-                    // Slight helper
                     if(Math.random() < 0.25) { res[1] = res[0]; }
-
                     setReels(res);
                     setSpinning(false);
-
                     let win = 0;
                     if(res[0] === res[1] && res[1] === res[2]) {
                         if(res[0] === '7️⃣') win = bet * 50;
@@ -1093,7 +1082,6 @@
                     } else if (res[0] === res[1] || res[1] === res[2] || res[0] === res[2]) {
                         win = Math.floor(bet * 1.5);
                     }
-
                     if(win > 0) {
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setStatus(`WIN +${win}`);
@@ -1111,12 +1099,9 @@
                     React.createElement('span', { className: "text-xs font-mono bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] relative" },
-                    // NEW: Win Chance Badge
-                    React.createElement(WinChanceBadge, { value: "95%", label: "Machine RTP" }),
-                    
-                    // Status Badge
+                    // ODD Badge
+                    React.createElement(OddsBadge, { value: "50.0x", label: "Max ODD" }),
                     React.createElement('div', { className: `mb-8 px-8 py-3 rounded-full font-black text-xl shadow-xl transition-all ${status.includes('WIN') ? 'bg-green-500 text-black scale-110' : (status==='NO LUCK' ? 'bg-red-500 text-white' : 'bg-dark-800 text-gold-500')}` }, status),
-
                     React.createElement('div', { className: "bg-gradient-to-b from-purple-900 to-black p-4 rounded-3xl border-4 border-gold-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]" },
                           React.createElement('div', { className: "flex gap-2 bg-black/50 p-4 rounded-xl border border-white/10" },
                            reels.map((r, i) => React.createElement('div', { key: i, className: "w-20 h-28 bg-white rounded-lg flex items-center justify-center text-5xl shadow-inner relative overflow-hidden" }, 
@@ -1133,27 +1118,22 @@
             );
         }
 
-        // --- UPDATED GAME: LIMBO (SURGICALLY UPDATED LOGIC & WIN CHANCE) ---
+        // --- UPDATED GAME: LIMBO (ODD LOGIC) ---
         function LimboGame({ user, back, showMsg, ArrowIcon, t }) {
             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
             const [result, setResult] = useState(null); 
             const [playing, setPlaying] = useState(false);
             
-            // Calculate Win Chance for Limbo: 99 / Target
-            const winChance = (99 / target).toFixed(2);
-            
             const play = async (e) => {
                 e.preventDefault();
                 if(Number(user.coins) < bet) return showMsg("No Balance", "error");
                 setPlaying(true); setResult(null);
-                
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
                 const r = Math.random() * 100; // 0.0 to 100.0
                 const rawOutcome = 99 / (r + 0.01); 
                 const outcome = Math.max(1.00, rawOutcome).toFixed(2);
-                
                 let count = 1.00;
                 
                 const interval = setInterval(() => {
@@ -1161,11 +1141,9 @@
                     if(count >= outcome) {
                         clearInterval(interval);
                         const isWin = Number(outcome) >= target; 
-                        
                         const winAmt = isWin ? Math.floor(bet * target) : 0;
                         setResult({ val: Number(outcome), win: isWin });
                         setPlaying(false);
-
                         if(isWin) {
                             updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt});
                             triggerConfetti();
@@ -1179,14 +1157,13 @@
             return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up` },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-orange-500" }, "LIMBO (PRO LOGIC)"), 
+                    React.createElement('span', { className: "font-bold text-orange-500" }, "LIMBO"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
                 React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 text-center relative" },
-                    // NEW: Dynamic Win Chance Badge
-                    React.createElement(WinChanceBadge, { value: `${winChance}%`, label: t('win_chance') }),
+                    // ODD Badge (Dynamic based on Target)
+                    React.createElement(OddsBadge, { value: `${target.toFixed(2)}x`, label: "Target ODD" }),
                     
-                    // Result Display
                     React.createElement('div', { className: "mb-10 relative" },
                         React.createElement('div', { className: "text-xs text-gray-500 font-bold mb-2 uppercase" }, "RESULT"),
                         React.createElement('div', { id: 'limbo-counter', className: `text-7xl font-black font-mono transition-all ${result ? (result.win ? 'text-green-500 drop-shadow-[0_0_20px_#22c55e]' : 'text-red-500 drop-shadow-[0_0_20px_#ef4444]') : 'text-white'}` }, 
@@ -1196,22 +1173,17 @@
                             result.win ? "WINNER!" : "CRASHED"
                         )
                     ),
-                    
-                    // Visual Bar
                     React.createElement('div', { className: "w-full h-4 bg-dark-800 rounded-full overflow-hidden relative border border-white/10" },
-                        // Target Marker
-                        React.createElement('div', { className: "absolute top-0 bottom-0 w-1 bg-white z-10", style: { left: `${Math.min(90, (target/10)*100)}%` } }), // Visual approx
-                        // Progress
+                        React.createElement('div', { className: "absolute top-0 bottom-0 w-1 bg-white z-10", style: { left: `${Math.min(90, (target/10)*100)}%` } }),
                         React.createElement('div', { className: `h-full transition-all duration-100 ${result?.win ? 'bg-green-500' : 'bg-red-500'}`, style: { width: result ? '100%' : '0%' } })
                     )
                 ),
                 React.createElement('div', { className: "p-6 bg-dark-900 space-y-4 pb-safe" },
                     React.createElement('div', { className: "flex justify-between text-sm text-gray-400" }, 
-                        React.createElement('span',{}, "Target Multiplier"), 
+                        React.createElement('span',{}, "Target Multiplier (ODD)"), 
                         React.createElement('span',{}, `${target.toFixed(2)}x`)
                     ),
                     React.createElement('input', { type: "range", min: "1.1", max: "10", step: "0.1", value: target, onChange: e=>setTarget(Number(e.target.value)) }),
-                    
                     React.createElement('div', { className: "flex gap-4" }, 
                         React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
                         React.createElement(Button, { full: true, onClick: play, disabled: playing }, t('play'))
@@ -1223,10 +1195,10 @@
         // --- UPDATED GAME: KENO ---
         function KenoGame({ user, back, showMsg, ArrowIcon, t }) {
             const [selected, setSelected] = useState([]);
-            const [drawn, setDrawn] = useState([]); // List of numbers
+            const [drawn, setDrawn] = useState([]);
             const [bet, setBet] = useState(100);
             const [playing, setPlaying] = useState(false);
-            const [gameResult, setGameResult] = useState(null); // { hits: 0, win: 0 }
+            const [gameResult, setGameResult] = useState(null);
 
             const toggle = (n) => {
                 if(playing) return;
@@ -1238,18 +1210,13 @@
                 e.preventDefault();
                 if(selected.length === 0) return showMsg("Pick numbers", "error");
                 if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                
                 setPlaying(true); setDrawn([]); setGameResult(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-
-                // Generate 10 randoms
                 const draws = [];
                 while(draws.length < 10) {
                     const r = Math.ceil(Math.random() * 40);
                     if(!draws.includes(r)) draws.push(r);
                 }
-
-                // Animate reveals one by one
                 let i = 0;
                 const int = setInterval(() => {
                     setDrawn(prev => [...prev, draws[i]]);
@@ -1268,12 +1235,9 @@
                 if(matches >= 5) mult = 3;
                 if(matches >= 7) mult = 10;
                 if(matches >= 9) mult = 50;
-                
                 const win = Math.floor(bet * mult);
-                
                 setGameResult({ hits: matches, win: win });
                 setPlaying(false);
-
                 if(win > 0) {
                     await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                     triggerConfetti();
@@ -1283,11 +1247,9 @@
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
                 React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900" }, 
                     React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO (ALIVE)"), 
+                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO"), 
                     React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
                 ),
-                
-                // Summary Modal Overlay
                 gameResult && React.createElement('div', { className: "absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in", onClick: ()=>setGameResult(null) },
                     React.createElement('div', { className: "bg-dark-900 p-8 rounded-2xl border border-white/20 text-center animate-pop" },
                         React.createElement('h2', { className: "text-2xl font-black text-white mb-2" }, gameResult.win > 0 ? "WINNER!" : "TRY AGAIN"),
@@ -1296,25 +1258,20 @@
                         React.createElement('button', { className: "mt-6 text-sm text-gray-500 underline" }, "Tap to close")
                     )
                 ),
-
                 React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center relative" },
-                    // NEW: Win Chance Badge
-                    React.createElement(WinChanceBadge, { value: "Risk: High", label: "Volatility" }),
-
+                    // ODD Badge
+                    React.createElement(OddsBadge, { value: "Up to 50x", label: "Max ODD" }),
                     React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm" },
                         Array(40).fill(0).map((_, i) => {
                             const n = i+1;
                             const isSel = selected.includes(n);
                             const isDrawn = drawn.includes(n);
                             const isHit = isSel && isDrawn;
-                            
                             let classes = "h-10 rounded-lg font-bold text-sm transition-all duration-300 ";
-                            
                             if (isHit) classes += "bg-green-500 text-black scale-110 shadow-[0_0_15px_#22c55e] z-10 animate-pop";
                             else if (isDrawn) classes += "bg-red-900/50 text-red-200";
                             else if (isSel) classes += "bg-white text-black";
                             else classes += "bg-dark-800 text-gray-600";
-                            
                             return React.createElement('button', { key: n, onClick: ()=>toggle(n), className: classes }, n);
                         })
                     )
