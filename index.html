@@ -162,7 +162,8 @@
                 step_2: "ارسل الايدي للادمن في تيليجرام",
                 wait_admin: "حسابك قيد المراجعة، يرجى الانتظار...",
                 admin_dash: "لوحة التحكم",
-                select_country: "اختر الدولة"
+                select_country: "اختر الدولة",
+                exchange: "تحويل العملات", exchange_rate: "سعر الصرف", convert: "تحويل"
             },
             en: {
                 welcome: "Welcome", login: "Login", register: "Register",
@@ -189,7 +190,8 @@
                 step_2: "Send ID to Admin on Telegram",
                 wait_admin: "Account under review, please wait...",
                 admin_dash: "Dashboard",
-                select_country: "Select Country"
+                select_country: "Select Country",
+                exchange: "Exchange", exchange_rate: "Exchange Rate", convert: "Convert"
             }
         };
 
@@ -306,7 +308,7 @@
             if (!user && view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
             if (!user && view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             
-            // --- PENDING SCREEN (UPDATED) ---
+            // --- PENDING SCREEN ---
             if (user && user.status === 'pending') {
                 return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg, settings });
             }
@@ -337,6 +339,7 @@
                     view === 'profile' && React.createElement(WalletScreen, { user, showMsg, t, isRTL, navTo }),
                     view === 'deposit' && React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') }),
                     view === 'withdraw' && React.createElement(WithdrawScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
+                    view === 'exchange' && React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
                     view === 'history' && React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') }),
                     view === 'settings' && React.createElement(SettingsScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
                     view === 'terms' && React.createElement(InfoPage, { title: t('terms'), content: settings.terms || "Terms...", back: ()=>navTo('profile') }),
@@ -352,36 +355,29 @@
             );
         }
 
-        // --- PENDING SCREEN (ELITE PRO VERSION) ---
+        // --- PENDING SCREEN ---
         function PendingActivationScreen({ user, logout, t, isRTL, showMsg, settings }) {
-            // Get links from Admin Settings (or default)
             const promoCode = settings?.promo_code || "CD0777";
             const telegramLink = settings?.telegram_link || "https://t.me/your_admin_link";
-            // MODIFIED: Added 1XBET Link retrieval
             const xbetLink = settings?.xbet_link || "https://refpa7921972.top/L?tag=d_3162621m_1573c_&site=3162621&ad=1573";
 
             const copyCode = (e) => {
-                e.stopPropagation(); // Prevent triggering link
+                e.stopPropagation();
                 e.preventDefault();
                 navigator.clipboard.writeText(promoCode);
                 showMsg(`Copied: ${promoCode}`);
             };
             
             return React.createElement('div', { className: "h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden", dir: isRTL?'rtl':'ltr' },
-                // Background Effects
                 React.createElement('div', { className: "absolute inset-0 luxury-bg opacity-90" }),
                 React.createElement('div', { className: "absolute top-0 left-0 w-full h-full star-bg opacity-40" }),
                 React.createElement('div', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] bg-gold-500/5 blur-[120px] rounded-full pointer-events-none" }),
                 
-                // --- ELITE MEMBERSHIP CARD (MODIFIED: Removed animate-flip) ---
-                // Removed 'animate-flip' and replaced with 'animate-fade-in' to prevent upside-down text
                 React.createElement('div', { className: "relative w-full max-w-sm aspect-[1.6/1] mb-8 animate-fade-in perspective-1000 group cursor-pointer" },
                     React.createElement('div', { className: "absolute inset-0 elite-card-bg rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 z-10 transition-transform transform group-hover:scale-105" },
-                        // Shine & Hologram
                         React.createElement('div', { className: "absolute inset-0 card-shine pointer-events-none z-20 opacity-30" }),
                         React.createElement('div', { className: "absolute inset-0 hologram pointer-events-none opacity-20" }),
                         
-                        // Card Header
                         React.createElement('div', { className: "flex justify-between items-start z-30" },
                             React.createElement('div', { className: "flex items-center gap-3" },
                                 React.createElement('div', { className: "w-10 h-10 rounded-full border-2 border-gold-500 flex items-center justify-center bg-black" },
@@ -395,7 +391,6 @@
                             React.createElement(Wifi, { size: 24, className: "text-white/50 rotate-90" })
                         ),
                         
-                        // BONUS SECTION (The main feature)
                         React.createElement('div', { className: "my-auto relative z-30" },
                              React.createElement('div', { className: "flex items-center gap-3 mb-1" },
                                 React.createElement('div', { className: "bg-gold-500/20 px-3 py-1 rounded text-gold-400 text-xs font-bold border border-gold-500/50" }, "WELCOME BONUS"),
@@ -410,7 +405,6 @@
                              )
                         ),
                         
-                        // Card Footer
                         React.createElement('div', { className: "mt-auto flex justify-between items-end z-30" },
                             React.createElement('div', {},
                                 React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold tracking-widest" }, "MEMBER"),
@@ -424,12 +418,10 @@
                     )
                 ),
 
-                // --- STEPS (Custom Links from Admin) ---
                 React.createElement('div', { className: "w-full max-w-sm space-y-4 relative z-10" },
                     React.createElement('div', { className: "bg-dark-900/80 backdrop-blur-md border border-white/10 p-5 rounded-2xl space-y-4" },
                         React.createElement('h3', { className: "text-center text-white font-bold mb-2 uppercase tracking-wide text-xs opacity-60" }, "Complete Activation"),
                         
-                        // MODIFIED: Step 1: 1xBet - Wrapped in Link to 1XBET
                         React.createElement('a', { href: xbetLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-green-500/50 hover:bg-green-900/10 transition-all cursor-pointer" },
                             React.createElement('div', { className: "flex items-center gap-3" },
                                 React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-green-600 to-green-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"),
@@ -443,7 +435,6 @@
                             )
                         ),
 
-                        // Step 2: Telegram
                         React.createElement('a', { href: telegramLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-blue-500/50 hover:bg-blue-900/10 transition-all" },
                             React.createElement('div', { className: "flex items-center gap-3" },
                                 React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-sky-300 flex items-center justify-center text-white shadow-lg" }, React.createElement(Send, { size: 14 })),
@@ -515,12 +506,11 @@
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl text-gray-300 hover:bg-white/5 btn-press" }, React.createElement(Icon, { size: 20 }), React.createElement('span', {}, label));
         const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all ${active?'text-gold-500 -translate-y-1 scale-110':'text-gray-500'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold" }, label));
 
-        // --- AUTH (UPDATED with Country & Auto-Prefix) ---
+        // --- AUTH ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); 
-            const [f, setF] = useState({ u:'', p:'', n:'', ph:'', country: 'MA' }); // Default Morocco
+            const [f, setF] = useState({ u:'', p:'', n:'', ph:'', country: 'MA' });
             
-            // Effect to update phone prefix when country changes
             useEffect(() => {
                 const c = COUNTRIES.find(c => c.code === f.country);
                 if(c && isReg) {
@@ -552,7 +542,6 @@
                     
                     isReg && React.createElement(Input, { icon: User, placeholder: t('name'), onChange: e=>setF({...f,n:e.target.value}) }),
                     
-                    // Country Select & Phone
                     isReg && React.createElement('div', { className: "flex gap-2" },
                         React.createElement('div', { className: "relative w-1/3" },
                             React.createElement('select', { value: f.country, onChange: e=>setF({...f, country: e.target.value}), className: "w-full h-full bg-dark-900 border border-white/10 rounded-xl text-white outline-none px-2 appearance-none text-center text-xl" },
@@ -589,7 +578,7 @@
             );
         }
 
-        // --- ADMIN PANEL (UPDATED with Links Config & Bonus Logic) ---
+        // --- ADMIN PANEL (UPDATED - APPROVED DEPOSIT GOES TO BALANCE) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
             const [tab, setTab] = useState('deposits'); 
             const [reqs, setReqs] = useState([]);
@@ -606,14 +595,12 @@
             }, []);
 
             const updateSt = async (uid, st) => {
-                // If activating, give the 1000 Bonus Coins + $10 automatically as promised on the card
                 const updates = { status: st };
                 if (st === 'active') {
-                    // Check if they already have coins to avoid double bonus if reactivating
                     const targetUser = usersList.find(u => u.id === uid);
                     if (targetUser && targetUser.coins === 0) {
                          updates.coins = 1000;
-                         updates.balance = 10; // Auto convert bonus to $10
+                         updates.balance = 10; 
                     }
                 }
                 await updateDoc(doc(db, "users", uid), updates);
@@ -623,7 +610,8 @@
             const handleDeposit = async (r, act) => {
                 if(act === 'app') {
                     const u = usersList.find(x => x.id === r.userId);
-                    if(u) await updateDoc(doc(db, "users", r.userId), { coins: Number(u.coins) + Number(r.amount) });
+                    // *** CRITICAL UPDATE: Add to BALANCE ($) NOT COINS ***
+                    if(u) await updateDoc(doc(db, "users", r.userId), { balance: Number(u.balance || 0) + Number(r.amount) });
                     await updateDoc(doc(db, "deposits", r.id), { status: 'approved' });
                 } else {
                     await updateDoc(doc(db, "deposits", r.id), { status: 'rejected' });
@@ -698,7 +686,6 @@
                     )),
 
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
-                        // Added Activation Links Config
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
                         React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
                         React.createElement(Input, { placeholder: "1XBET Reg Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
@@ -715,7 +702,7 @@
             );
         }
 
-        // --- HOUSE EDGE & LOGIC UPDATES ---
+        // --- GAMES ---
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL }) {
             const [gameState, setGameState] = useState('BETTING');
             const [countdown, setCountdown] = useState(5);
@@ -739,7 +726,6 @@
             }, [gameState, countdown]);
 
             const startFlight = () => {
-                // HOUSE EDGE LOGIC: 3% chance to crash instantly at 1.00x
                 if (Math.random() < 0.03) {
                     crashPointRef.current = 1.00;
                 } else {
@@ -753,7 +739,7 @@
 
             const loop = () => {
                 const elapsed = (Date.now() - startTimeRef.current) / 1000;
-                const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.08); // Speed up
+                const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.08); 
                 if (nextMult >= crashPointRef.current) {
                     crash(crashPointRef.current);
                 } else {
@@ -851,9 +837,6 @@
                 setTimeout(async () => {
                     clearInterval(interval);
                     const finalReels = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
-                    if(Math.random() < 0.15 && finalReels[0] === finalReels[1]) {
-                    }
-                    
                     setReels(finalReels);
                     setSpinning(false);
                     
@@ -863,7 +846,7 @@
                         else if(finalReels[0] === '💎') win = bet * 20;
                         else win = bet * 10;
                     } else if (finalReels[0] === finalReels[1] || finalReels[1] === finalReels[2]) {
-                        win = Math.floor(bet * 1.5); // Small win for 2 matches
+                        win = Math.floor(bet * 1.5);
                     }
                     
                     if(win > 0) {
@@ -1179,6 +1162,85 @@
             );
         }
 
+        // --- NEW EXCHANGE SCREEN ---
+        function ExchangeScreen({ user, showMsg, t, back }) {
+            const [amount, setAmount] = useState('');
+            const [mode, setMode] = useState('to_coins'); // 'to_coins' ($ -> C) or 'to_usd' (C -> $)
+            
+            const RATE = 100; // 1 USD = 100 COINS
+
+            const execute = async () => {
+                const val = Number(amount);
+                if(!val || val <= 0) return showMsg("Invalid Amount", "error");
+
+                if (mode === 'to_coins') {
+                    // USD -> Coins
+                    if (Number(user.balance) < val) return showMsg("Insufficient Balance ($)", "error");
+                    const coinsToAdd = val * RATE;
+                    await updateDoc(doc(db,"users",user.id), {
+                        balance: Number(user.balance) - val,
+                        coins: Number(user.coins) + coinsToAdd
+                    });
+                    showMsg(`Exchanged $${val} to ${coinsToAdd} Coins`, 'success');
+                } else {
+                    // Coins -> USD
+                    if (Number(user.coins) < val) return showMsg("Insufficient Coins", "error");
+                    const usdToAdd = val / RATE;
+                    await updateDoc(doc(db,"users",user.id), {
+                        coins: Number(user.coins) - val,
+                        balance: Number(user.balance) + usdToAdd
+                    });
+                    showMsg(`Exchanged ${val} Coins to $${usdToAdd.toFixed(2)}`, 'success');
+                }
+                setAmount('');
+            };
+
+            return React.createElement('div', { className: "animate-pop" },
+                React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
+                React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gold-500" }, t('exchange')),
+                
+                React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl border border-white/10 space-y-6" },
+                    // Rate Display
+                    React.createElement('div', { className: "flex justify-center" },
+                         React.createElement('div', { className: "bg-black/40 px-4 py-2 rounded-full border border-white/5 text-xs text-gray-400 flex items-center gap-2" },
+                            React.createElement(DollarSign, { size: 12, className: "text-green-500" }),
+                            "1.00",
+                            React.createElement(ArrowLeftRight, { size: 12 }),
+                            React.createElement(Gem, { size: 12, className: "text-gold-500" }),
+                            RATE
+                         )
+                    ),
+
+                    // Inputs
+                    React.createElement('div', { className: "relative" },
+                         React.createElement('div', { className: "flex justify-between text-xs text-gray-400 mb-1 px-1" },
+                             React.createElement('span', {}, mode === 'to_coins' ? "From (USD Balance)" : "From (Game Coins)"),
+                             React.createElement('span', { className: "text-white font-mono" }, mode === 'to_coins' ? `$${Number(user.balance).toFixed(2)}` : user.coins)
+                         ),
+                         React.createElement(Input, { type: "number", value: amount, onChange: e=>setAmount(e.target.value), icon: mode==='to_coins'?DollarSign:Gem, placeholder: "Amount to convert" })
+                    ),
+
+                    // Switcher
+                    React.createElement('div', { className: "flex justify-center" },
+                        React.createElement('button', { onClick: ()=>setMode(mode==='to_coins'?'to_usd':'to_coins'), className: "p-3 bg-gold-500 rounded-full text-black shadow-lg hover:scale-110 transition-transform" },
+                             React.createElement(ArrowUp, { size: 20, className: "rotate-0" }) // Using ArrowUp as vertical switch icon equivalent
+                        )
+                    ),
+                    
+                    // Result Preview
+                    React.createElement('div', { className: "bg-black/40 p-4 rounded-xl text-center border border-white/5" },
+                        React.createElement('p', { className: "text-xs text-gray-500 mb-1" }, "You Receive"),
+                        React.createElement('p', { className: "text-2xl font-black font-mono text-white flex items-center justify-center gap-2" },
+                            mode === 'to_coins' ? (amount ? (amount * RATE) : 0) : (amount ? (amount / RATE).toFixed(2) : '0.00'),
+                            mode === 'to_coins' ? React.createElement(Gem, { size: 20, className: "text-gold-500" }) : React.createElement(DollarSign, { size: 20, className: "text-green-500" })
+                        )
+                    ),
+
+                    React.createElement(Button, { full: true, onClick: execute }, t('convert'))
+                )
+            );
+        }
+
         function WalletScreen({ user, showMsg, t, isRTL, navTo }) {
             return React.createElement('div', { className: "space-y-6 animate-pop" },
                 React.createElement('div', { className: "bg-gradient-to-r from-gold-600 to-gold-400 p-6 rounded-2xl shadow-lg text-black relative overflow-hidden" },
@@ -1190,6 +1252,19 @@
                         React.createElement('button', { onClick: ()=>navTo('withdraw'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('withdraw'))
                     )
                 ),
+                
+                // Exchange Button
+                React.createElement('button', { onClick: ()=>navTo('exchange'), className: "w-full bg-dark-800 p-4 rounded-xl border border-gold-500/30 flex items-center justify-between group hover:bg-dark-700 transition-all" },
+                    React.createElement('div', { className: "flex items-center gap-3" },
+                        React.createElement('div', { className: "p-2 bg-gold-500/10 rounded-lg text-gold-500" }, React.createElement(ArrowLeftRight, { size: 20 })),
+                        React.createElement('div', { className: "text-left rtl:text-right" },
+                            React.createElement('p', { className: "font-bold text-white" }, t('exchange')),
+                            React.createElement('p', { className: "text-[10px] text-gray-400" }, "USD <-> Coins")
+                        )
+                    ),
+                    React.createElement(ChevronRight, { className: "text-gray-500 group-hover:text-gold-500 transition-colors" })
+                ),
+
                 React.createElement('div', { className: "bg-dark-900 rounded-2xl p-1" },
                     React.createElement(SettingsBtn, { icon: History, label: t('history'), onClick: ()=>navTo('history'), arrow:true, isRTL }),
                     React.createElement(SettingsBtn, { icon: FileText, label: t('terms'), onClick: ()=>navTo('terms'), arrow:true, isRTL }),
