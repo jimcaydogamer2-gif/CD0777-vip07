@@ -128,7 +128,7 @@
         import { createRoot } from 'react-dom/client';
         import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones, CircleDot, MoveUp, Mail, Star, Bell, Speaker } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc, limit, startAfter } from 'firebase/firestore';
 
         // --- 1. FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -2233,4 +2233,5 @@
     </script>
 </body>
 </html>
+
 
