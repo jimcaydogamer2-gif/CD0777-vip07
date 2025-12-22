@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CD0777 Elite Club - Pro Admin & VIP Activation</title>
+    <title>CD0777 Elite Club - Tier 1 Experience</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,12 +29,13 @@
                         'float-up': 'floatUp 1.5s ease-out forwards',
                         'pulse-glow': 'pulseGlow 1.5s infinite',
                         'slide-up': 'slideUp 0.4s ease-out forwards',
-                        'rocket-fly': 'rocketFly 2s ease-in-out infinite alternate',
+                        'rocket-fly': 'rocketFly 0.5s ease-in-out infinite alternate',
                         'shine': 'shine 2s infinite',
                         'spin-slow': 'spin 1s linear infinite',
                         'win-pulse': 'winPulse 0.8s infinite alternate',
                         'loss-shake': 'lossShake 0.5s',
                         'gold-rain': 'goldRain 3s linear infinite',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
                     },
                     keyframes: {
                         pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
@@ -44,11 +45,12 @@
                         floatUp: { '0%': { transform: 'translateY(0) scale(1)', opacity: '1' }, '100%': { transform: 'translateY(-50px) scale(1.2)', opacity: '0' } },
                         pulseGlow: { '0%, 100%': { boxShadow: '0 0 10px #FFD700' }, '50%': { boxShadow: '0 0 25px #FFD700' } },
                         slideUp: { '0%': { transform: 'translateY(50px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-                        rocketFly: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(-20px)' } },
+                        rocketFly: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(-5px)' } },
                         shine: { '0%': { backgroundPosition: '200% center' }, '100%': { backgroundPosition: '-200% center' } },
                         winPulse: { '0%': { transform: 'scale(1)', filter: 'brightness(1)' }, '100%': { transform: 'scale(1.05)', filter: 'brightness(1.3)' } },
                         lossShake: { '0%, 100%': { transform: 'translate(0, 0)' }, '25%': { transform: 'translate(-5px, 5px)' }, '50%': { transform: 'translate(5px, -5px)' }, '75%': { transform: 'translate(-5px, -5px)' } },
-                        goldRain: { '0%': { backgroundPosition: '0 0' }, '100%': { backgroundPosition: '0 1000px' } }
+                        goldRain: { '0%': { backgroundPosition: '0 0' }, '100%': { backgroundPosition: '0 1000px' } },
+                        slideInRight: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(0)' } }
                     }
                 }
             }
@@ -56,8 +58,8 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Oswald:wght@500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #020617; color: #fff; overflow: hidden; touch-action: manipulation; }
-        .glass-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.08); }
+        body { background-color: #020617; color: #fff; overflow: hidden; touch-action: manipulation; font-family: 'Cairo', sans-serif; }
+        .glass-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.08); }
         .luxury-bg { background-image: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
         input, select, button, textarea { outline: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 4px; }
@@ -72,12 +74,9 @@
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         
-        .confetti-piece { position: absolute; width: 8px; height: 8px; background: #FFD700; animation: fall 3s linear forwards; pointer-events: none; z-index: 100; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        .btn-press:active { transform: scale(0.95); transition: transform 0.05s; }
         
-        .btn-press:active { transform: scale(0.95); transition: transform 0.1s; }
-        
-        .slot-spin { animation: slotSpin 0.1s linear infinite; }
+        .slot-spin { animation: slotSpin 0.08s linear infinite; }
         @keyframes slotSpin { 0% { transform: translateY(-20px); filter: blur(5px); } 100% { transform: translateY(20px); filter: blur(5px); } }
 
         .coin-container { transform-style: preserve-3d; transition: transform 1s cubic-bezier(0.4, 2, 0.55, 0.44); }
@@ -96,8 +95,7 @@
         
         .loader { border: 3px solid rgba(255,255,255,0.1); border-left-color: #FFD700; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         
-        /* New Luxury Effects */
-        .glass-modal { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 215, 0, 0.1); }
+        .glass-modal { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 215, 0, 0.1); }
         .text-glow { text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700; }
         .text-glow-red { text-shadow: 0 0 20px #ef4444, 0 0 40px #991b1b; }
         .cracked-screen {
@@ -107,12 +105,6 @@
                 linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.1) 50%, transparent 52%);
             box-shadow: inset 0 0 150px rgba(185, 28, 28, 0.5);
             background-size: 100% 100%, 200% 200%;
-        }
-        .gold-sparkle {
-            background-image: radial-gradient(white 10%, transparent 20%);
-            background-size: 10px 10px;
-            animation: goldRain 2s linear infinite;
-            opacity: 0.5;
         }
     </style>
 </head>
@@ -132,9 +124,9 @@
     </script>
 
     <script type="module">
-        import React, { useState, useEffect, useRef } from 'react';
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones, CircleDot, MoveUp, Mail, Star } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones, CircleDot, MoveUp, Mail, Star, Bell, Speaker } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -150,29 +142,160 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- HELPER: HOUSE EDGE LOGIC (RIGGED) ---
-        // 80% chance the house wins/interferes
-        const shouldHouseWin = () => Math.random() < 0.8;
+        // --- TIER 1: SOUND ENGINE (Procedural Audio) ---
+        const AudioSys = {
+            ctx: null,
+            init: () => {
+                if (!AudioSys.ctx) {
+                    AudioSys.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if(AudioSys.ctx.state === 'suspended') AudioSys.ctx.resume();
+            },
+            playTone: (freq, type, duration, vol=0.1) => {
+                if(!AudioSys.ctx) return;
+                const osc = AudioSys.ctx.createOscillator();
+                const gain = AudioSys.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, AudioSys.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, AudioSys.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(AudioSys.ctx.destination);
+                osc.start();
+                osc.stop(AudioSys.ctx.currentTime + duration);
+            },
+            click: () => { AudioSys.init(); AudioSys.playTone(800, 'triangle', 0.05, 0.05); },
+            success: () => { 
+                AudioSys.init(); 
+                [440, 554, 659].forEach((f,i) => setTimeout(() => AudioSys.playTone(f, 'sine', 0.3, 0.1), i*100)); 
+            },
+            error: () => { 
+                AudioSys.init(); 
+                AudioSys.playTone(150, 'sawtooth', 0.3, 0.1); 
+            },
+            spin: () => { AudioSys.init(); AudioSys.playTone(200, 'square', 0.05, 0.03); },
+            win: () => {
+                AudioSys.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                notes.forEach((n, i) => setTimeout(() => AudioSys.playTone(n, 'square', 0.2, 0.1), i*120));
+            },
+            crash: () => {
+                AudioSys.init();
+                const bufferSize = AudioSys.ctx.sampleRate * 0.5;
+                const buffer = AudioSys.ctx.createBuffer(1, bufferSize, AudioSys.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = AudioSys.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = AudioSys.ctx.createGain();
+                gain.gain.setValueAtTime(0.2, AudioSys.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + 0.5);
+                noise.connect(gain);
+                gain.connect(AudioSys.ctx.destination);
+                noise.start();
+            },
+            coins: () => {
+                 AudioSys.init();
+                 for(let i=0; i<5; i++) setTimeout(()=> AudioSys.playTone(2000 + Math.random()*1000, 'sine', 0.1, 0.05), i*50);
+            }
+        };
 
+        // --- TIER 1: HAPTICS & UX ---
+        const hapticFeedback = (type) => {
+            if (navigator.vibrate) {
+                if(type === 'soft') navigator.vibrate(10);
+                if(type === 'success') navigator.vibrate([50, 50, 50]);
+                if(type === 'error') navigator.vibrate([50, 100, 50]);
+                if(type === 'impact') navigator.vibrate(40);
+            }
+        };
+
+        // --- TIER 1: CANVAS VFX (PARTICLE SYSTEM) ---
+        const WinParticles = ({ active }) => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                if(!active) return;
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                let particles = [];
+                for(let i=0; i<100; i++) {
+                    particles.push({
+                        x: canvas.width/2, y: canvas.height/2,
+                        vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15,
+                        life: 1, color: Math.random() > 0.5 ? '#FFD700' : '#FFF'
+                    });
+                }
+                const render = () => {
+                    ctx.clearRect(0,0, canvas.width, canvas.height);
+                    particles.forEach((p, i) => {
+                        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.01;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+                        ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fill();
+                        if(p.life <= 0) particles.splice(i, 1);
+                    });
+                    if(particles.length > 0) requestAnimationFrame(render);
+                };
+                render();
+            }, [active]);
+            if(!active) return null;
+            return React.createElement('canvas', { ref: canvasRef, className: "fixed inset-0 pointer-events-none z-[70]" });
+        };
+
+        // --- TIER 1: COMMUNITY CHAT WIDGET ---
+        const ChatWidget = ({ user, t, isRTL }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [msgs, setMsgs] = useState([
+                { u: 'Ahmed_99', m: 'Big win on Crash! x50 🚀', t: 'Just now' },
+                { u: 'SarahPro', m: 'Anyone playing Slots?', t: '1m ago' },
+                { u: 'CasinoKing', m: 'This platform is fire 🔥', t: '2m ago' }
+            ]);
+            const FAKE_MSGS = ["Just cashed out $500!", "Crash is rigged today lol", "x100 incoming on Plinko", "Who wants a code?", "Lost it all... again", "Admin is fast today", "Nice update!"];
+            const FAKE_USERS = ["Momo_X", "RajaClub", "Wydad_Fan", "CryptoWhale", "Hassan22", "Layla_Q"];
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    if(Math.random() > 0.7) {
+                        const newMsg = { u: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)], m: FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)], t: 'Just now' };
+                        setMsgs(prev => [newMsg, ...prev.slice(0, 8)]);
+                    }
+                }, 4000);
+                return () => clearInterval(interval);
+            }, []);
+            return React.createElement(React.Fragment, null,
+                React.createElement('button', { onClick: () => { setIsOpen(!isOpen); AudioSys.click(); }, className: "fixed bottom-24 right-4 z-40 bg-gold-500 text-black p-3 rounded-full shadow-[0_0_20px_#FFD700] btn-press" }, React.createElement(MessageCircle, { size: 24 })),
+                isOpen && React.createElement('div', { className: `fixed inset-y-0 right-0 w-72 bg-dark-950/95 border-l border-gold-500/20 backdrop-blur-xl z-50 p-4 flex flex-col transition-transform ${isRTL?'left-0 border-r border-l-0':''} animate-slide-in-right` },
+                    React.createElement('div', { className: "flex justify-between items-center mb-4 border-b border-white/10 pb-2" }, React.createElement('h3', { className: "text-gold-500 font-bold" }, "Elite Chat"), React.createElement('button', { onClick: ()=>setIsOpen(false) }, React.createElement(X, { className: "text-gray-400" }))),
+                    React.createElement('div', { className: "flex-1 overflow-y-auto space-y-3 no-scrollbar" },
+                        msgs.map((m, i) => React.createElement('div', { key: i, className: "bg-white/5 p-3 rounded-lg border border-white/5 animate-fade-in" },
+                            React.createElement('div', { className: "flex justify-between items-baseline mb-1" }, React.createElement('span', { className: "text-gold-500 text-xs font-bold" }, m.u), React.createElement('span', { className: "text-gray-500 text-[9px]" }, m.t)),
+                            React.createElement('p', { className: "text-xs text-gray-200" }, m.m)
+                        ))
+                    ),
+                    React.createElement('div', { className: "mt-2 pt-2 border-t border-white/10" }, React.createElement('input', { disabled: true, placeholder: "Chat disabled for non-VIP", className: "w-full bg-black/40 text-xs p-2 rounded border border-white/5 text-center cursor-not-allowed" }))
+                )
+            );
+        };
+
+        // --- TIER 1: LIVE ACTIVITY TICKER ---
+        const LiveTicker = ({ t }) => {
+            const [ticker, setTicker] = useState("Welcome to CD0777 Elite Club");
+            useEffect(() => {
+                const ACTIONS = ["User **82 just withdrew $200 via Bank", "**99 Hit x50 on Crash!", "**12 Deposited $50 via CashPlus", "**05 Won 5000 Coins in Plinko"];
+                const int = setInterval(() => { setTicker(ACTIONS[Math.floor(Math.random() * ACTIONS.length)]); }, 5000);
+                return () => clearInterval(int);
+            }, []);
+            return React.createElement('div', { className: "bg-black/40 border-b border-white/5 py-1 px-4 flex justify-center overflow-hidden" }, React.createElement('p', { className: "text-[10px] text-gray-400 whitespace-nowrap animate-pulse flex items-center gap-2" }, React.createElement(CircleDot, { size: 8, className: "text-green-500 animate-ping" }), ticker));
+        };
+
+        const shouldHouseWin = () => Math.random() < 0.8;
         const logGame = async (userId, username, game, bet, win, profit) => {
             if(!userId || userId === 'admin') return;
-            try {
-                await addDoc(collection(db, "game_logs"), {
-                    userId, username, game, bet, win, profit, date: new Date().toISOString()
-                });
-            } catch(e) { console.error("Log Error", e); }
+            try { await addDoc(collection(db, "game_logs"), { userId, username, game, bet, win, profit, date: new Date().toISOString() }); } catch(e) { console.error("Log Error", e); }
         };
 
         // --- CONSTANTS ---
-        const COUNTRIES = [
-            { code: 'MA', name: 'Morocco', prefix: '+212', flag: '🇲🇦' },
-            { code: 'DZ', name: 'Algeria', prefix: '+213', flag: '🇩🇿' },
-            { code: 'TN', name: 'Tunisia', prefix: '+216', flag: '🇹🇳' },
-            { code: 'EG', name: 'Egypt', prefix: '+20', flag: '🇪🇬' },
-            { code: 'SA', name: 'Saudi Arabia', prefix: '+966', flag: '🇸🇦' },
-            { code: 'AE', name: 'UAE', prefix: '+971', flag: '🇦🇪' },
-            { code: 'US', name: 'USA', prefix: '+1', flag: '🇺🇸' },
-        ];
+        const COUNTRIES = [{ code: 'MA', name: 'Morocco', prefix: '+212', flag: '🇲🇦' }, { code: 'DZ', name: 'Algeria', prefix: '+213', flag: '🇩🇿' }, { code: 'TN', name: 'Tunisia', prefix: '+216', flag: '🇹🇳' }, { code: 'EG', name: 'Egypt', prefix: '+20', flag: '🇪🇬' }, { code: 'SA', name: 'Saudi Arabia', prefix: '+966', flag: '🇸🇦' }, { code: 'AE', name: 'UAE', prefix: '+971', flag: '🇦🇪' }, { code: 'US', name: 'USA', prefix: '+1', flag: '🇺🇸' }];
 
         const TEXTS = {
             ar: {
@@ -234,21 +357,28 @@
 
         // --- COMPONENTS ---
         const Button = ({ children, onClick, disabled, variant='gold', full, className='', icon: Icon, loading }) => {
-            const base = "relative font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 btn-press disabled:opacity-50 disabled:grayscale select-none disabled:pointer-events-none";
+            const base = "relative font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 btn-press disabled:opacity-50 disabled:grayscale select-none disabled:pointer-events-none overflow-hidden";
             const styles = {
                 gold: 'bg-gradient-to-b from-[#FFD700] to-[#B8860B] text-black shadow-[0_4px_15px_rgba(255,215,0,0.3)] border border-[#FFD700]',
                 green: 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white border border-emerald-500 shadow-[0_4px_15px_rgba(16,185,129,0.3)]',
                 red: 'bg-gradient-to-b from-red-500 to-red-700 text-white border border-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.3)]',
                 dark: 'bg-dark-800 text-gold-500 border border-gold-500/30 hover:bg-dark-700'
             };
-            return React.createElement('button', { type: "button", onClick, disabled: disabled || loading, className: `${base} ${styles[variant]} ${full?'w-full':''} ${className}` }, 
+            const clickHandler = (e) => {
+                if(!disabled && !loading) {
+                    AudioSys.click();
+                    hapticFeedback('soft');
+                    onClick && onClick(e);
+                }
+            }
+            return React.createElement('button', { type: "button", onClick: clickHandler, disabled: disabled || loading, className: `${base} ${styles[variant]} ${full?'w-full':''} ${className}` }, 
                 loading ? React.createElement('div', { className: "loader" }) : React.createElement(React.Fragment, null, Icon && React.createElement(Icon, { size: 20 }), children)
             );
         };
 
         const Input = (props) => React.createElement('div', { className: "relative group w-full" },
             props.icon && React.createElement(props.icon, { size: 18, className: "absolute top-1/2 -translate-y-1/2 right-4 text-gray-500 group-focus-within:text-gold-500 transition-colors" }),
-            React.createElement('input', { ...props, className: `w-full bg-dark-900 border border-white/10 p-4 ${props.icon?'pr-12':''} rounded-xl text-white outline-none focus:border-gold-500 focus:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all placeholder:text-gray-600 shadow-inner ${props.className}` })
+            React.createElement('input', { ...props, className: `w-full bg-dark-900 border border-white/10 p-4 ${props.icon?'pr-12':''} rounded-xl text-white outline-none focus:border-gold-500 focus:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all placeholder:text-gray-600 shadow-inner ${props.className}`, onFocus: () => AudioSys.init() })
         );
 
         const OddsBadge = ({ value, label }) => {
@@ -262,6 +392,7 @@
         };
 
         const StatusModal = ({ title, msg, type='success', onClose }) => {
+            useEffect(() => { type==='success'?AudioSys.success():AudioSys.error(); }, []);
             return React.createElement('div', { className: "fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in" },
                 React.createElement('div', { className: "bg-dark-900 border border-gold-500/30 w-full max-w-sm rounded-2xl p-6 relative animate-pop text-center" },
                     React.createElement('div', { className: "w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center" },
@@ -274,14 +405,16 @@
             );
         };
 
-        // --- NEW: LUXURY GAME RESULT OVERLAY (PROFESSIONAL) ---
         const GameResultModal = ({ win, amount, onClose, t }) => {
             useEffect(() => {
+                if(win) { AudioSys.win(); hapticFeedback('success'); }
+                else { AudioSys.error(); hapticFeedback('error'); }
                 const timer = setTimeout(onClose, 2500);
                 return () => clearTimeout(timer);
             }, [onClose]);
 
             return React.createElement('div', { className: "fixed inset-0 z-[60] flex items-center justify-center glass-modal animate-fade-in" },
+                React.createElement(WinParticles, { active: win }),
                 !win && React.createElement('div', { className: "cracked-screen animate-loss-shake" }),
                 win && React.createElement('div', { className: "absolute inset-0 gold-sparkle pointer-events-none" }),
                 
@@ -305,19 +438,6 @@
             );
         };
 
-        const triggerConfetti = () => {
-            const colors = ['#FFD700', '#FFFFFF', '#FFA500'];
-            for(let i=0; i<80; i++) {
-                const el = document.createElement('div');
-                el.className = 'confetti-piece';
-                el.style.left = Math.random() * 100 + 'vw';
-                el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                el.style.animationDuration = (Math.random() * 2 + 1) + 's';
-                document.body.appendChild(el);
-                setTimeout(() => el.remove(), 3000);
-            }
-        };
-
         const convertToBase64 = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -339,7 +459,13 @@
 
             const t = (k) => TEXTS[lang][k] || k;
             
-            useEffect(() => { setTimeout(() => setSplash(false), 2500); }, []);
+            useEffect(() => { 
+                const initAudio = () => AudioSys.init();
+                window.addEventListener('click', initAudio, { once: true });
+                setTimeout(() => setSplash(false), 2500); 
+                return () => window.removeEventListener('click', initAudio);
+            }, []);
+            
             useEffect(() => { if(db) onSnapshot(doc(db, "settings", "global"), (s) => s.exists() && setSettings(s.data())); }, []);
 
             useEffect(() => {
@@ -358,8 +484,13 @@
 
             useEffect(() => { if (user && view === 'auth') setView(user.role === 'admin' ? 'admin' : 'home'); }, [user]);
 
-            const showMsg = (msg, type='success') => { setNotify({msg, type}); setTimeout(()=>setNotify(null), 3000); };
-            const navTo = (v) => { setView(v); setMenuOpen(false); };
+            const showMsg = (msg, type='success') => { 
+                setNotify({msg, type}); 
+                if(type === 'success') AudioSys.coins();
+                else hapticFeedback('error');
+                setTimeout(()=>setNotify(null), 3000); 
+            };
+            const navTo = (v) => { setView(v); setMenuOpen(false); AudioSys.click(); };
             const logout = () => { localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth'); };
             const isRTL = lang === 'ar';
             const ArrowIcon = isRTL ? ChevronRight : ChevronLeft;
@@ -372,9 +503,8 @@
             if (user && user.status === 'pending') return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg, settings });
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
-            const GameProps = { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL, db, logGame, triggerConfetti };
+            const GameProps = { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL, db, logGame };
 
-            // Game Views
             if (view === 'game-crash') return React.createElement(CrashGame, GameProps);
             if (view === 'game-slots') return React.createElement(SlotsGame, GameProps);
             if (view === 'game-keno') return React.createElement(KenoGame, GameProps);
@@ -387,14 +517,14 @@
             if (view === 'game-hilo') return React.createElement(HiLoGame, GameProps);
 
             return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
-                notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 animate-pop glass-panel w-max max-w-[90%] ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
+                notify && React.createElement('div', { className: `fixed top-12 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 animate-pop glass-panel w-max max-w-[90%] ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
                     notify.type==='success'?React.createElement(CheckCircle,{size:24, className:"text-green-400"}):React.createElement(XCircle,{size:24, className:"text-red-400"}), 
                     React.createElement('span', { className: "font-bold text-sm" }, notify.msg)
                 ),
-                
+                React.createElement(LiveTicker, { t }),
                 React.createElement(Header, { user, toggleMenu: ()=>setMenuOpen(true) }),
                 menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, lang, setLang, settings, logout }),
-                
+                React.createElement(ChatWidget, { user, t, isRTL }),
                 React.createElement('main', { className: "flex-1 overflow-y-auto p-5 pb-28 z-10 scrollbar-hide" },
                     view === 'home' && React.createElement(HomeScreen, { user, navTo, t }),
                     view === 'casino' && React.createElement(CasinoScreen, { navTo, t }),
@@ -408,8 +538,6 @@
                     view === 'terms' && React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>navTo('profile'), settings }),
                     view === 'policy' && React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>navTo('profile'), settings })
                 ),
-
-                // NAV BAR HIDDEN IN SETTINGS
                 view !== 'settings' && React.createElement('nav', { className: "fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl z-40 flex justify-around items-center shadow-2xl border border-white/10 backdrop-blur-md" },
                     React.createElement(NavBtn, { icon: Home, label: t('home'), active: view==='home', onClick:()=>navTo('home') }),
                     React.createElement(NavBtn, { icon: Dices, label: t('casino'), active: view==='casino', onClick:()=>navTo('casino') }),
@@ -418,7 +546,6 @@
                 )
             );
         }
-
         // --- AUTH ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); 
@@ -433,6 +560,7 @@
 
             const submit = async () => {
                 if(loading) return;
+                AudioSys.click();
                 if(!f.u || !f.p) return showMsg(t('inputs_err'), 'error');
                 if(isReg && !agreeTerms) return showMsg(t('must_agree'), 'error');
 
@@ -504,15 +632,13 @@
             );
         }
 
-        // --- UPDATED FORGOT PASSWORD (ID & EMAIL) ---
         function ForgotPassScreen({ setView, showMsg, t, ArrowIcon }) {
-            const [id, setId] = useState(''); // ID instead of phone
+            const [id, setId] = useState(''); 
             const [email, setEmail] = useState('');
             const [sent, setSent] = useState(false);
 
             const req = async () => {
                 if(!id || !email) return showMsg(t('inputs_err'), 'error');
-                // Simulate send
                 await new Promise(r => setTimeout(r, 1500));
                 setSent(true);
             };
@@ -537,7 +663,6 @@
             );
         }
 
-        // --- UPDATED SETTINGS SCREEN (PROFESSIONAL & EDITABLE) ---
         function SettingsScreen({ user, showMsg, t, back, db }) {
             const [edit, setEdit] = useState(false);
             const [form, setForm] = useState({ fullName: user.fullName, phone: user.phone, email: user.email || '' });
@@ -557,7 +682,6 @@
                 ),
 
                 React.createElement('div', { className: "space-y-6" },
-                    // Profile Overview with Edit
                     React.createElement('div', { className: "bg-gradient-to-br from-dark-900 to-black rounded-3xl p-6 border border-white/5 shadow-2xl relative overflow-hidden" },
                         React.createElement('div', { className: "absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl pointer-events-none" }),
                         
@@ -582,7 +706,6 @@
                         )
                     ),
 
-                    // Security
                     React.createElement('div', { className: "bg-dark-900 rounded-3xl p-6 border border-white/5 shadow-xl" },
                         React.createElement('h3', { className: "text-white font-bold text-lg border-b border-white/10 pb-4 mb-4 flex items-center gap-2" }, 
                             React.createElement('div', { className: "p-2 bg-red-500/10 rounded-lg" }, React.createElement(Lock, {size:20, className:"text-red-500"})),
@@ -598,7 +721,7 @@
             );
         }
 
-        // --- GAMES (RIGGED LOGIC 80% LOSS) ---
+        // --- GAMES (TIER 1 UPGRADED) ---
 
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL, db, logGame }) {
             const [gameState, setGameState] = useState('BETTING');
@@ -616,14 +739,18 @@
                 let timer;
                 if (gameState === 'BETTING') {
                     setMultiplier(1.00); setResultModal(null);
-                    if (countdown > 0) timer = setTimeout(() => setCountdown(c => c - 1), 1000);
-                    else startFlight();
+                    if (countdown > 0) {
+                        timer = setTimeout(() => { 
+                            setCountdown(c => c - 1); 
+                            AudioSys.click();
+                        }, 1000);
+                    } else startFlight();
                 }
                 return () => clearTimeout(timer);
             }, [gameState, countdown]);
 
             const startFlight = () => {
-                // RIGGED: 80% chance to crash very early (1.00x - 1.40x)
+                AudioSys.playTone(300, 'sine', 0.5); 
                 if (shouldHouseWin()) {
                     crashPointRef.current = 1.00 + Math.random() * 0.4;
                 } else {
@@ -638,6 +765,9 @@
             const loop = () => {
                 const elapsed = (Date.now() - startTimeRef.current) / 1000;
                 const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.08); 
+                
+                if(nextMult % 0.5 < 0.1) AudioSys.playTone(200 + (nextMult * 50), 'sawtooth', 0.1, 0.05);
+
                 if (nextMult >= crashPointRef.current) {
                     crash(crashPointRef.current);
                 } else {
@@ -650,6 +780,9 @@
                 cancelAnimationFrame(reqRef.current);
                 setMultiplier(val);
                 setGameState('CRASHED');
+                AudioSys.crash(); 
+                hapticFeedback('impact');
+
                 if(activeBet) {
                     logGame(user.id, user.username, 'Crash', activeBet, 0, -activeBet);
                     setResultModal({ win: false, amount: 0 });
@@ -701,7 +834,7 @@
             );
         }
 
-        function SlotsGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function SlotsGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [reels, setReels] = useState(['🍒','🍋','🍇']);
             const [spinning, setSpinning] = useState(false);
@@ -721,11 +854,13 @@
                 setSpinning(true); setResultModal(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
+                const spinSound = setInterval(() => AudioSys.spin(), 100);
                 let interval = setInterval(() => { setReels([getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]); }, 100);
                 
                 setTimeout(async () => {
                     clearInterval(interval);
-                    // RIGGED: Force mismatch if house wins
+                    clearInterval(spinSound);
+                    
                     let finalReels;
                     if(shouldHouseWin()) {
                         const s1 = getRandomSymbol();
@@ -752,7 +887,6 @@
                     if(win > bet) {
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setResultModal({ win: true, amount: win });
-                        triggerConfetti();
                     } else {
                         setResultModal({ win: false, amount: 0 });
                     }
@@ -783,8 +917,94 @@
             );
         }
 
-        function LimboGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
-            const [target, setTarget] = useState(2.0);
+        function KenoGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
+            const [selected, setSelected] = useState([]);
+            const [drawn, setDrawn] = useState([]);
+            const [bet, setBet] = useState(100);
+            const [playing, setPlaying] = useState(false);
+            const [resultModal, setResultModal] = useState(null);
+
+            const toggle = (n) => {
+                if(playing) return;
+                AudioSys.click();
+                if(selected.includes(n)) setSelected(selected.filter(i=>i!==n));
+                else if(selected.length < 10) setSelected([...selected, n]);
+            }
+
+            const play = async () => {
+                if(selected.length === 0) return showMsg("Pick numbers", "error");
+                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
+                setPlaying(true); setDrawn([]); setResultModal(null);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                const draws = [];
+                while(draws.length < 10) {
+                    const r = Math.ceil(Math.random() * 40);
+                    if (shouldHouseWin() && selected.includes(r)) {
+                        continue; 
+                    }
+                    if(!draws.includes(r)) draws.push(r);
+                }
+                
+                let i = 0;
+                const int = setInterval(() => {
+                    setDrawn(prev => [...prev, draws[i]]);
+                    AudioSys.playTone(400 + (i*50), 'triangle', 0.1, 0.05);
+                    i++;
+                    if(i >= 10) {
+                        clearInterval(int);
+                        const matches = selected.filter(s => draws.includes(s)).length;
+                        let mult = 0;
+                        if(matches >= 3) mult = 1.2; 
+                        if(matches >= 5) mult = 2.5; 
+                        if(matches >= 7) mult = 8;
+                        if(matches >= 9) mult = 40;
+                        const win = Math.floor(bet * mult);
+                        
+                        logGame(user.id, user.username, 'Keno', bet, win, win - bet);
+                        setPlaying(false);
+                        if(win > 0) {
+                            updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                            setResultModal({ win: true, amount: win });
+                        } else {
+                            setResultModal({ win: false, amount: 0 });
+                        }
+                    }
+                }, 150); 
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                resultModal && React.createElement(GameResultModal, { ...resultModal, onClose:()=>setResultModal(null), t }),
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" }, 
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
+                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO"), 
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center relative" },
+                    React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm" },
+                        Array(40).fill(0).map((_, i) => {
+                            const n = i+1;
+                            const isSel = selected.includes(n);
+                            const isDrawn = drawn.includes(n);
+                            const isHit = isSel && isDrawn;
+                            let classes = "h-10 rounded-lg font-bold text-sm transition-all duration-300 ";
+                            if (isHit) classes += "bg-green-500 text-black scale-110 shadow-[0_0_15px_#22c55e] z-10 animate-pop";
+                            else if (isDrawn) classes += "bg-red-900/50 text-red-200";
+                            else if (isSel) classes += "bg-white text-black";
+                            else classes += "bg-dark-800 text-gray-600";
+                            return React.createElement('button', { key: n, onClick: ()=>toggle(n), className: classes }, n);
+                        })
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" }, 
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
+                    React.createElement(Button, { full: true, onClick: play, disabled: playing }, playing ? "..." : "PLAY")
+                )
+            );
+        }
+
+        function LimboGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
+             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
             const [result, setResult] = useState(null); 
             const [playing, setPlaying] = useState(false);
@@ -796,7 +1016,6 @@
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
                 let finalVal;
-                // RIGGED: 80% chance to land JUST below target
                 if (shouldHouseWin()) {
                     finalVal = 1.00 + (Math.random() * (target - 1.01)); 
                 } else {
@@ -820,7 +1039,6 @@
                         if(isWin) {
                             updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt});
                             setResultModal({ win: true, amount: winAmt });
-                            triggerConfetti();
                         } else {
                             setResultModal({ win: false, amount: 0 });
                         }
@@ -861,8 +1079,8 @@
                 )
             );
         }
-        
-        function CoinFlipGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+
+        function CoinFlipGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [choice, setChoice] = useState('Heads'); 
             const [flipping, setFlipping] = useState(false);
@@ -874,11 +1092,11 @@
                 if(flipping) return;
                 setFlipping(true); setResultModal(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                AudioSys.spin();
 
-                // RIGGED: 80% chance to flip OPPOSITE of choice
                 let isHeads;
                 if (shouldHouseWin()) {
-                    isHeads = choice === 'Tails'; // Force opposite
+                    isHeads = choice === 'Tails'; 
                 } else {
                     isHeads = Math.random() > 0.5;
                 }
@@ -896,7 +1114,6 @@
                     if(isWin) {
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setResultModal({ win: true, amount: win });
-                        triggerConfetti();
                     } else {
                         setResultModal({ win: false, amount: 0 });
                     }
@@ -930,97 +1147,7 @@
                 )
             );
         }
-
-        function KenoGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
-            const [selected, setSelected] = useState([]);
-            const [drawn, setDrawn] = useState([]);
-            const [bet, setBet] = useState(100);
-            const [playing, setPlaying] = useState(false);
-            const [resultModal, setResultModal] = useState(null);
-
-            const toggle = (n) => {
-                if(playing) return;
-                if(selected.includes(n)) setSelected(selected.filter(i=>i!==n));
-                else if(selected.length < 10) setSelected([...selected, n]);
-            }
-
-            const play = async () => {
-                if(selected.length === 0) return showMsg("Pick numbers", "error");
-                if(Number(user.coins) < bet) return showMsg("No Balance", "error");
-                setPlaying(true); setDrawn([]); setResultModal(null);
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
-                
-                // RIGGED: Ensure few matches
-                const draws = [];
-                while(draws.length < 10) {
-                    const r = Math.ceil(Math.random() * 40);
-                    // If House win, avoid selected numbers 80% of time
-                    if (shouldHouseWin() && selected.includes(r)) {
-                        continue; 
-                    }
-                    if(!draws.includes(r)) draws.push(r);
-                }
-                
-                let i = 0;
-                const int = setInterval(() => {
-                    setDrawn(prev => [...prev, draws[i]]);
-                    i++;
-                    if(i >= 10) {
-                        clearInterval(int);
-                        const matches = selected.filter(s => draws.includes(s)).length;
-                        let mult = 0;
-                        if(matches >= 3) mult = 1.2; 
-                        if(matches >= 5) mult = 2.5; 
-                        if(matches >= 7) mult = 8;
-                        if(matches >= 9) mult = 40;
-                        const win = Math.floor(bet * mult);
-                        
-                        logGame(user.id, user.username, 'Keno', bet, win, win - bet);
-                        setPlaying(false);
-                        if(win > 0) {
-                            updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
-                            setResultModal({ win: true, amount: win });
-                            triggerConfetti();
-                        } else {
-                            setResultModal({ win: false, amount: 0 });
-                        }
-                    }
-                }, 150); 
-            };
-
-            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
-                resultModal && React.createElement(GameResultModal, { ...resultModal, onClose:()=>setResultModal(null), t }),
-                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" }, 
-                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-bold text-emerald-500" }, "KENO"), 
-                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
-                ),
-                React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center justify-center relative" },
-                    React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm" },
-                        Array(40).fill(0).map((_, i) => {
-                            const n = i+1;
-                            const isSel = selected.includes(n);
-                            const isDrawn = drawn.includes(n);
-                            const isHit = isSel && isDrawn;
-                            let classes = "h-10 rounded-lg font-bold text-sm transition-all duration-300 ";
-                            if (isHit) classes += "bg-green-500 text-black scale-110 shadow-[0_0_15px_#22c55e] z-10 animate-pop";
-                            else if (isDrawn) classes += "bg-red-900/50 text-red-200";
-                            else if (isSel) classes += "bg-white text-black";
-                            else classes += "bg-dark-800 text-gray-600";
-                            return React.createElement('button', { key: n, onClick: ()=>toggle(n), className: classes }, n);
-                        })
-                    )
-                ),
-                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" }, 
-                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }), 
-                    React.createElement(Button, { full: true, onClick: play, disabled: playing }, playing ? "..." : "PLAY")
-                )
-            );
-        }
-
-        // --- NEW GAMES (Mines, Plinko, Dice, Wheel, HiLo) ---
-
-        function MinesGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function MinesGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [playing, setPlaying] = useState(false);
             const [grid, setGrid] = useState(Array(25).fill(null)); 
@@ -1045,8 +1172,8 @@
 
             const clickTile = async (i) => {
                 if(!playing || revealed[i] || gameOver) return;
+                AudioSys.click();
                 
-                // RIGGED: Dynamic bad luck. If profit is good, force swap gem to bomb
                 let currentVal = grid[i];
                 if (currentVal === 'gem' && profit > bet * 0.5 && shouldHouseWin()) {
                     currentVal = 'bomb';
@@ -1057,9 +1184,11 @@
                 
                 if(currentVal === 'bomb') {
                     setGameOver(true); setPlaying(false);
+                    AudioSys.crash(); hapticFeedback('impact');
                     logGame(user.id, user.username, 'Mines', bet, 0, -bet);
                     setResultModal({ win: false, amount: 0 });
                 } else {
+                    AudioSys.playTone(600 + (profit/10), 'sine', 0.1);
                     const gemsFound = newRevealed.filter((r, idx) => r && grid[idx] === 'gem').length;
                     const nextMult = 1 + (gemsFound * (bombsCount / (25 - bombsCount))); 
                     setProfit(Math.floor(bet * nextMult) - bet);
@@ -1073,7 +1202,6 @@
                 logGame(user.id, user.username, 'Mines', bet, win, profit);
                 setPlaying(false); setGameOver(true); 
                 setResultModal({ win: true, amount: win });
-                triggerConfetti();
             };
 
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
@@ -1102,7 +1230,7 @@
             );
         }
 
-        function PlinkoGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function PlinkoGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [dropping, setDropping] = useState(false);
             const [ballPos, setBallPos] = useState(50); 
@@ -1112,12 +1240,12 @@
                 if(user.coins < bet) return showMsg("No Balance", "error");
                 setDropping(true); setResultModal(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                AudioSys.playTone(600, 'square', 0.1); 
                 
                 const buckets = [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6]; 
-                // RIGGED: Skew towards index 3,4,5 (multipliers 1, 0.5, 1)
                 let bucketIdx;
                 if (shouldHouseWin()) {
-                    bucketIdx = 3 + Math.floor(Math.random() * 3); // 3, 4, or 5
+                    bucketIdx = 3 + Math.floor(Math.random() * 3); 
                 } else {
                     let r = 0; for(let i=0; i<6; i++) r += Math.random();
                     bucketIdx = Math.floor(r * (buckets.length / 6)); 
@@ -1128,6 +1256,7 @@
                 let steps = 0;
                 const int = setInterval(() => {
                     setBallPos(prev => prev + (Math.random() > 0.5 ? 2 : -2)); 
+                    if(steps%2===0) AudioSys.click();
                     steps++;
                     if(steps > 20) {
                         clearInterval(int);
@@ -1139,7 +1268,6 @@
                                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                                 if(win > bet) {
                                     setResultModal({ win: true, amount: win });
-                                    triggerConfetti();
                                 } else {
                                     showMsg(`x${multiplier}`, 'success');
                                 }
@@ -1177,7 +1305,7 @@
             );
         }
 
-        function DiceGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function DiceGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [target, setTarget] = useState(50);
             const [rollUnder, setRollUnder] = useState(true);
@@ -1191,10 +1319,10 @@
                 if(user.coins < bet) return showMsg("No Balance", "error");
                 setRolling(true); setLastRoll(null); setResultModal(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                AudioSys.spin();
                 
                 setTimeout(async () => {
                     let r;
-                    // RIGGED: Force losing roll
                     if (shouldHouseWin()) {
                         if (rollUnder) r = target + Math.floor(Math.random() * (100-target));
                         else r = Math.floor(Math.random() * target);
@@ -1210,7 +1338,6 @@
                     if(win) { 
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt}); 
                         setResultModal({ win: true, amount: winAmt });
-                        triggerConfetti(); 
                     } else {
                         setResultModal({ win: false, amount: 0 });
                     }
@@ -1246,7 +1373,7 @@
             );
         }
 
-        function WheelGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function WheelGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [spinning, setSpinning] = useState(false);
             const [rotation, setRotation] = useState(0);
@@ -1263,11 +1390,11 @@
                 if(user.coins < bet) return showMsg("No Balance", "error");
                 setSpinning(true); setResultModal(null);
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                AudioSys.spin();
 
                 let outcome;
-                // RIGGED: Force low multiplier
                 if (shouldHouseWin()) {
-                    outcome = SEGMENTS[0]; // Force 2x
+                    outcome = SEGMENTS[0]; 
                 } else {
                     const r = Math.random();
                     let acc = 0;
@@ -1286,7 +1413,6 @@
                     
                     if(win > bet * 4) {
                         setResultModal({ win: true, amount: win });
-                        triggerConfetti();
                     } else {
                         showMsg(`x${outcome.mult}`, 'success'); 
                     }
@@ -1321,7 +1447,7 @@
             );
         }
 
-        function HiLoGame({ user, back, showMsg, ArrowIcon, t, db, logGame, triggerConfetti }) {
+        function HiLoGame({ user, back, showMsg, ArrowIcon, t, db, logGame }) {
             const [bet, setBet] = useState(100);
             const [currentCard, setCurrentCard] = useState(Math.floor(Math.random()*13)+1); 
             const [playing, setPlaying] = useState(false);
@@ -1338,11 +1464,10 @@
             };
 
             const guess = async (dir) => { 
+                AudioSys.click();
                 let nextCard = Math.floor(Math.random()*13)+1;
                 
-                // RIGGED: Peek at result, if it wins, maybe swap it to lose?
                 if (shouldHouseWin()) {
-                    // Try to force loss
                     if (dir === 'hi' && nextCard > currentCard) nextCard = Math.max(1, currentCard - 1);
                     if (dir === 'lo' && nextCard < currentCard) nextCard = Math.min(13, currentCard + 1);
                 }
@@ -1358,6 +1483,7 @@
                     const mult = dir === 'same' ? 10 : 1.5; 
                     const newWin = Math.floor(roundWin * mult);
                     setRoundWin(newWin);
+                    AudioSys.playTone(600, 'sine', 0.1);
                 } else {
                     logGame(user.id, user.username, 'HiLo', bet, 0, -bet);
                     setPlaying(false); setRoundWin(0); 
@@ -1370,7 +1496,6 @@
                 logGame(user.id, user.username, 'HiLo', bet, roundWin, roundWin-bet);
                 setPlaying(false); 
                 setResultModal({ win: true, amount: roundWin });
-                triggerConfetti();
             };
 
             return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
@@ -1429,6 +1554,7 @@
         }
 
         function CasinoScreen({ navTo, t }) {
+            const GameCard = ({ title, sub, color, icon: Icon, onClick }) => React.createElement('button', { onClick, className: `relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-dark-800 hover:border-${color}-500/50 transition-all group w-full text-right active:scale-95 shadow-lg` }, React.createElement('div', { className: `absolute inset-0 bg-gradient-to-br from-${color}-900/50 to-transparent` }), React.createElement('div', { className: `absolute top-3 left-3 text-${color}-500/20 group-hover:text-${color}-500/40 transition-colors` }, React.createElement(Icon, { size: 60 })), React.createElement('div', { className: "absolute bottom-4 right-4 z-10" }, React.createElement('h3', { className: "text-xl font-black text-white italic" }, title), React.createElement('p', { className: `text-[10px] text-${color}-300 font-bold uppercase` }, sub)));
             return React.createElement('div', { className: "space-y-4 animate-pop" },
                 React.createElement('h2', { className: "text-gold-500 font-bold text-lg flex gap-2 items-center" }, React.createElement(Dices), t('casino')),
                 React.createElement('div', { className: "grid grid-cols-2 gap-4" },
@@ -1437,7 +1563,6 @@
                     React.createElement(GameCard, { title:t('limbo'), sub:"Greedy Mode", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
                     React.createElement(GameCard, { title:t('keno'), sub:"Classic", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
                     React.createElement(GameCard, { title:t('coinflip'), sub:"50/50", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') }),
-                    // NEW GAMES
                     React.createElement(GameCard, { title:t('mines'), sub:"Grid Logic", color:"red", icon:Bomb, onClick:()=>navTo('game-mines') }),
                     React.createElement(GameCard, { title:t('plinko'), sub:"Physics", color:"pink", icon:CircleDot, onClick:()=>navTo('game-plinko') }),
                     React.createElement(GameCard, { title:t('dice'), sub:"Range", color:"blue", icon:Dices, onClick:()=>navTo('game-dice') }),
@@ -1446,7 +1571,7 @@
                 )
             );
         }
-        const GameCard = ({ title, sub, color, icon: Icon, onClick }) => React.createElement('button', { onClick, className: `relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-dark-800 hover:border-${color}-500/50 transition-all group w-full text-right active:scale-95 shadow-lg` }, React.createElement('div', { className: `absolute inset-0 bg-gradient-to-br from-${color}-900/50 to-transparent` }), React.createElement('div', { className: `absolute top-3 left-3 text-${color}-500/20 group-hover:text-${color}-500/40 transition-colors` }, React.createElement(Icon, { size: 60 })), React.createElement('div', { className: "absolute bottom-4 right-4 z-10" }, React.createElement('h3', { className: "text-xl font-black text-white italic" }, title), React.createElement('p', { className: `text-[10px] text-${color}-300 font-bold uppercase` }, sub)));
+
         function TasksScreen({ user, showMsg, t }) { return React.createElement('div', { className: "animate-pop" }, React.createElement('h2', { className: "text-gold-500 font-bold text-lg mb-4" }, t('tasks')), React.createElement('div', { className: "text-center py-10 bg-dark-900 rounded-2xl border border-white/5" }, React.createElement(Trophy, { size: 40, className: "mx-auto text-gray-600 mb-4" }), React.createElement('p', { className: "text-gray-400" }, t('no_tasks')))); }
 
         function WalletScreen({ user, showMsg, t, isRTL, navTo }) {
@@ -1460,7 +1585,6 @@
                         React.createElement('button', { onClick: ()=>navTo('withdraw'), className: "flex-1 bg-black/20 hover:bg-black/30 py-2 rounded-lg font-bold text-sm transition-colors" }, t('withdraw'))
                     )
                 ),
-                
                 React.createElement('button', { onClick: ()=>navTo('exchange'), className: "w-full bg-dark-800 p-4 rounded-xl border border-gold-500/30 flex items-center justify-between group hover:bg-dark-700 transition-all" },
                     React.createElement('div', { className: "flex items-center gap-3" },
                         React.createElement('div', { className: "p-2 bg-gold-500/10 rounded-lg text-gold-500" }, React.createElement(ArrowLeftRight, { size: 20 })),
@@ -1471,7 +1595,6 @@
                     ),
                     React.createElement(ChevronRight, { className: "text-gray-500 group-hover:text-gold-500 transition-colors" })
                 ),
-
                 React.createElement('div', { className: "bg-dark-900 rounded-2xl p-1" },
                     React.createElement(SettingsBtn, { icon: History, label: t('history'), onClick: ()=>navTo('history'), arrow:true, isRTL }),
                     React.createElement(SettingsBtn, { icon: FileText, label: t('terms'), onClick: ()=>navTo('terms'), arrow:true, isRTL }),
@@ -1517,7 +1640,6 @@
              return React.createElement('div', { className: "animate-pop h-full flex flex-col" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
                 React.createElement('h2', { className: "text-2xl font-bold mb-4" }, t('deposit')),
-                
                 React.createElement('div', { className: "flex-1 overflow-y-auto space-y-4 pb-20" },
                     React.createElement('div', { className: "grid grid-cols-2 gap-3" },
                         METHODS.map(m => React.createElement('button', { key: m.id, onClick: () => setMethod(m), className: `p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${method?.id === m.id ? 'border-gold-500 bg-gold-500/10' : 'border-white/10 bg-dark-900'}` }, React.createElement(m.icon, { className: m.color }), React.createElement('span', { className: "text-xs font-bold" }, m.name)))
@@ -1556,24 +1678,18 @@
                  if(loading) return; 
                  if(!method || !form.amount) return showMsg(t('inputs_err'), 'error');
                  if(method.id==='recharge' && !form.phone) return showMsg(t('inputs_err'), 'error');
-                 
                  const amt = Number(form.amount);
                  if(amt <= 0) return showMsg("Invalid Amount", 'error');
                  if(Number(user.balance) < amt) return showMsg("Insufficient Balance", 'error');
 
                  setLoading(true);
                  try {
-                     await updateDoc(doc(db, "users", user.id), {
-                         balance: Number(user.balance) - amt
-                     });
-
+                     await updateDoc(doc(db, "users", user.id), { balance: Number(user.balance) - amt });
                      await addDoc(collection(db, "withdraws"), {
                         userId: user.id, username: user.username, amount: amt, method: method.name, details: form, status: 'pending', date: new Date().toISOString()
                      });
                      setShowSuccess(true);
-                 } catch (e) {
-                     showMsg(t('error'), 'error');
-                 }
+                 } catch (e) { showMsg(t('error'), 'error'); }
                  setLoading(false);
              };
 
@@ -1623,7 +1739,6 @@
         function ExchangeScreen({ user, showMsg, t, back }) {
             const [amount, setAmount] = useState('');
             const [mode, setMode] = useState('to_coins'); 
-            
             const RATE = 100; // 1 USD = 100 COINS
 
             const execute = async () => {
@@ -1653,7 +1768,6 @@
             return React.createElement('div', { className: "animate-pop" },
                 React.createElement('button', { onClick: back, className: "mb-4 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), t('wallet')),
                 React.createElement('h2', { className: "text-2xl font-bold mb-4 text-gold-500" }, t('exchange')),
-                
                 React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl border border-white/10 space-y-6" },
                     React.createElement('div', { className: "flex justify-center" },
                           React.createElement('div', { className: "bg-black/40 px-4 py-2 rounded-full border border-white/5 text-xs text-gray-400 flex items-center gap-2" },
@@ -1664,7 +1778,6 @@
                             RATE
                           )
                     ),
-
                     React.createElement('div', { className: "relative" },
                           React.createElement('div', { className: "flex justify-between text-xs text-gray-400 mb-1 px-1" },
                              React.createElement('span', {}, mode === 'to_coins' ? "From (USD Balance)" : "From (Game Coins)"),
@@ -1672,13 +1785,11 @@
                           ),
                           React.createElement(Input, { type: "number", value: amount, onChange: e=>setAmount(e.target.value), icon: mode==='to_coins'?DollarSign:Gem, placeholder: "Amount to convert" })
                     ),
-
                     React.createElement('div', { className: "flex justify-center" },
                         React.createElement('button', { onClick: ()=>setMode(mode==='to_coins'?'to_usd':'to_coins'), className: "p-3 bg-gold-500 rounded-full text-black shadow-lg hover:scale-110 transition-transform" },
                              React.createElement(ArrowUp, { size: 20, className: "rotate-0" }) 
                         )
                     ),
-                    
                     React.createElement('div', { className: "bg-black/40 p-4 rounded-xl text-center border border-white/5" },
                         React.createElement('p', { className: "text-xs text-gray-500 mb-1" }, "You Receive"),
                         React.createElement('p', { className: "text-2xl font-black font-mono text-white flex items-center justify-center gap-2" },
@@ -1686,7 +1797,6 @@
                             mode === 'to_coins' ? React.createElement(Gem, { size: 20, className: "text-gold-500" }) : React.createElement(DollarSign, { size: 20, className: "text-green-500" })
                         )
                     ),
-
                     React.createElement(Button, { full: true, onClick: execute }, t('convert'))
                 )
             );
@@ -1694,17 +1804,13 @@
 
         function HistoryScreen({ user, t, back }) {
             const [list, setList] = useState([]);
-            
             useEffect(() => {
                 const fetchHistory = async () => {
                     const dQ = query(collection(db, "deposits"), where("userId", "==", user.id));
                     const wQ = query(collection(db, "withdraws"), where("userId", "==", user.id));
-                    
                     const [dSnap, wSnap] = await Promise.all([getDocs(dQ), getDocs(wQ)]);
-                    
                     const dData = dSnap.docs.map(d => ({...d.data(), type: 'deposit'}));
                     const wData = wSnap.docs.map(d => ({...d.data(), type: 'withdraw'}));
-                    
                     const combined = [...dData, ...wData].sort((a,b) => new Date(b.date) - new Date(a.date));
                     setList(combined);
                 };
@@ -1733,18 +1839,6 @@
                         )
                     )
                 ))
-            );
-        }
-
-        // --- OTHER SCREENS (Restored) ---
-        function SplashScreen() {
-            return React.createElement('div', { className: "fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center" },
-                React.createElement('div', { className: "relative w-40 h-40 flex items-center justify-center animate-pop" },
-                    React.createElement('div', { className: "absolute inset-0 border-4 border-gold-500 rotate-45 rounded-xl shadow-[0_0_50px_#FFD700]" }),
-                    React.createElement('div', { className: "absolute inset-2 border-2 border-white/20 rotate-45 rounded-lg" }),
-                    React.createElement('h1', { className: "text-7xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-gold-300 to-gold-600 font-oswald tracking-tighter" }, "CD")
-                ),
-                React.createElement('div', { className: "mt-8 text-gold-500/50 text-sm tracking-[0.5em] font-light animate-pulse" }, "ELITE CLUB")
             );
         }
 
@@ -1781,31 +1875,22 @@
         }
         
         const SidebarBtn = ({ icon: Icon, label, onClick }) => React.createElement('button', { onClick, className: "w-full flex items-center gap-4 p-3.5 rounded-xl text-gray-300 hover:bg-white/5 btn-press" }, React.createElement(Icon, { size: 20 }), React.createElement('span', {}, label));
-        
         const NavBtn = ({ icon: Icon, label, active, onClick }) => React.createElement('button', { onClick, className: `flex flex-col items-center gap-1 transition-all ${active?'text-gold-500 -translate-y-1 scale-110':'text-gray-500'}` }, React.createElement(Icon, { size: 24, strokeWidth: active?2.5:2 }), React.createElement('span', { className: "text-[9px] font-bold" }, label));
-
         const SettingsBtn = ({ icon: Icon, label, onClick, arrow, isRTL }) => React.createElement('button', { onClick, className: "w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-xl group transition-all" }, React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "p-2 bg-dark-950 rounded-lg text-gold-500 group-hover:scale-110 transition-transform" }, React.createElement(Icon, { size: 18 })), React.createElement('span', { className: "font-medium text-sm" }, label)), arrow && (isRTL ? React.createElement(ChevronLeft, { size: 16, className: "text-gray-600" }) : React.createElement(ChevronRight, { size: 16, className: "text-gray-600" })));
 
         function InfoPage({ title, content, back, settings }) {
             const supportLink = settings?.support_link || "https://t.me/your_admin";
             const supportText = settings?.support_text || "Contact us for assistance";
-
             return React.createElement('div', { className: "h-full bg-dark-950 p-6 overflow-y-auto animate-pop" },
-                React.createElement('button', { onClick: back, className: "mb-6 text-gold-500 flex items-center gap-2 font-bold p-2 bg-gold-500/10 rounded-xl w-max" }, 
-                    React.createElement(ChevronRight), "Back"
-                ),
+                React.createElement('button', { onClick: back, className: "mb-6 text-gold-500 flex items-center gap-2 font-bold p-2 bg-gold-500/10 rounded-xl w-max" }, React.createElement(ChevronRight), "Back"),
                 React.createElement('h2', { className: "text-3xl font-bold mb-6 text-gold-500 font-oswald uppercase" }, title),
-                
                 React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-cairo border border-white/5 shadow-lg mb-6" }, content),
-
                 React.createElement('div', { className: "border-t border-white/10 pt-6 mt-4" },
                     React.createElement('div', { className: "bg-blue-900/20 border border-blue-500/30 p-6 rounded-2xl text-center" },
                         React.createElement(Headphones, { size: 32, className: "text-blue-400 mx-auto mb-3" }),
                         React.createElement('h3', { className: "text-white font-bold mb-2" }, "Support Center"),
                         React.createElement('p', { className: "text-gray-400 text-xs mb-4" }, supportText),
-                        React.createElement('a', { href: supportLink, target: "_blank", rel: "noopener", className: "inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-blue-900/50" },
-                            React.createElement(Send, { size: 16 }), "Contact Support"
-                        )
+                        React.createElement('a', { href: supportLink, target: "_blank", rel: "noopener", className: "inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-blue-900/50" }, React.createElement(Send, { size: 16 }), "Contact Support")
                     )
                 )
             );
@@ -1815,12 +1900,7 @@
             const promoCode = settings?.promo_code || "CD0777";
             const telegramLink = settings?.telegram_link || "https://t.me/your_admin_link";
             const xbetLink = settings?.xbet_link || "https://refpa7921972.top/L?tag=d_3162621m_1573c_&site=3162621&ad=1573";
-
-            const copyCode = (e) => {
-                e.stopPropagation(); e.preventDefault();
-                navigator.clipboard.writeText(promoCode);
-                showMsg(`Copied: ${promoCode}`);
-            };
+            const copyCode = (e) => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(promoCode); showMsg(`Copied: ${promoCode}`); };
             
             return React.createElement('div', { className: "h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden", dir: isRTL?'rtl':'ltr' },
                 React.createElement('div', { className: "absolute inset-0 luxury-bg opacity-90" }),
@@ -1834,40 +1914,21 @@
                         
                         React.createElement('div', { className: "flex justify-between items-start z-30" },
                             React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-10 h-10 rounded-full border-2 border-gold-500 flex items-center justify-center bg-black" },
-                                    React.createElement(Crown, { size: 20, className: "text-gold-500" })
-                                ),
-                                React.createElement('div', { className: "flex flex-col" },
-                                    React.createElement('span', { className: "text-white font-oswald tracking-[0.2em] text-lg font-bold italic" }, "ELITE"),
-                                    React.createElement('span', { className: "text-gold-500 text-[10px] tracking-[0.4em] uppercase" }, "PRESTIGE CLUB")
-                                )
+                                React.createElement('div', { className: "w-10 h-10 rounded-full border-2 border-gold-500 flex items-center justify-center bg-black" }, React.createElement(Crown, { size: 20, className: "text-gold-500" })),
+                                React.createElement('div', { className: "flex flex-col" }, React.createElement('span', { className: "text-white font-oswald tracking-[0.2em] text-lg font-bold italic" }, "ELITE"), React.createElement('span', { className: "text-gold-500 text-[10px] tracking-[0.4em] uppercase" }, "PRESTIGE CLUB"))
                             ),
                             React.createElement(Wifi, { size: 24, className: "text-white/50 rotate-90" })
                         ),
                         
                         React.createElement('div', { className: "my-auto relative z-30" },
-                             React.createElement('div', { className: "flex items-center gap-3 mb-1" },
-                                React.createElement('div', { className: "bg-gold-500/20 px-3 py-1 rounded text-gold-400 text-xs font-bold border border-gold-500/50" }, "WELCOME BONUS"),
-                                React.createElement('div', { className: "h-px flex-1 bg-gradient-to-r from-gold-500/50 to-transparent" })
-                             ),
-                             React.createElement('div', { className: "flex items-baseline gap-2" },
-                                React.createElement('span', { className: "text-4xl font-black text-transparent bg-clip-text bg-gradient-to-t from-gold-600 to-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" }, "1000"),
-                                React.createElement('span', { className: "text-sm text-gold-300 font-bold" }, "COINS")
-                             ),
-                             React.createElement('p', { className: "text-[10px] text-gray-400 mt-1 flex items-center gap-1 animate-pulse" }, 
-                                React.createElement(RefreshCw, { size: 10 }), "Auto-convert to CASH upon approval"
-                             )
+                             React.createElement('div', { className: "flex items-center gap-3 mb-1" }, React.createElement('div', { className: "bg-gold-500/20 px-3 py-1 rounded text-gold-400 text-xs font-bold border border-gold-500/50" }, "WELCOME BONUS"), React.createElement('div', { className: "h-px flex-1 bg-gradient-to-r from-gold-500/50 to-transparent" })),
+                             React.createElement('div', { className: "flex items-baseline gap-2" }, React.createElement('span', { className: "text-4xl font-black text-transparent bg-clip-text bg-gradient-to-t from-gold-600 to-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" }, "1000"), React.createElement('span', { className: "text-sm text-gold-300 font-bold" }, "COINS")),
+                             React.createElement('p', { className: "text-[10px] text-gray-400 mt-1 flex items-center gap-1 animate-pulse" }, React.createElement(RefreshCw, { size: 10 }), "Auto-convert to CASH upon approval")
                         ),
                         
                         React.createElement('div', { className: "mt-auto flex justify-between items-end z-30" },
-                            React.createElement('div', {},
-                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold tracking-widest" }, "MEMBER"),
-                                React.createElement('p', { className: "text-sm text-white font-mono uppercase tracking-wide drop-shadow-md" }, user.fullName || user.username)
-                            ),
-                            React.createElement('div', { className: "text-right" },
-                                React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold" }, "ID"),
-                                React.createElement('p', { className: "text-sm font-mono text-white/80" }, user.memberId || "xxxx")
-                            )
+                            React.createElement('div', {}, React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold tracking-widest" }, "MEMBER"), React.createElement('p', { className: "text-sm text-white font-mono uppercase tracking-wide drop-shadow-md" }, user.fullName || user.username)),
+                            React.createElement('div', { className: "text-right" }, React.createElement('p', { className: "text-[8px] text-gray-500 uppercase font-bold" }, "ID"), React.createElement('p', { className: "text-sm font-mono text-white/80" }, user.memberId || "xxxx"))
                         )
                     )
                 ),
@@ -1877,38 +1938,18 @@
                         React.createElement('h3', { className: "text-center text-white font-bold mb-2 uppercase tracking-wide text-xs opacity-60" }, "Complete Activation"),
                         
                         React.createElement('a', { href: xbetLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-green-500/50 hover:bg-green-900/10 transition-all cursor-pointer" },
-                            React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-green-600 to-green-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"),
-                                React.createElement('div', {},
-                                    React.createElement('p', { className: "text-xs text-white font-bold" }, "Register on 1xBet"),
-                                    React.createElement('p', { className: "text-[10px] text-gray-400" }, "You MUST use Promo Code:")
-                                )
-                            ),
-                            React.createElement('button', { onClick: copyCode, className: "flex items-center gap-2 px-2 py-1 bg-green-500/20 text-green-400 rounded-lg border border-green-500/30 font-mono font-bold text-xs hover:bg-green-500/30" }, 
-                                promoCode, React.createElement(Copy, { size: 12 })
-                            )
+                            React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-green-600 to-green-400 flex items-center justify-center font-bold text-white text-xs shadow-lg" }, "1"), React.createElement('div', {}, React.createElement('p', { className: "text-xs text-white font-bold" }, "Register on 1xBet"), React.createElement('p', { className: "text-[10px] text-gray-400" }, "You MUST use Promo Code:"))),
+                            React.createElement('button', { onClick: copyCode, className: "flex items-center gap-2 px-2 py-1 bg-green-500/20 text-green-400 rounded-lg border border-green-500/30 font-mono font-bold text-xs hover:bg-green-500/30" }, promoCode, React.createElement(Copy, { size: 12 }))
                         ),
 
                         React.createElement('a', { href: telegramLink, target: "_blank", rel: "noopener noreferrer", className: "flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-blue-500/50 hover:bg-blue-900/10 transition-all" },
-                            React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-sky-300 flex items-center justify-center text-white shadow-lg" }, React.createElement(Send, { size: 14 })),
-                                React.createElement('div', {},
-                                    React.createElement('p', { className: "text-xs text-gray-300" }, "Send ID to Admin"),
-                                    React.createElement('p', { className: "text-xs font-bold text-sky-400" }, "Telegram Verification")
-                                )
-                            ),
+                            React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: "w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-sky-300 flex items-center justify-center text-white shadow-lg" }, React.createElement(Send, { size: 14 })), React.createElement('div', {}, React.createElement('p', { className: "text-xs text-gray-300" }, "Send ID to Admin"), React.createElement('p', { className: "text-xs font-bold text-sky-400" }, "Telegram Verification"))),
                             React.createElement(ExternalLink, { size: 16, className: "text-gray-500 group-hover:text-white transition-colors" })
                         )
                     ),
 
-                    React.createElement('div', { className: "flex items-center justify-center gap-2 text-xs text-gold-500/70" },
-                        React.createElement('div', { className: "w-2 h-2 rounded-full bg-gold-500 animate-pulse" }),
-                        t('wait_admin')
-                    ),
-                    
-                    React.createElement('button', { onClick: logout, className: "w-full mt-4 text-gray-500 text-xs font-bold flex items-center justify-center gap-2 hover:text-white transition-colors" }, 
-                        React.createElement(LogOut, { size: 14 }), t('logout')
-                    )
+                    React.createElement('div', { className: "flex items-center justify-center gap-2 text-xs text-gold-500/70" }, React.createElement('div', { className: "w-2 h-2 rounded-full bg-gold-500 animate-pulse" }), t('wait_admin')),
+                    React.createElement('button', { onClick: logout, className: "w-full mt-4 text-gray-500 text-xs font-bold flex items-center justify-center gap-2 hover:text-white transition-colors" }, React.createElement(LogOut, { size: 14 }), t('logout'))
                 )
             );
         }
@@ -1927,9 +1968,7 @@
                 const unsubDep = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending")), s => setDepositReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
                 const unsubWith = onSnapshot(query(collection(db, "withdraws"), where("status", "==", "pending")), s => setWithdrawReqs(s.docs.map(d => ({id: d.id, ...d.data()}))));
                 const unsubU = onSnapshot(collection(db, "users"), s => setUsersList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                
                 getDoc(doc(db, "settings", "global")).then(s => s.exists() && setConf(s.data()));
-                
                 return () => { unsubDep(); unsubWith(); unsubU(); };
             }, []);
 
@@ -1944,10 +1983,7 @@
                 const updates = { status: st };
                 if (st === 'active') {
                     const targetUser = usersList.find(u => u.id === uid);
-                    if (targetUser && targetUser.coins === 0) {
-                         updates.coins = 1000;
-                         updates.balance = 10; 
-                    }
+                    if (targetUser && targetUser.coins === 0) { updates.coins = 1000; updates.balance = 10; }
                 }
                 await updateDoc(doc(db, "users", uid), updates);
                 showMsg(`User ${st}`);
@@ -1987,7 +2023,6 @@
                     React.createElement('h1', { className: "text-2xl font-bold text-gold-500 flex gap-2" }, React.createElement(LayoutDashboard), "ADMIN CONTROL"),
                     React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
                 ),
-
                 React.createElement('div', { className: "grid grid-cols-3 md:grid-cols-6 gap-2 mb-6 shrink-0" },
                     React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-green-500 text-black border-green-500':'border-white/10 text-gray-400'}` }, `Dep (${depositReqs.length})`),
                     React.createElement('button', { onClick:()=>setTab('withdraws'), className: `p-3 rounded-lg font-bold border ${tab==='withdraws'?'bg-red-500 text-black border-red-500':'border-white/10 text-gray-400'}` }, `With (${withdrawReqs.length})`),
@@ -1996,115 +2031,72 @@
                     React.createElement('button', { onClick:()=>setTab('logs'), className: `p-3 rounded-lg font-bold border ${tab==='logs'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Logs`),
                     React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-gray-500 text-black border-gray-500':'border-white/10 text-gray-400'}` }, `Config`)
                 ),
-
                 React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
-                    // --- DEPOSITS TAB ---
                     tab === 'deposits' && (depositReqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending deposits") :
                         depositReqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
                             r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
                             React.createElement('div', { className: "flex-1" },
-                                React.createElement('div', { className: "flex justify-between" },
-                                    React.createElement('span', { className: "font-bold text-white" }, r.username),
-                                    React.createElement('span', { className: "text-green-500 font-mono text-xl" }, `+${r.amount}$`)
-                                ),
+                                React.createElement('div', { className: "flex justify-between" }, React.createElement('span', { className: "font-bold text-white" }, r.username), React.createElement('span', { className: "text-green-500 font-mono text-xl" }, `+${r.amount}$`)),
                                 React.createElement('p', { className: "text-xs text-gray-400 mb-4" }, `${r.method} • ${new Date(r.date).toLocaleString()}`),
-                                React.createElement('div', { className: "flex gap-2" },
-                                    React.createElement(Button, { onClick:()=>handleDeposit(r,'app'), variant:'green', className:"py-2 px-4 text-xs" }, "Approve"),
-                                    React.createElement(Button, { onClick:()=>handleDeposit(r,'rej'), variant:'red', className:"py-2 px-4 text-xs" }, "Reject")
-                                )
+                                React.createElement('div', { className: "flex gap-2" }, React.createElement(Button, { onClick:()=>handleDeposit(r,'app'), variant:'green', className:"py-2 px-4 text-xs" }, "Approve"), React.createElement(Button, { onClick:()=>handleDeposit(r,'rej'), variant:'red', className:"py-2 px-4 text-xs" }, "Reject"))
                             )
                         ))
                     ),
-
-                    // --- WITHDRAWALS TAB ---
                     tab === 'withdraws' && (withdrawReqs.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending withdrawals") :
                         withdrawReqs.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-red-900/30 flex flex-col gap-2" },
                             React.createElement('div', { className: "flex justify-between items-center" },
-                                React.createElement('div', {},
-                                    React.createElement('span', { className: "font-bold text-white block" }, r.username),
-                                    React.createElement('span', { className: "text-xs text-gray-400" }, `${r.method} • ${r.details?.phone || r.details?.account || 'N/A'}`)
-                                ),
+                                React.createElement('div', {}, React.createElement('span', { className: "font-bold text-white block" }, r.username), React.createElement('span', { className: "text-xs text-gray-400" }, `${r.method} • ${r.details?.phone || r.details?.account || 'N/A'}`)),
                                 React.createElement('span', { className: "text-red-500 font-mono text-xl font-bold" }, `-${r.amount}$`)
                             ),
-                            React.createElement('div', { className: "flex gap-2 mt-2" },
-                                React.createElement(Button, { onClick:()=>handleWithdraw(r,'app'), variant:'green', className:"py-2 px-4 text-xs flex-1" }, "Approve"),
-                                React.createElement(Button, { onClick:()=>handleWithdraw(r,'rej'), variant:'red', className:"py-2 px-4 text-xs flex-1" }, "Reject (Refund)")
-                            )
+                            React.createElement('div', { className: "flex gap-2 mt-2" }, React.createElement(Button, { onClick:()=>handleWithdraw(r,'app'), variant:'green', className:"py-2 px-4 text-xs flex-1" }, "Approve"), React.createElement(Button, { onClick:()=>handleWithdraw(r,'rej'), variant:'red', className:"py-2 px-4 text-xs flex-1" }, "Reject (Refund)"))
                         ))
                     ),
-
-                    // --- NEW USERS TAB ---
                     tab === 'pending_users' && (pendingUsers.length===0 ? React.createElement('p', { className: "text-gray-500 text-center italic" }, "No pending registrations") :
                         pendingUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
-                            React.createElement('div', {},
-                                React.createElement('p', { className: "font-bold text-white flex gap-2 items-center" }, 
-                                    u.username,
-                                    React.createElement('span', {className:"text-[10px] bg-gray-700 px-1 rounded"}, u.country || "??")
-                                ),
-                                React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName || 'No Name'} • ${u.memberId}`)
-                            ),
-                            React.createElement('div', { className: "flex gap-2" },
-                                React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "bg-green-500 hover:bg-green-600 text-black font-bold py-2 px-4 rounded-lg flex items-center gap-1" }, React.createElement(CheckCircle, {size:16}), "ACCEPT"),
-                                React.createElement('button', { onClick:()=>deleteDoc(doc(db,"users",u.id)), className: "bg-red-500/20 text-red-500 p-2 rounded-lg" }, React.createElement(X, {size:20}))
-                            )
+                            React.createElement('div', {}, React.createElement('p', { className: "font-bold text-white flex gap-2 items-center" }, u.username, React.createElement('span', {className:"text-[10px] bg-gray-700 px-1 rounded"}, u.country || "??")), React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName || 'No Name'} • ${u.memberId}`)),
+                            React.createElement('div', { className: "flex gap-2" }, React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "bg-green-500 hover:bg-green-600 text-black font-bold py-2 px-4 rounded-lg flex items-center gap-1" }, React.createElement(CheckCircle, {size:16}), "ACCEPT"), React.createElement('button', { onClick:()=>deleteDoc(doc(db,"users",u.id)), className: "bg-red-500/20 text-red-500 p-2 rounded-lg" }, React.createElement(X, {size:20})))
                         ))
                     ),
-
-                    // --- ALL USERS TAB ---
                     tab === 'users' && activeUsers.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
-                        React.createElement('div', {},
-                            React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned' && React.createElement('span',{className:"text-red-500 text-[10px] ml-2"},"BANNED")),
-                            React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, `Coins: ${u.coins} | Bal: $${u.balance || 0}`)
-                        ),
-                        editId === u.id ? React.createElement('div', { className: "flex gap-1 bg-black p-1 rounded" },
-                            React.createElement('input', { type:"number", className: "w-20 bg-transparent text-white text-xs px-1", placeholder: "Coins", onChange:e=>setBalInput(e.target.value) }),
-                            React.createElement('button', { onClick:()=>{updateDoc(doc(db,"users",u.id),{coins:Number(balInput)}); setEditId(null)}, className: "text-green-500" }, React.createElement(Check, {size:16})),
-                            React.createElement('button', { onClick:()=>setEditId(null), className: "text-red-500" }, React.createElement(X, {size:16}))
-                        ) : React.createElement('div', { className: "flex gap-2" },
-                            React.createElement('button', { onClick:()=>{setEditId(u.id); setBalInput(u.coins)}, className: "text-blue-500 bg-blue-500/10 p-2 rounded" }, React.createElement(Edit3, {size:14})),
-                            u.status !== 'banned' ? 
-                                React.createElement('button', { onClick:()=>updateSt(u.id, 'banned'), className: "text-orange-500 bg-orange-500/10 p-2 rounded" }, React.createElement(Ban, {size:14})) :
-                                React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "text-green-500 bg-green-500/10 p-2 rounded" }, React.createElement(CheckCircle, {size:14}))
-                        )
+                        React.createElement('div', {}, React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned' && React.createElement('span',{className:"text-red-500 text-[10px] ml-2"},"BANNED")), React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, `Coins: ${u.coins} | Bal: $${u.balance || 0}`)),
+                        editId === u.id ? React.createElement('div', { className: "flex gap-1 bg-black p-1 rounded" }, React.createElement('input', { type:"number", className: "w-20 bg-transparent text-white text-xs px-1", placeholder: "Coins", onChange:e=>setBalInput(e.target.value) }), React.createElement('button', { onClick:()=>{updateDoc(doc(db,"users",u.id),{coins:Number(balInput)}); setEditId(null)}, className: "text-green-500" }, React.createElement(Check, {size:16})), React.createElement('button', { onClick:()=>setEditId(null), className: "text-red-500" }, React.createElement(X, {size:16}))) 
+                        : React.createElement('div', { className: "flex gap-2" }, React.createElement('button', { onClick:()=>{setEditId(u.id); setBalInput(u.coins)}, className: "text-blue-500 bg-blue-500/10 p-2 rounded" }, React.createElement(Edit3, {size:14})), u.status !== 'banned' ? React.createElement('button', { onClick:()=>updateSt(u.id, 'banned'), className: "text-orange-500 bg-orange-500/10 p-2 rounded" }, React.createElement(Ban, {size:14})) : React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "text-green-500 bg-green-500/10 p-2 rounded" }, React.createElement(CheckCircle, {size:14})))
                     )),
-
-                    // --- LOGS TAB (NEW) ---
                     tab === 'logs' && React.createElement('div', { className: "space-y-2" },
                         React.createElement('div', {className:"grid grid-cols-4 font-bold text-xs text-gray-400 mb-2"}, React.createElement('span',{},"Time"), React.createElement('span',{},"User"), React.createElement('span',{},"Game"), React.createElement('span',{},"Profit")),
-                        logs.map((l, i) => React.createElement('div', {key:i, className:"grid grid-cols-4 text-xs p-2 bg-dark-900 rounded border border-white/5"},
-                            React.createElement('span', {className:"text-gray-500 truncate"}, new Date(l.date).toLocaleTimeString()),
-                            React.createElement('span', {className:"truncate"}, l.username),
-                            React.createElement('span', {className:"text-gold-500"}, l.game),
-                            React.createElement('span', {className: l.profit >= 0 ? "text-green-500" : "text-red-500"}, l.profit)
-                        ))
+                        logs.map((l, i) => React.createElement('div', {key:i, className:"grid grid-cols-4 text-xs p-2 bg-dark-900 rounded border border-white/5"}, React.createElement('span', {className:"text-gray-500 truncate"}, new Date(l.date).toLocaleTimeString()), React.createElement('span', {className:"truncate"}, l.username), React.createElement('span', {className:"text-gold-500"}, l.game), React.createElement('span', {className: l.profit >= 0 ? "text-green-500" : "text-red-500"}, l.profit)))
                     ),
-
-                    // --- SETTINGS TAB ---
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2" }, "Activation Setup"),
                         React.createElement(Input, { placeholder: "Promo Code (e.g. CD0777)", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
                         React.createElement(Input, { placeholder: "1XBET Reg Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Telegram Admin Link", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
-                        
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "Payment Instructions"),
                         React.createElement(Input, { placeholder: "Attijari Info (Bank)", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
                         React.createElement(Input, { placeholder: "CashPlus Info (Cash)", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Binance/Crypto Info (USDT)", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
-                        
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "Support Center Config"),
                         React.createElement(Input, { placeholder: "Support Link (Telegram/WhatsApp)", value: conf.support_link, onChange: e=>setConf({...conf, support_link:e.target.value}) }),
                         React.createElement(Input, { placeholder: "Support Text Message", value: conf.support_text, onChange: e=>setConf({...conf, support_text:e.target.value}) }),
-
                         React.createElement('p', { className: "text-gold-500 font-bold mb-2 border-b border-white/10 pb-2 mt-6" }, "App Protocols (Info Pages)"),
                         React.createElement('label', { className: "text-xs text-gray-500" }, "Terms of Service"),
                         React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Terms Content...", value: conf.terms || DEFAULT_TERMS, onChange: e=>setConf({...conf, terms:e.target.value}) }),
-                        
                         React.createElement('label', { className: "text-xs text-gray-500" }, "Privacy Policy"),
                         React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Privacy Policy Content...", value: conf.policy || DEFAULT_POLICY, onChange: e=>setConf({...conf, policy:e.target.value}) }),
-
                         React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
                     )
                 )
+            );
+        }
+
+        function SplashScreen() {
+            return React.createElement('div', { className: "fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center" },
+                React.createElement('div', { className: "relative w-40 h-40 flex items-center justify-center animate-pop" },
+                    React.createElement('div', { className: "absolute inset-0 border-4 border-gold-500 rotate-45 rounded-xl shadow-[0_0_50px_#FFD700]" }),
+                    React.createElement('div', { className: "absolute inset-2 border-2 border-white/20 rotate-45 rounded-lg" }),
+                    React.createElement('h1', { className: "text-7xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-gold-300 to-gold-600 font-oswald tracking-tighter" }, "CD")
+                ),
+                React.createElement('div', { className: "mt-8 text-gold-500/50 text-sm tracking-[0.5em] font-light animate-pulse" }, "ELITE TIER 1")
             );
         }
 
