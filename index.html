@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -111,7 +110,7 @@
     <script type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones } from 'lucide-react';
+        import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones, CircleDot, MoveUp } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
@@ -126,6 +125,17 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        // --- HELPER FUNCTIONS ---
+        // NEW: Function to log game results
+        const logGame = async (userId, username, game, bet, win, profit) => {
+            if(!userId || userId === 'admin') return;
+            try {
+                await addDoc(collection(db, "game_logs"), {
+                    userId, username, game, bet, win, profit, date: new Date().toISOString()
+                });
+            } catch(e) { console.error("Log Error", e); }
+        };
 
         // --- CONSTANTS & TEXTS ---
         const DEFAULT_TERMS = "مرحباً بكم في CD0777 Elite Club.\n\n1. الأهلية: يجب أن يكون عمرك 18 عامًا على الأقل لاستخدام خدماتنا.\n2. الحساب: أنت مسؤول عن الحفاظ على سرية معلومات حسابك.\n3. اللعب العادل: يمنع استخدام أي برامج أو أدوات للغش. سيتم حظر الحسابات المخالفة فوراً دون استرداد الأموال.\n4. المدفوعات: جميع عمليات الإيداع والسحب تخضع للمراجعة الإدارية.\n5. التعديلات: تحتفظ الإدارة بالحق في تعديل هذه الشروط في أي وقت.";
@@ -154,6 +164,7 @@
                 home: "الرئيسية", casino: "كازينو", tasks: "المهام", wallet: "المحفظة",
                 deposit: "شحن الحساب", withdraw: "سحب الارباح", offers: "العروض الخاصة",
                 crash: "كراش (طيار)", slots: "سلوتس", keno: "كينو", limbo: "ليمبو", coinflip: "عملة",
+                mines: "الألغام", plinko: "بلينكو", dice: "نرد", wheel: "عجلة الحظ", hilo: "هاي لو",
                 menu: "القائمة", settings: "الإعدادات", logout: "خروج",
                 success: "عملية ناجحة", error: "حدث خطأ",
                 you_get: "لقد ربحت", you_lose: "حظ أوفر",
@@ -186,6 +197,7 @@
                 home: "Home", casino: "Casino", tasks: "Tasks", wallet: "Wallet",
                 deposit: "Deposit", withdraw: "Withdraw", offers: "Special Offers",
                 crash: "Crash", slots: "Slots", keno: "Keno", limbo: "Limbo", coinflip: "CoinFlip",
+                mines: "Mines", plinko: "Plinko", dice: "Dice", wheel: "Wheel", hilo: "HiLo",
                 menu: "Menu", settings: "Settings", logout: "Logout",
                 success: "Success", error: "Error",
                 you_get: "YOU WIN", you_lose: "YOU LOSE",
@@ -243,7 +255,6 @@
              );
         };
 
-        // --- NEW STATUS MODAL COMPONENT ---
         const StatusModal = ({ title, msg, type='success', onClose }) => {
             return React.createElement('div', { className: "fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in" },
                 React.createElement('div', { className: "bg-dark-900 border border-gold-500/30 w-full max-w-sm rounded-2xl p-6 relative animate-pop text-center" },
@@ -337,30 +348,33 @@
 
             if (splash) return React.createElement(SplashScreen);
 
-            // Updated routing to allow viewing Terms/Policy without login
             if (!user && (view === 'auth' || view === 'forgot')) {
                 if(view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
                 if(view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
             }
             
-            // Allow public access to InfoPages (Terms/Policy)
-            if (view === 'terms' && (!user || user)) return React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=> user ? navTo('profile') : setView('auth'), settings: settings });
-            if (view === 'policy' && (!user || user)) return React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=> user ? navTo('profile') : setView('auth'), settings: settings });
+            if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=> user ? navTo('profile') : setView('auth'), settings: settings });
+            if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=> user ? navTo('profile') : setView('auth'), settings: settings });
 
-            // --- PENDING SCREEN ---
             if (user && user.status === 'pending') {
                 return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg, settings });
             }
 
-            // --- ADMIN PANEL ---
             if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
 
-            // --- GAMES ---
+            // Existing Games
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL });
             if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-keno') return React.createElement(KenoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-limbo') return React.createElement(LimboGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
             if (view === 'game-coinflip') return React.createElement(CoinFlipGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+
+            // New Games Routes
+            if (view === 'game-mines') return React.createElement(MinesGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+            if (view === 'game-plinko') return React.createElement(PlinkoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+            if (view === 'game-dice') return React.createElement(DiceGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+            if (view === 'game-wheel') return React.createElement(WheelGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
+            if (view === 'game-hilo') return React.createElement(HiLoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t });
 
             return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
                 notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 animate-pop glass-panel w-max max-w-[90%] ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
@@ -415,8 +429,6 @@
                 }
 
                 setLoading(true);
-
-                // Simulate processing delay for effect
                 await new Promise(r => setTimeout(r, 1000));
 
                 if(f.u==='admin' && f.p==='admin123') { 
@@ -451,7 +463,6 @@
                     
                     isReg && React.createElement(Input, { icon: User, placeholder: t('name'), onChange: e=>setF({...f,n:e.target.value}) }),
                     
-                    // Styled Country & Phone Input
                     isReg && React.createElement('div', { className: "relative bg-dark-900 border border-white/10 rounded-xl flex items-center overflow-hidden focus-within:border-gold-500 focus-within:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all" },
                         React.createElement('div', { className: "relative w-[120px] border-e border-white/10 h-full bg-black/20" },
                             React.createElement('select', { value: f.country, onChange: e=>setF({...f, country: e.target.value}), className: "w-full h-full bg-transparent text-white outline-none appearance-none px-4 py-4 text-center cursor-pointer font-bold relative z-10" },
@@ -469,7 +480,6 @@
                     React.createElement(Input, { icon: User, placeholder: t('user'), onChange: e=>setF({...f,u:e.target.value}) }),
                     React.createElement(Input, { icon: Lock, type: "password", placeholder: t('pass'), onChange: e=>setF({...f,p:e.target.value}) }),
                     
-                    // Styled Checkbox with Blue Terms Link
                     isReg && React.createElement('div', { className: "flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors checkbox-wrapper" },
                         React.createElement('label', { className: "flex items-center cursor-pointer" },
                              React.createElement('input', { type: "checkbox", checked: agreeTerms, onChange: e=>setAgreeTerms(e.target.checked), className: "hidden" }),
@@ -525,7 +535,7 @@
                 ),
 
                 React.createElement('div', { className: "space-y-6" },
-                    // Profile Overview (Read Only)
+                    // Profile Overview
                     React.createElement('div', { className: "bg-dark-900 rounded-2xl p-5 border border-white/5 space-y-4" },
                         React.createElement('h3', { className: "text-white font-bold text-sm border-b border-white/10 pb-2 mb-2 flex items-center gap-2" }, React.createElement(User, {size:16, className:"text-blue-500"}), t('personal_info')),
                         
@@ -545,7 +555,7 @@
                         React.createElement(Button, { full:true, onClick:()=>showMsg(t('success')) }, "Update Password")
                     ),
 
-                    // Danger Zone (Visual only for now)
+                    // Danger Zone
                     React.createElement('div', { className: "bg-red-950/20 rounded-2xl p-5 border border-red-900/30 space-y-4" },
                         React.createElement('h3', { className: "text-red-500 font-bold text-sm flex items-center gap-2" }, React.createElement(AlertTriangle, {size:16}), "Danger Zone"),
                         React.createElement('p', { className: "text-xs text-gray-400" }, "To delete your account or change critical information, please contact support."),
@@ -555,12 +565,13 @@
             );
         }
 
-        // --- ADMIN PANEL ---
+        // --- ADMIN PANEL (UPDATED WITH LOGS) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
             const [tab, setTab] = useState('deposits'); 
             const [depositReqs, setDepositReqs] = useState([]);
             const [withdrawReqs, setWithdrawReqs] = useState([]);
             const [usersList, setUsersList] = useState([]);
+            const [logs, setLogs] = useState([]); // NEW STATE
             const [conf, setConf] = useState({});
             const [editId, setEditId] = useState(null);
             const [balInput, setBalInput] = useState('');
@@ -574,6 +585,14 @@
                 
                 return () => { unsubDep(); unsubWith(); unsubU(); };
             }, []);
+
+            // NEW: Fetch Logs
+            useEffect(() => {
+                if(tab === 'logs') {
+                    const q = query(collection(db, "game_logs"), orderBy("date", "desc")); 
+                    getDocs(q).then(s => setLogs(s.docs.map(d => d.data())));
+                }
+            }, [tab]);
 
             const updateSt = async (uid, st) => {
                 const updates = { status: st };
@@ -623,12 +642,13 @@
                     React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
                 ),
 
-                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 shrink-0" },
-                    React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-green-500 text-black border-green-500':'border-white/10 text-gray-400'}` }, `Deposits (${depositReqs.length})`),
-                    React.createElement('button', { onClick:()=>setTab('withdraws'), className: `p-3 rounded-lg font-bold border ${tab==='withdraws'?'bg-red-500 text-black border-red-500':'border-white/10 text-gray-400'}` }, `Withdraws (${withdrawReqs.length})`),
-                    React.createElement('button', { onClick:()=>setTab('pending_users'), className: `p-3 rounded-lg font-bold border ${tab==='pending_users'?'bg-yellow-500 text-black border-yellow-500':'border-white/10 text-gray-400'}` }, `New Users (${pendingUsers.length})`),
-                    React.createElement('button', { onClick:()=>setTab('users'), className: `p-3 rounded-lg font-bold border ${tab==='users'?'bg-blue-500 text-black border-blue-500':'border-white/10 text-gray-400'}` }, `All Users`),
-                    React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Settings`)
+                React.createElement('div', { className: "grid grid-cols-3 md:grid-cols-6 gap-2 mb-6 shrink-0" },
+                    React.createElement('button', { onClick:()=>setTab('deposits'), className: `p-3 rounded-lg font-bold border ${tab==='deposits'?'bg-green-500 text-black border-green-500':'border-white/10 text-gray-400'}` }, `Dep (${depositReqs.length})`),
+                    React.createElement('button', { onClick:()=>setTab('withdraws'), className: `p-3 rounded-lg font-bold border ${tab==='withdraws'?'bg-red-500 text-black border-red-500':'border-white/10 text-gray-400'}` }, `With (${withdrawReqs.length})`),
+                    React.createElement('button', { onClick:()=>setTab('pending_users'), className: `p-3 rounded-lg font-bold border ${tab==='pending_users'?'bg-yellow-500 text-black border-yellow-500':'border-white/10 text-gray-400'}` }, `New (${pendingUsers.length})`),
+                    React.createElement('button', { onClick:()=>setTab('users'), className: `p-3 rounded-lg font-bold border ${tab==='users'?'bg-blue-500 text-black border-blue-500':'border-white/10 text-gray-400'}` }, `Users`),
+                    React.createElement('button', { onClick:()=>setTab('logs'), className: `p-3 rounded-lg font-bold border ${tab==='logs'?'bg-purple-500 text-black border-purple-500':'border-white/10 text-gray-400'}` }, `Logs`),
+                    React.createElement('button', { onClick:()=>setTab('settings'), className: `p-3 rounded-lg font-bold border ${tab==='settings'?'bg-gray-500 text-black border-gray-500':'border-white/10 text-gray-400'}` }, `Config`)
                 ),
 
                 React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
@@ -701,6 +721,17 @@
                                 React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "text-green-500 bg-green-500/10 p-2 rounded" }, React.createElement(CheckCircle, {size:14}))
                         )
                     )),
+
+                    // --- LOGS TAB (NEW) ---
+                    tab === 'logs' && React.createElement('div', { className: "space-y-2" },
+                        React.createElement('div', {className:"grid grid-cols-4 font-bold text-xs text-gray-400 mb-2"}, React.createElement('span',{},"Time"), React.createElement('span',{},"User"), React.createElement('span',{},"Game"), React.createElement('span',{},"Profit")),
+                        logs.map((l, i) => React.createElement('div', {key:i, className:"grid grid-cols-4 text-xs p-2 bg-dark-900 rounded border border-white/5"},
+                            React.createElement('span', {className:"text-gray-500 truncate"}, new Date(l.date).toLocaleTimeString()),
+                            React.createElement('span', {className:"truncate"}, l.username),
+                            React.createElement('span', {className:"text-gold-500"}, l.game),
+                            React.createElement('span', {className: l.profit >= 0 ? "text-green-500" : "text-red-500"}, l.profit)
+                        ))
+                    ),
 
                     // --- SETTINGS TAB ---
                     tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
@@ -899,7 +930,7 @@
             );
         }
 
-        // --- GAME COMPONENTS (Included but collapsed for brevity as they were unchanged) ---
+        // --- GAME COMPONENTS (UPDATED WITH LOGS) ---
         function CrashGame({ user, back, showMsg, ArrowIcon, t, isRTL }) {
             const [gameState, setGameState] = useState('BETTING');
             const [countdown, setCountdown] = useState(5);
@@ -949,7 +980,11 @@
                 cancelAnimationFrame(reqRef.current);
                 setMultiplier(val);
                 setGameState('CRASHED');
-                setActiveBet(null);
+                // LOG LOSS
+                if(activeBet) {
+                    logGame(user.id, user.username, 'Crash', activeBet, 0, -activeBet);
+                    setActiveBet(null);
+                }
                 setTimeout(() => { setCountdown(5); setGameState('BETTING'); }, 3000);
             };
 
@@ -962,7 +997,12 @@
             const cashout = async () => {
                 if (!activeBet || gameState !== 'FLYING') return;
                 const win = Math.floor(activeBet * multiplier);
+                const profit = win - activeBet;
+                
                 await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                // LOG WIN
+                logGame(user.id, user.username, 'Crash', activeBet, win, profit);
+                
                 setCashoutWin(win);
                 setActiveBet(null);
                 showMsg(`${t('you_get')} ${win}`, 'success');
@@ -1046,6 +1086,10 @@
                         win = Math.floor(bet * 1.5);
                     }
                     
+                    // LOG GAME
+                    const profit = win - bet;
+                    logGame(user.id, user.username, 'Slots', bet, win, profit);
+
                     if(win > 0) {
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setStatus(`WIN +${win}`);
@@ -1081,7 +1125,6 @@
             );
         }
 
-        // --- Other games kept identical but function definitions needed for reference ---
         function LimboGame({ user, back, showMsg, ArrowIcon, t }) {
             const [target, setTarget] = useState(2.0);
             const [bet, setBet] = useState(100);
@@ -1112,8 +1155,12 @@
                         setResult({ val: displayVal, win: isWin });
                         setPlaying(false);
                         
+                        // LOG GAME
+                        const winAmt = isWin ? Math.floor(bet * target) : 0;
+                        const profit = winAmt - bet;
+                        logGame(user.id, user.username, 'Limbo', bet, winAmt, profit);
+
                         if(isWin) {
-                            const winAmt = Math.floor(bet * target);
                             updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt});
                             triggerConfetti();
                         }
@@ -1181,8 +1228,13 @@
 
                 setTimeout(async () => {
                     setFlipping(false);
-                    if(result === choice) {
-                        const win = bet * 2;
+                    const isWin = result === choice;
+                    const win = isWin ? bet * 2 : 0;
+                    
+                    // LOG GAME
+                    logGame(user.id, user.username, 'CoinFlip', bet, win, win-bet);
+
+                    if(isWin) {
                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
                         setWinAmt(win);
                         triggerConfetti();
@@ -1260,6 +1312,10 @@
                         if(matches >= 9) mult = 40;
                         const win = Math.floor(bet * mult);
                         
+                        // LOG GAME
+                        const profit = win - bet;
+                        logGame(user.id, user.username, 'Keno', bet, win, profit);
+
                         setGameResult({ hits: matches, win: win });
                         setPlaying(false);
                         if(win > 0) {
@@ -1306,6 +1362,322 @@
             );
         }
 
+        // --- NEW GAMES (Mines, Plinko, Dice, Wheel, HiLo) ---
+
+        function MinesGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [playing, setPlaying] = useState(false);
+            const [grid, setGrid] = useState(Array(25).fill(null)); 
+            const [revealed, setRevealed] = useState(Array(25).fill(false));
+            const [bombsCount, setBombsCount] = useState(3);
+            const [profit, setProfit] = useState(0);
+            const [gameOver, setGameOver] = useState(false);
+
+            const startGame = async () => {
+                if(user.coins < bet) return showMsg("No Balance", "error");
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                let newGrid = Array(25).fill('gem');
+                let placed = 0;
+                while(placed < bombsCount) {
+                    let idx = Math.floor(Math.random() * 25);
+                    if(newGrid[idx] === 'gem') { newGrid[idx] = 'bomb'; placed++; }
+                }
+                setGrid(newGrid); setRevealed(Array(25).fill(false)); setPlaying(true); setGameOver(false); setProfit(0);
+            };
+
+            const clickTile = async (i) => {
+                if(!playing || revealed[i] || gameOver) return;
+                const newRevealed = [...revealed]; newRevealed[i] = true; setRevealed(newRevealed);
+                
+                if(grid[i] === 'bomb') {
+                    setGameOver(true); setPlaying(false);
+                    logGame(user.id, user.username, 'Mines', bet, 0, -bet);
+                    showMsg("BOOM!", "error");
+                } else {
+                    const gemsFound = newRevealed.filter((r, idx) => r && grid[idx] === 'gem').length;
+                    const nextMult = 1 + (gemsFound * (bombsCount / (25 - bombsCount))); 
+                    setProfit(Math.floor(bet * nextMult) - bet);
+                }
+            };
+
+            const cashout = async () => {
+                if(!playing || gameOver) return;
+                const win = bet + profit;
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                logGame(user.id, user.username, 'Mines', bet, win, profit);
+                setPlaying(false); setGameOver(true); showMsg(`Won +${profit}`, "success"); triggerConfetti();
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" },
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-bold text-red-500" }, "MINES"),
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6" },
+                    React.createElement('div', { className: "grid grid-cols-5 gap-2 w-full max-w-sm mb-6" },
+                        grid.map((val, i) => React.createElement('button', {
+                            key: i, onClick: ()=>clickTile(i),
+                            className: `h-14 rounded-lg flex items-center justify-center text-xl transition-all ${revealed[i] ? (val==='bomb'?'bg-red-500':'bg-green-500') : 'bg-dark-800 hover:bg-dark-700'}`
+                        }, revealed[i] ? (val==='bomb' ? React.createElement(Bomb) : React.createElement(Gem)) : ''))
+                    ),
+                    !playing && !gameOver && React.createElement('div', {className:"flex gap-4 items-center mb-4"}, 
+                        React.createElement('span', {className:"text-gray-400 text-xs"}, "Bombs:"),
+                        [1,3,5,10].map(b => React.createElement('button', {key:b, onClick:()=>setBombsCount(b), className:`px-3 py-1 rounded border ${bombsCount===b?'bg-gold-500 text-black border-gold-500':'border-white/10'}`}, b))
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" },
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }),
+                    playing ? React.createElement(Button, { full: true, onClick: cashout, variant:'green' }, `CASHOUT (+${profit})`) : React.createElement(Button, { full: true, onClick: startGame }, "PLAY")
+                )
+            );
+        }
+
+        function PlinkoGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [dropping, setDropping] = useState(false);
+            const [ballPos, setBallPos] = useState(50); 
+            
+            const drop = async () => {
+                if(user.coins < bet) return showMsg("No Balance", "error");
+                setDropping(true);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                const buckets = [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6]; 
+                let r = 0; for(let i=0; i<6; i++) r += Math.random();
+                const bucketIdx = Math.floor(r * (buckets.length / 6)); 
+                const safeIdx = Math.min(Math.max(bucketIdx, 0), buckets.length-1);
+                const multiplier = buckets[safeIdx];
+                
+                let steps = 0;
+                const int = setInterval(() => {
+                    setBallPos(prev => prev + (Math.random() > 0.5 ? 2 : -2)); 
+                    steps++;
+                    if(steps > 20) {
+                        clearInterval(int);
+                        setBallPos(10 + (safeIdx * 10)); 
+                        setTimeout(async () => {
+                            const win = Math.floor(bet * multiplier);
+                            logGame(user.id, user.username, 'Plinko', bet, win, win-bet);
+                            if(win > 0) {
+                                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                                showMsg(`x${multiplier}`, 'success'); triggerConfetti();
+                            } else {
+                                showMsg(`x${multiplier}`, 'error');
+                            }
+                            setDropping(false); setBallPos(50);
+                        }, 500);
+                    }
+                }, 50);
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" },
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-bold text-pink-500" }, "PLINKO"),
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 relative overflow-hidden flex flex-col items-center justify-end pb-10" },
+                    React.createElement('div', {className:"absolute top-10 flex flex-col items-center gap-4 opacity-50"},
+                        Array(8).fill(0).map((_,i) => React.createElement('div', {key:i, className:"flex gap-6"}, Array(i+3).fill(0).map((__,j)=>React.createElement('div',{key:j, className:"w-2 h-2 rounded-full bg-white"}))))
+                    ),
+                    dropping && React.createElement('div', {className:"absolute top-10 w-4 h-4 rounded-full bg-red-500 shadow-[0_0_10px_red] transition-all duration-75", style:{left:`${ballPos}%`, top:`${dropping ? '80%' : '10%'}`}}),
+                    React.createElement('div', {className:"flex gap-1 w-full px-4 mb-20"},
+                        [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6].map((m,i) => 
+                            React.createElement('div', {key:i, className:`flex-1 h-8 rounded text-[9px] flex items-center justify-center font-bold ${m>=2?'bg-red-500':(m<1?'bg-blue-500':'bg-orange-500')}`}, m+'x')
+                        )
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" },
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: dropping, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }),
+                    React.createElement(Button, { full: true, onClick: drop, disabled: dropping }, "DROP")
+                )
+            );
+        }
+
+        function DiceGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [target, setTarget] = useState(50);
+            const [rollUnder, setRollUnder] = useState(true);
+            const [rolling, setRolling] = useState(false);
+            const [lastRoll, setLastRoll] = useState(null);
+
+            const multiplier = 98 / (rollUnder ? target : (100-target));
+            
+            const roll = async () => {
+                if(user.coins < bet) return showMsg("No Balance", "error");
+                setRolling(true); setLastRoll(null);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                setTimeout(async () => {
+                    const r = Math.floor(Math.random() * 100);
+                    setLastRoll(r);
+                    const win = (rollUnder ? r < target : r > target);
+                    const winAmt = win ? Math.floor(bet * multiplier) : 0;
+                    
+                    logGame(user.id, user.username, 'Dice', bet, winAmt, winAmt-bet);
+                    if(win) { await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt}); triggerConfetti(); }
+                    setRolling(false);
+                }, 500);
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" },
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-bold text-blue-400" }, "DICE"),
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6" },
+                    React.createElement('div', {className:"text-6xl font-black mb-10 font-mono text-white"}, lastRoll ?? "00"),
+                    React.createElement('div', {className:"w-full max-w-sm bg-dark-800 p-6 rounded-2xl border border-white/5"},
+                        React.createElement('div', {className:"flex justify-between mb-2"}, 
+                            React.createElement('span', {className:"text-gray-400"}, "Multiplier"),
+                            React.createElement('span', {className:"text-gold-500 font-bold"}, multiplier.toFixed(4)+'x')
+                        ),
+                        React.createElement('input', { type: "range", min: "2", max: "98", value: target, onChange: e=>setTarget(Number(e.target.value)), className: "accent-blue-500 mb-4" }),
+                        React.createElement('div', {className:"flex justify-between text-xs font-bold text-white"}, 
+                            React.createElement('span', {}, "0"), React.createElement('span', {}, target), React.createElement('span', {}, "100")
+                        ),
+                        React.createElement('button', {onClick: ()=>setRollUnder(!rollUnder), className:"w-full mt-4 p-3 bg-white/5 rounded border border-white/10 text-sm"}, `Roll ${rollUnder?'Under':'Over'} ${target}`)
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" },
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: rolling, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }),
+                    React.createElement(Button, { full: true, onClick: roll, disabled: rolling }, rolling ? "..." : "ROLL")
+                )
+            );
+        }
+
+        function WheelGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [spinning, setSpinning] = useState(false);
+            const [rotation, setRotation] = useState(0);
+
+            const SEGMENTS = [
+                { color: '#222', mult: 2, chance: 0.5 },
+                { color: '#ef4444', mult: 3, chance: 0.3 },
+                { color: '#22c55e', mult: 5, chance: 0.15 },
+                { color: '#eab308', mult: 50, chance: 0.05 }
+            ];
+
+            const spin = async () => {
+                if(user.coins < bet) return showMsg("No Balance", "error");
+                setSpinning(true);
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+
+                const r = Math.random();
+                let acc = 0;
+                let outcome = SEGMENTS[0];
+                for(let s of SEGMENTS) { acc += s.chance; if(r <= acc) { outcome = s; break; } }
+                
+                const extraDeg = Math.floor(Math.random() * 30); 
+                const finalRot = rotation + 1800 + extraDeg; 
+                setRotation(finalRot);
+
+                setTimeout(async () => {
+                    const win = Math.floor(bet * outcome.mult);
+                    logGame(user.id, user.username, 'Wheel', bet, win, win-bet);
+                    if(win > bet) { 
+                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                         showMsg(`x${outcome.mult}`, 'success'); triggerConfetti();
+                    } else {
+                         await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                         showMsg(`x${outcome.mult}`, 'success'); 
+                    }
+                    setSpinning(false);
+                }, 3000);
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" },
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-bold text-yellow-500" }, "WHEEL"),
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden" },
+                     React.createElement('div', { className: "absolute top-20 text-gold-500 z-20" }, React.createElement(ArrowUp, {size:40, className:"rotate-180 drop-shadow-lg"})),
+                     React.createElement('div', { 
+                         className: "w-64 h-64 rounded-full border-4 border-white/10 relative transition-all duration-[3000ms] cubic-bezier(0.2, 0.8, 0.2, 1)",
+                         style: { transform: `rotate(${rotation}deg)`, background: 'conic-gradient(#222 0% 50%, #ef4444 50% 80%, #22c55e 80% 95%, #eab308 95% 100%)' }
+                     }),
+                     React.createElement('div', {className:"mt-10 flex gap-4 text-xs font-bold"},
+                        SEGMENTS.map((s,i) => React.createElement('div', {key:i, className:"flex flex-col items-center"},
+                            React.createElement('div', {className:"w-4 h-4 rounded-full mb-1", style:{background:s.color}}),
+                            React.createElement('span', {}, s.mult+'x')
+                        ))
+                     )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" },
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: spinning, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }),
+                    React.createElement(Button, { full: true, onClick: spin, disabled: spinning }, "SPIN")
+                )
+            );
+        }
+
+        function HiLoGame({ user, back, showMsg, ArrowIcon, t }) {
+            const [bet, setBet] = useState(100);
+            const [currentCard, setCurrentCard] = useState(Math.floor(Math.random()*13)+1); 
+            const [playing, setPlaying] = useState(false);
+            const [roundWin, setRoundWin] = useState(0);
+
+            const cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+            const startGame = async () => {
+                if(user.coins < bet) return showMsg("No Balance", "error");
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                setPlaying(true); setRoundWin(bet);
+                setCurrentCard(Math.floor(Math.random()*13)+1);
+            };
+
+            const guess = async (dir) => { 
+                const nextCard = Math.floor(Math.random()*13)+1;
+                let win = false;
+                if(dir === 'hi' && nextCard > currentCard) win = true;
+                else if(dir === 'lo' && nextCard < currentCard) win = true;
+                else if(dir === 'same' && nextCard === currentCard) win = true; 
+
+                setCurrentCard(nextCard);
+
+                if(win) {
+                    const mult = dir === 'same' ? 10 : 1.5; 
+                    const newWin = Math.floor(roundWin * mult);
+                    setRoundWin(newWin);
+                } else {
+                    logGame(user.id, user.username, 'HiLo', bet, 0, -bet);
+                    setPlaying(false); setRoundWin(0); showMsg("Incorrect", "error");
+                }
+            };
+
+            const cashout = async () => {
+                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+roundWin});
+                logGame(user.id, user.username, 'HiLo', bet, roundWin, roundWin-bet);
+                setPlaying(false); showMsg(`Won +${roundWin}`, 'success'); triggerConfetti();
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 bg-dark-900 border-b border-white/10" },
+                    React.createElement('button', { onClick: back, className: "text-slate-400" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-bold text-gray-200" }, "HI-LO"),
+                    React.createElement('span', { className: "text-xs bg-black px-2 py-1 rounded text-gold-500" }, user.coins)
+                ),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center p-6" },
+                    React.createElement('div', { className: "w-32 h-48 bg-white rounded-xl flex items-center justify-center text-6xl font-black text-black shadow-2xl mb-8 border-4 border-gray-300 animate-pop" },
+                        cards[currentCard-1]
+                    ),
+                    playing && React.createElement('div', {className:"text-green-500 font-mono text-xl font-bold mb-4"}, `Win: ${roundWin}`),
+                    playing && React.createElement('div', {className:"flex gap-2 w-full max-w-sm"},
+                        React.createElement('button', {onClick:()=>guess('lo'), className:"flex-1 p-4 bg-red-500/20 text-red-500 border border-red-500/50 rounded-xl font-bold hover:bg-red-500/40"}, "LO"),
+                        React.createElement('button', {onClick:()=>guess('hi'), className:"flex-1 p-4 bg-green-500/20 text-green-500 border border-green-500/50 rounded-xl font-bold hover:bg-green-500/40"}, "HI")
+                    )
+                ),
+                React.createElement('div', { className: "p-4 bg-dark-900 flex gap-4 pb-safe border-t border-white/10" },
+                    React.createElement('input', { type: "number", value: bet, onChange: e=>setBet(Number(e.target.value)), disabled: playing, className: "w-24 bg-black border border-white/20 rounded-xl text-center text-white font-bold" }),
+                    playing ? React.createElement(Button, { full: true, onClick: cashout, variant:'gold' }, "CASHOUT") : React.createElement(Button, { full: true, onClick: startGame }, "START")
+                )
+            );
+        }
+
         // --- DASHBOARD AND WALLET ---
         function HomeScreen({ user, navTo, t }) {
             return React.createElement('div', { className: "space-y-6 animate-pop" },
@@ -1337,6 +1709,7 @@
             );
         }
 
+        // --- UPDATED CASINO SCREEN ---
         function CasinoScreen({ navTo, t }) {
             return React.createElement('div', { className: "space-y-4 animate-pop" },
                 React.createElement('h2', { className: "text-gold-500 font-bold text-lg flex gap-2 items-center" }, React.createElement(Dices), t('casino')),
@@ -1345,7 +1718,13 @@
                     React.createElement(GameCard, { title:t('slots'), sub:"Weighted", color:"purple", icon:Gem, onClick:()=>navTo('game-slots') }),
                     React.createElement(GameCard, { title:t('limbo'), sub:"Greedy Mode", color:"orange", icon:Target, onClick:()=>navTo('game-limbo') }),
                     React.createElement(GameCard, { title:t('keno'), sub:"Classic", color:"emerald", icon:Grid3X3, onClick:()=>navTo('game-keno') }),
-                    React.createElement(GameCard, { title:t('coinflip'), sub:"50/50", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') })
+                    React.createElement(GameCard, { title:t('coinflip'), sub:"50/50", color:"blue", icon:Coins, onClick:()=>navTo('game-coinflip') }),
+                    // NEW GAMES
+                    React.createElement(GameCard, { title:t('mines'), sub:"Grid Logic", color:"red", icon:Bomb, onClick:()=>navTo('game-mines') }),
+                    React.createElement(GameCard, { title:t('plinko'), sub:"Physics", color:"pink", icon:CircleDot, onClick:()=>navTo('game-plinko') }),
+                    React.createElement(GameCard, { title:t('dice'), sub:"Range", color:"blue", icon:Dices, onClick:()=>navTo('game-dice') }),
+                    React.createElement(GameCard, { title:t('wheel'), sub:"Spin", color:"yellow", icon:LifeBuoy, onClick:()=>navTo('game-wheel') }),
+                    React.createElement(GameCard, { title:t('hilo'), sub:"Cards", color:"gray", icon:ArrowUp, onClick:()=>navTo('game-hilo') })
                 )
             );
         }
@@ -1636,11 +2015,11 @@
                             React.createElement('p', { className: `font-bold ${item.type==='deposit'?'text-green-400':'text-red-400'}` }, 
                                 item.type === 'deposit' ? 'DEPOSIT' : 'WITHDRAW'
                             ),
-                            React.createElement('p', { className: "text-xs text-white/80" }, item.method), 
+                            React.createElement('p', { className: "text-xs text-white/80" }, item.method),
                             React.createElement('p', { className: "text-[10px] text-gray-500" }, new Date(item.date).toLocaleDateString())
                         ),
                         React.createElement('div', { className: "text-right" }, 
-                            React.createElement('p', { className: "text-white font-mono font-bold" }, item.type==='deposit' ? `+${item.amount}$` : `-${item.amount}$`), 
+                            React.createElement('p', { className: "text-white font-mono font-bold" }, item.type==='deposit' ? `+${item.amount}$` : `-${item.amount}$`),
                             React.createElement('span', { className: `text-[9px] px-2 py-0.5 rounded ${item.status==='pending'?'bg-yellow-500/20 text-yellow-500':(item.status==='approved'?'bg-green-500/20 text-green-500':'bg-red-500/20 text-red-500')}` }, item.status)
                         )
                     )
@@ -1655,4 +2034,3 @@
     </script>
 </body>
 </html>
-
