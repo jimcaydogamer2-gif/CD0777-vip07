@@ -431,19 +431,21 @@
         const CountUp = ({ value, prefix = '' }) => {
             const [displayVal, setDisplayVal] = useState(0);
             const prevValueRef = useRef(0);
+            const [isAnimating, setIsAnimating] = useState(false);
             
             useEffect(() => {
-                let start = displayVal;
                 const end = parseFloat(value) || 0;
-                if (start === end) return;
+                if (displayVal === end) return;
                 
-                const duration = 1000;
+                setIsAnimating(true);
+                const start = displayVal;
+                const duration = 1200; // سرعة انسيابية عالمية
                 const startTime = performance.now();
 
                 const animate = (currentTime) => {
                     const elapsed = currentTime - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    const ease = 1 - Math.pow(1 - progress, 3);
+                    const ease = 1 - Math.pow(1 - progress, 4); // حركة انسيابية جداً
                     
                     const current = start + (end - start) * ease;
                     setDisplayVal(current);
@@ -451,23 +453,25 @@
                     if (progress < 1) requestAnimationFrame(animate);
                     else {
                         setDisplayVal(end);
+                        setIsAnimating(false);
                         prevValueRef.current = end;
                     }
                 };
                 requestAnimationFrame(animate);
             }, [value]);
 
-            // التحقق إذا كان الرصيد يزداد (حالة فوز) لإضافة التوهج
-            const isIncreasing = value > prevValueRef.current;
+            const isWinning = value > prevValueRef.current && isAnimating;
 
             return React.createElement('span', { 
-                className: `font-mono tracking-tight transition-all duration-500 ${isIncreasing ? 'text-white' : 'text-gold-500'}`,
+                className: `font-mono tracking-tighter transition-all duration-300 ${isWinning ? 'scale-110 text-white' : 'text-gold-400'}`,
                 style: { 
-                    textShadow: isIncreasing ? '0 0 15px #FFD700, 0 0 25px #FFB300' : 'none',
-                    filter: isIncreasing ? 'brightness(1.5)' : 'brightness(1)'
+                    display: 'inline-block',
+                    // توهج "هادئ" غير مزعج
+                    textShadow: isWinning ? '0 0 10px rgba(255,215,0,0.5)' : 'none',
+                    transform: isWinning ? 'translateY(-1px)' : 'none'
                 }
             }, 
-                `${prefix}${displayVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                `${prefix}${displayVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             );
         };
 
@@ -563,71 +567,33 @@
             );
         };
 
+        // --- تعديل نافذة النتائج لتكون عالمية وغير مزعجة ---
         const GameResultModal = ({ win, amount, onClose, t }) => {
             useEffect(() => {
-                if(win) { 
-                    // نغمة فوز راقية (تتابعية)
-                    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => 
-                        setTimeout(() => AudioSys.playTone(f, 'sine', 0.4, 0.1), i * 150)
-                    );
-                    hapticFeedback('success'); 
-                } else { 
-                    AudioSys.playTone(100, 'triangle', 0.5, 0.1); 
-                    hapticFeedback('soft'); 
-                }
-                const timer = setTimeout(onClose, 3000); // إغلاق تلقائي بعد 3 ثواني
+                if(win) { AudioSys.win(); hapticFeedback('success'); }
+                else { hapticFeedback('soft'); }
+                const timer = setTimeout(onClose, 2000); 
                 return () => clearTimeout(timer);
-            }, [onClose, win]);
+            }, [win, onClose]);
 
-            return React.createElement('div', { className: "fixed inset-0 z-[60] flex items-center justify-center animate-fade-in" },
-                // 1. الخلفية المضببة الداكنة جداً
-                React.createElement('div', { className: "absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity duration-500" }),
-
-                // 2. تأثيرات الغبار الذهبي (فقط عند الفوز)
-                win && React.createElement(WinParticles, { active: win }),
-
-                // 3. البطاقة الرئيسية (The Card)
+            return React.createElement('div', { className: "fixed inset-0 z-[70] flex items-center justify-center animate-fade-in px-6" },
+                React.createElement('div', { className: "absolute inset-0 bg-black/40 backdrop-blur-sm" }),
                 React.createElement('div', { 
-                    className: `relative z-10 w-full max-w-sm mx-6 p-1 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] transform transition-all duration-500
-                    ${win ? 'animate-slide-up scale-100' : 'animate-pop grayscale opacity-90'}`
+                    className: `relative z-10 w-full max-w-xs p-8 rounded-[2.5rem] border transition-all duration-500 bg-dark-950/95 shadow-2xl ${win ? 'border-gold-500/40 shadow-gold-500/10' : 'border-white/5'}`
                 },
-                    // حدود ذهبية لامعة (Border Gradient)
-                    React.createElement('div', { className: `absolute inset-0 ${win ? 'bg-gradient-to-b from-gold-400 via-transparent to-gold-600 opacity-50' : 'bg-gray-800'}` }),
-
-                    // محتوى البطاقة الداخلي
-                    React.createElement('div', { className: "relative bg-dark-950 rounded-[22px] p-8 flex flex-col items-center justify-center border border-white/5 h-full" },
-                        
-                        // إضاءة خلفية مركزية (Glow)
-                        win && React.createElement('div', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gold-500/20 blur-[50px] rounded-full" }),
-
-                        // الأيقونة
-                        React.createElement('div', { className: "mb-6 relative" },
-                            win 
-                            ? React.createElement(Crown, { size: 70, className: "text-gold-500 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] animate-bounce" })
-                            : React.createElement(Ban, { size: 60, className: "text-gray-600 opacity-80" })
-                        ),
-
-                        // النصوص
-                        React.createElement('h2', { 
-                            className: `text-2xl font-black uppercase tracking-[0.2em] mb-2 ${win ? 'text-transparent bg-clip-text bg-gradient-to-r from-gold-200 to-gold-500' : 'text-gray-400'}` 
-                        }, win ? "Big Win" : "Good Luck"),
-
-                        // المبلغ (الرقم الكبير)
-                        React.createElement('div', { className: "relative" },
-                            win && React.createElement('div', { className: "absolute inset-0 blur-lg bg-gold-500/30" }), // توهج الرقم
-                            React.createElement('p', { 
-                                className: `relative text-6xl font-black font-mono tracking-tighter ${win ? 'text-white drop-shadow-md' : 'text-gray-500'}` 
-                            }, 
-                                win ? `+${amount}` : "0.00"
-                            )
-                        ),
-
-                        // العملة أسفل الرقم
-                        win && React.createElement('span', { className: "text-xs font-bold text-gold-600 mt-2 tracking-widest uppercase bg-gold-500/10 px-3 py-1 rounded-full border border-gold-500/20" }, "Coins Added")
+                    win && React.createElement('div', { className: "absolute -top-10 left-1/2 -translate-x-1/2 animate-bounce" }, 
+                        React.createElement(Crown, { size: 40, className: "text-gold-500 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" })
+                    ),
+                    React.createElement('div', { className: "text-center space-y-1" },
+                        React.createElement('h2', { className: `text-[10px] font-black uppercase tracking-[0.4em] ${win ? 'text-gold-500' : 'text-gray-500'}` }, win ? "Profit Unlocked" : "Round Ended"),
+                        React.createElement('p', { className: `text-5xl font-mono font-black tracking-tighter ${win ? 'text-white' : 'text-gray-600'}` }, win ? `+${amount}` : "0.00")
                     )
                 )
             );
         };
+
+        
+            
 
         const convertToBase64 = (file) => {
             return new Promise((resolve, reject) => {
@@ -2045,10 +2011,10 @@
                     React.createElement('button', { onClick: toggleMenu, className: "p-2 bg-dark-900 rounded-xl text-gold-500 border border-white/5 btn-press" }, React.createElement(Menu, { size: 24 })),
                     React.createElement('div', { className: "w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-400 to-gold-600 flex items-center justify-center font-black text-black text-sm shadow-lg shadow-gold-500/10" }, "CD")
                 ),
-                React.createElement('div', { className: "bg-dark-900 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-inner" }, 
-                    React.createElement(Gem, { size: 16, className: "text-gold-500 animate-pulse" }), 
+                React.createElement('div', { className: "bg-dark-900 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-[inset_0_1px_4px_rgba(0,0,0,0.5)]" }, 
+                    React.createElement(Gem, { size: 14, className: "text-gold-500" }), 
                     React.createElement('div', { className: "text-gold-500 font-mono font-bold text-sm" }, 
-                        // هنا التعديل: استخدام العداد المتحرك
+                        // هذا العداد سيظهر في كل الالعاب الآن بلا استثناء
                         React.createElement(CountUp, { value: user.coins })
                     )
                 )
