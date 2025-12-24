@@ -284,20 +284,14 @@
         };
 
         // --- TIER 1: COMMUNITY CHAT WIDGET (LOCALIZED MIX) ---
+        // --- TIER 1: COMMUNITY CHAT WIDGET (FULLY RANDOMIZED) ---
         const ChatWidget = ({ user, t, isRTL }) => {
             const [isOpen, setIsOpen] = useState(false);
             
-            // دالة لتوليد معرفات عشوائية تبدأ بـ CD
+            // دالة لتوليد معرفات مثل CD4921
             const getRandomID = () => `CD${Math.floor(1000 + Math.random() * 9000)}`;
 
-            // رسائل البداية (خليط)
-            const [msgs, setMsgs] = useState([
-                { u: 'CD1092', m: 'Nayda lyoum f Crash! 🔥', t: 'Just now' },
-                { u: 'CD8821', m: 'Mabrook ya shabab ❤️', t: '1m ago' },
-                { u: 'CD3301', m: 'C\'est parti 🚀', t: '2m ago' }
-            ]);
-            
-            // قائمة الرسائل العشوائية (مغربية، مصرية، فرنسية)
+            // قائمة الرسائل (ميكس لهجات)
             const FAKE_MSGS = [
                 "Nayda f Crash! 🔥", 
                 "El denya wal3a fl Plinko", 
@@ -315,19 +309,38 @@
                 "Qui veut échanger des pièces?",
                 "Ana ksebt kteer elnaharda 💪",
                 "Khsert kolchi... hani raj3 db",
-                "Skhina lyoum 🔥"
+                "Skhina lyoum 🔥",
+                "Kayn chi rba7 ola walo?",
+                "L'appli est top saraha",
+                "Mabrouk 3likom kamlin",
+                "Withdrawal approved ✅",
+                "Crash 20x!! 🚀"
             ];
+
+            // 🟢 التعديل الجوهري هنا:
+            // بدلاً من وضع رسائل ثابتة، نقوم بتوليد 3 رسائل عشوائية فوراً عند بدء التطبيق
+            const [msgs, setMsgs] = useState(() => {
+                const initialMsgs = [];
+                for (let i = 1; i <= 3; i++) {
+                    initialMsgs.push({
+                        u: getRandomID(),
+                        m: FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)],
+                        t: `${i}m ago` // توقيتات وهمية (1m ago, 2m ago...)
+                    });
+                }
+                return initialMsgs;
+            });
             
             useEffect(() => {
                 const interval = setInterval(() => {
-                    // احتمالية ظهور رسالة جديدة 70% كل 4 ثواني
+                    // إضافة رسالة جديدة كل بضعة ثواني
                     if(Math.random() > 0.3) {
                         const newMsg = { 
                             u: getRandomID(), 
                             m: FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)], 
                             t: 'Just now' 
                         };
-                        setMsgs(prev => [newMsg, ...prev.slice(0, 8)]); // الاحتفاظ بآخر 8 رسائل فقط
+                        setMsgs(prev => [newMsg, ...prev.slice(0, 8)]); // إبقاء القائمة نظيفة
                     }
                 }, 3500);
                 return () => clearInterval(interval);
@@ -352,11 +365,11 @@
                                 React.createElement('span', { className: "text-gold-500 text-xs font-mono font-bold tracking-wider" }, m.u), 
                                 React.createElement('span', { className: "text-gray-500 text-[9px]" }, m.t)
                             ),
-                            React.createElement('p', { className: "text-xs text-gray-200 font-cairo" }, m.m) // استخدام خط Cairo لدعم العربية بشكل جميل
+                            React.createElement('p', { className: "text-xs text-gray-200 font-cairo" }, m.m)
                         ))
                     ),
                     
-                    // حقل الكتابة (معطل لغير النخبة)
+                    // حقل الكتابة (معطل)
                     React.createElement('div', { className: "mt-2 pt-2 border-t border-white/10" }, 
                         React.createElement('div', { className: "relative" },
                             React.createElement('input', { disabled: true, placeholder: "Chat disabled for non-VIP", className: "w-full bg-black/40 text-xs p-3 rounded-xl border border-white/5 text-center cursor-not-allowed text-gray-500" }),
