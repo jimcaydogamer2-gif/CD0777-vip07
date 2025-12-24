@@ -284,6 +284,35 @@
             return React.createElement('canvas', { ref: canvasRef, className: "fixed inset-0 pointer-events-none z-[70]" });
         };
 
+        // --- بداية كود شريط السحوبات الجديد ---
+        const LiveWithdrawals = () => {
+            const [msg, setMsg] = useState("");
+            
+            // قائمة الأسماء والطرق والمبالغ لتبدو واقعية جداً
+            const NAMES = ["Ahmed.K", "Simo_Life", "Youssef_7", "Sarah.M", "Omar_Pro", "Hassan.Dz", "Karim_Fes", "Mehdi_Casa"];
+            const METHODS = ["Cash Plus", "Wafacash", "CIH Bank", "Attijari", "USDT", "Orange Money"];
+            
+            useEffect(() => {
+                const generateMsg = () => {
+                    const name = NAMES[Math.floor(Math.random() * NAMES.length)];
+                    const method = METHODS[Math.floor(Math.random() * METHODS.length)];
+                    const amount = Math.floor(Math.random() * 800) + 100; // مبالغ بين 100 و 900
+                    setMsg(`🚀 ${name} just withdrew $${amount} via ${method}`);
+                };
+
+                generateMsg(); // تشغيل فوري
+                const interval = setInterval(generateMsg, 4000); // تغيير كل 4 ثواني
+                return () => clearInterval(interval);
+            }, []);
+
+            return React.createElement('div', { className: "w-full bg-green-900/90 border-b border-green-500/50 p-2 flex justify-center items-center overflow-hidden relative z-50 backdrop-blur-md" },
+                React.createElement('div', { className: "flex items-center gap-2 animate-pulse" },
+                    React.createElement(CheckCircle, { size: 14, className: "text-green-400" }),
+                    React.createElement('span', { className: "text-[10px] font-mono font-bold text-white tracking-wider" }, msg)
+                )
+            );
+        };
+        // --- نهاية كود شريط السحوبات الجديد ---
         // --- TIER 1: COMMUNITY CHAT WIDGET (LOCALIZED MIX) ---
         // --- TIER 1: COMMUNITY CHAT WIDGET (FULLY RANDOMIZED) ---
         const ChatWidget = ({ user, t, isRTL }) => {
@@ -993,6 +1022,7 @@
             },
                 React.createElement('div', { className: "noise-overlay" }),
                 React.createElement(CursorTrail),
+                React.createElement(LiveWithdrawals),
                 
                 notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-pop glass-premium w-max max-w-[90%] border ${notify.type==='error'?'border-red-500 bg-red-900/80':'border-green-500 bg-green-900/80'}` }, 
                     notify.type==='success'?React.createElement(CheckCircle,{size:20}):React.createElement(XCircle,{size:20}),
@@ -3691,4 +3721,3 @@
 </script>
 </body>
 </html>
-
