@@ -1023,8 +1023,88 @@
             );
         }
 
-        // --- APP MAIN (MOBILE OPTIMIZED) ---
+        // --- 0. CINEMATIC INTRO SCREEN (The Grand Opening) ---
+        function IntroScreen({ onFinish }) {
+            const [progress, setProgress] = useState(0);
+            const [status, setStatus] = useState("INITIALIZING SECURE CORE...");
+            const [exiting, setExiting] = useState(false);
+
+            useEffect(() => {
+                // تسلسل الأحداث (Timeline)
+                const timeline = [
+                    { t: 500, p: 20, s: "ESTABLISHING UPLINK..." },
+                    { t: 1200, p: 45, s: "VERIFYING ENCRYPTION KEYS..." },
+                    { t: 2000, p: 70, s: "CONNECTING TO ELITE SERVERS..." },
+                    { t: 2800, p: 90, s: "SYNCING ASSETS..." },
+                    { t: 3500, p: 100, s: "ACCESS GRANTED" }
+                ];
+
+                timeline.forEach(step => {
+                    setTimeout(() => {
+                        setProgress(step.p);
+                        setStatus(step.s);
+                        AudioSys.click(); // صوت تكتكة خفيف
+                    }, step.t);
+                });
+
+                // إنهاء العرض
+                setTimeout(() => {
+                    setExiting(true); // بدء انيميشن الخروج
+                    setTimeout(onFinish, 800); // إزالة المكون بعد انتهاء انيميشن الخروج
+                }, 4000);
+
+            }, []);
+
+            return React.createElement('div', { 
+                className: `fixed inset-0 z-[999] bg-[#020617] flex flex-col items-center justify-center font-mono transition-all duration-1000 ${exiting ? 'opacity-0 scale-110 blur-sm' : 'opacity-100'}`
+            },
+                // الخلفية الشبكية المتحركة
+                React.createElement('div', { className: "absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_#1e293b_1px,_transparent_1px)]", style: { backgroundSize: '30px 30px' } }),
+                
+                // الشعار المركزي المتوهج
+                React.createElement('div', { className: "relative mb-12" },
+                    // هالة خارجية
+                    React.createElement('div', { className: "absolute inset-0 bg-gold-500 blur-[60px] opacity-20 animate-pulse" }),
+                    // دائرة تدور
+                    React.createElement('div', { className: "absolute -inset-4 border-t-2 border-r-2 border-gold-500/30 rounded-full animate-spin", style: { animationDuration: '3s' } }),
+                    React.createElement('div', { className: "absolute -inset-8 border-b-2 border-l-2 border-gold-500/10 rounded-full animate-spin", style: { animationDuration: '5s', animationDirection: 'reverse' } }),
+                    
+                    // الشعار
+                    React.createElement('div', { className: "relative w-32 h-32 bg-black rounded-full flex items-center justify-center border border-gold-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)]" },
+                        React.createElement('span', { className: "text-6xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-gold-300 to-gold-600 font-oswald tracking-tighter" }, "CD")
+                    )
+                ),
+
+                // شريط التقدم الفاخر
+                React.createElement('div', { className: "w-64 space-y-2 relative z-10" },
+                    // الحاوية
+                    React.createElement('div', { className: "h-1 w-full bg-gray-800 rounded-full overflow-hidden" },
+                        // الشريط المتحرك
+                        React.createElement('div', { 
+                            className: "h-full bg-gradient-to-r from-gold-600 via-yellow-400 to-gold-600 shadow-[0_0_15px_#eab308] transition-all duration-500 ease-out",
+                            style: { width: `${progress}%` } 
+                        })
+                    ),
+                    
+                    // النصوص والبيانات
+                    React.createElement('div', { className: "flex justify-between items-center" },
+                        React.createElement('p', { className: "text-[10px] text-gold-500/80 font-bold tracking-widest animate-pulse" }, status),
+                        React.createElement('p', { className: "text-[10px] text-white font-mono" }, `${progress}%`)
+                    )
+                ),
+
+                // التذييل الأمني
+                React.createElement('div', { className: "absolute bottom-10 flex flex-col items-center gap-2 opacity-50" },
+                    React.createElement(Lock, { size: 14, className: "text-gray-500" }),
+                    React.createElement('span', { className: "text-[8px] text-gray-500 uppercase tracking-[0.3em]" }, "Secure Connection Established")
+                )
+            );
+        }
+        // --- APP MAIN (MOBILE OPTIMIZED & CINEMATIC) ---
         export default function App() {
+            // 1. حالة التحكم في شاشة البداية السينمائية
+            const [showIntro, setShowIntro] = useState(true);
+
             const [user, setUser] = useState(null);
             const [view, setView] = useState('auth');
             const [notify, setNotify] = useState(null);
@@ -1033,14 +1113,22 @@
             const [settings, setSettings] = useState({});
 
             useEffect(() => {
-                document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+                // منع التكبير باللمس المزدوج
+                document.addEventListener('dblclick', function(event) {
+                    event.preventDefault();
+                }, { passive: false });
+
                 const uid = localStorage.getItem('cd0777_uid');
                 if (uid && db) {
                     if (uid === 'admin') { setUser({role: 'admin'}); return; }
+                    
+                    // الاستماع لتغييرات المستخدم (Real-time)
                     onSnapshot(doc(db, "users", uid), (s) => { 
                         if(s.exists()) setUser({id: s.id, ...s.data()}); 
                         else { setUser(null); localStorage.removeItem('cd0777_uid'); setView('auth'); }
                     });
+
+                    // جلب الإعدادات العامة
                     getDoc(doc(db, "settings", "global")).then(s => {
                         if(s.exists()) {
                             const data = s.data();
@@ -1051,7 +1139,7 @@
                 }
             }, []);
 
-            // توجيه تلقائي عند الدخول، لكن لا تلمس صفحات الشروط إذا كانت مفتوحة
+            // توجيه تلقائي عند الدخول (مع استثناء صفحات الشروط والسياسة)
             useEffect(() => { 
                 if(user && view === 'auth') {
                     setView(user.role === 'admin' ? 'admin' : 'home'); 
@@ -1062,20 +1150,33 @@
             const navTo = (v) => { setView(v); setMenuOpen(false); AudioSys.click(); };
 
             // ----------------------------------------------------
-            // 🟢 [التصحيح الهام] الصفحات العامة (تظهر للجميع)
+            // 1. عرض شاشة البداية أولاً (Cinematic Intro)
             // ----------------------------------------------------
-            // نتحقق من هذه الصفحات *قبل* التحقق من المستخدم (!user)
+            if (showIntro) {
+                return React.createElement(IntroScreen, { 
+                    onFinish: () => setShowIntro(false) 
+                });
+            }
+
+            // ----------------------------------------------------
+            // 2. الصفحات العامة (متاحة للجميع قبل وبعد التسجيل)
+            // ----------------------------------------------------
             if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: DEFAULT_TERMS, back: () => setView(user ? 'home' : 'auth'), settings });
             if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: DEFAULT_POLICY, back: () => setView(user ? 'home' : 'auth'), settings });
 
-            // الآن نتحقق: هل المستخدم غير مسجل؟
+            // ----------------------------------------------------
+            // 3. التحقق من المستخدم (Login/Register)
+            // ----------------------------------------------------
             if (!user) return React.createElement(AuthScreen, { setUser, setView, showMsg, t });
             
             // ----------------------------------------------------
-            // الصفحات الخاصة بالمستخدمين المسجلين
+            // 4. لوحة تحكم الأدمن (God Mode)
             // ----------------------------------------------------
             if (user?.role === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');}, db, showMsg, t });
             
+            // ----------------------------------------------------
+            // 5. الألعاب (Games Routing)
+            // ----------------------------------------------------
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, isRTL: true, db, logGame });
             if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-mines') return React.createElement(MinesGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
@@ -1087,6 +1188,9 @@
             if (view === 'game-coinflip') return React.createElement(CoinFlipGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-hilo') return React.createElement(HiLoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             
+            // ----------------------------------------------------
+            // 6. الصفحات الداخلية (Internal Pages)
+            // ----------------------------------------------------
             if (view === 'vip-register') return React.createElement(VipRegistrationScreen, { user, t, back: ()=>navTo('home'), db, showMsg });
             if (view === 'xp-level') return React.createElement(LevelingScreen, { user, back: ()=>navTo('home') });
             if (view === 'deposit') return React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') });
@@ -1094,30 +1198,37 @@
             if (view === 'exchange') return React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') });
             if (view === 'history') return React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') });
             
-            // مررنا setView هنا لكي تعمل الأزرار داخل صفحة الإعدادات
+            // صفحة الإعدادات الاحترافية (تم تمرير setView للروابط)
             if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile'), db, t, showMsg, setView });
             
+            // الصفحات الجديدة (الوكيل والهدايا)
             if (view === 'agent') return React.createElement(AgentScreen, { user, back: ()=>navTo('home'), t, showMsg });
             if (view === 'gifts') return React.createElement(GiftScreen, { user, back: ()=>navTo('home'), showMsg });
 
-            // The Main Layout (Mobile Optimized)
+            // ----------------------------------------------------
+            // 7. الواجهة الرئيسية (The Main Layout)
+            // ----------------------------------------------------
             return React.createElement('div', { 
                 className: "h-[100dvh] w-full flex flex-col bg-dark-950 text-white overflow-hidden fixed inset-0", 
                 dir: 'rtl' 
             },
+                // الطبقات الخلفية والمؤثرات
                 React.createElement('div', { className: "noise-overlay" }),
                 React.createElement(CursorTrail),
                 React.createElement(LiveWithdrawals),
                 
+                // الإشعارات العائمة
                 notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-pop glass-premium w-max max-w-[90%] border ${notify.type==='error'?'border-red-500 bg-red-900/80':'border-green-500 bg-green-900/80'}` }, 
                     notify.type==='success'?React.createElement(CheckCircle,{size:20}):React.createElement(XCircle,{size:20}),
                     React.createElement('span', { className: "font-bold text-xs" }, notify.msg)
                 ),
 
+                // شريط الأخبار المتحرك
                 React.createElement(LiveTicker, { t }),
                 
+                // الشريط العلوي (Navbar)
                 React.createElement('div', { className: "p-4 flex justify-between items-center glass-premium z-20" },
-                    React.createElement('button', { onClick: ()=>setMenuOpen(true), className: "p-2 bg-white/5 rounded-lg" }, React.createElement(Menu, { className: "text-gold-500" })),
+                    React.createElement('button', { onClick: ()=>setMenuOpen(true), className: "p-2 bg-white/5 rounded-lg hover:bg-gold-500/10 transition-colors" }, React.createElement(Menu, { className: "text-gold-500" })),
                     React.createElement('span', { className: "font-black text-gold-500 text-xl font-oswald tracking-widest" }, "CD0777"),
                     React.createElement('div', { className: "bg-black/40 border border-gold-500/20 px-3 py-1 rounded-lg flex items-center gap-2" }, 
                         React.createElement(Gem, { size: 14, className: "text-gold-500" }), 
@@ -1125,9 +1236,11 @@
                     )
                 ),
 
+                // القائمة الجانبية والشات
                 menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, lang: 'ar', setLang: ()=>{}, settings, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');} }),
                 React.createElement(ChatWidget, { user, t, isRTL: true }),
 
+                // منطقة المحتوى الرئيسية (Routing Area)
                 React.createElement('main', { className: "flex-1 overflow-y-auto p-4 pb-24 scrollbar-hide" },
                     view === 'home' && React.createElement(HomeScreen, { user, navTo, t }),
                     view === 'profile' && React.createElement(WalletScreen, { user, t, isRTL: true, navTo }),
@@ -1135,6 +1248,7 @@
                     view === 'casino' && React.createElement(CasinoScreen, { navTo, t })
                 ),
 
+                // شريط التنقل السفلي (Bottom Nav)
                 React.createElement('nav', { className: "fixed bottom-0 left-0 right-0 h-20 glass-premium rounded-t-3xl flex justify-around items-center z-40 pb-2 border-t border-white/5" },
                     React.createElement(NavBtn, { icon: Home, label: t('home'), active: view==='home', onClick:()=>navTo('home') }),
                     React.createElement(NavBtn, { icon: Dices, label: t('casino'), active: view==='casino', onClick:()=>navTo('casino') }),
