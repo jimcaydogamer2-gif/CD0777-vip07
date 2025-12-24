@@ -942,7 +942,22 @@
                 return () => window.removeEventListener('click', initAudio);
             }, []);
             
-            useEffect(() => { if(db) onSnapshot(doc(db, "settings", "global"), (s) => s.exists() && setSettings(s.data())); }, []);
+            // هذا الكود يربط عقل الأدمن بعقل اللاعب فوراً
+            useEffect(() => { 
+                if(db) onSnapshot(doc(db, "settings", "global"), (s) => {
+                    if (s.exists()) {
+                        const data = s.data();
+                        setSettings(data);
+                        
+                        // 👇 التحديث الفوري لنسبة الفوز (بدون ريفريش)
+                        if (data.house_win_rate !== undefined) {
+                            GLOBAL_HOUSE_EDGE = data.house_win_rate / 100;
+                            // يمكنك إلغاء التعليق أدناه للتأكد من وصول الأمر
+                            // console.log("System Difficulty Updated:", GLOBAL_HOUSE_EDGE);
+                        }
+                    }
+                }); 
+            }, []);
 
             useEffect(() => {
                 const uid = localStorage.getItem('cd0777_uid');
