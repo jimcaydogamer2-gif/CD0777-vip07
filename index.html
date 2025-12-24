@@ -1144,12 +1144,13 @@
             );
         }
 
-        // --- AUTH ---
+        // --- 4. PROFESSIONAL AUTH SCREEN (CINEMATIC ENTRY) ---
         function AuthScreen({ setUser, setView, showMsg, t, lang, setLang }) {
             const [isReg, setIsReg] = useState(false); 
             const [f, setF] = useState({ u:'', p:'', n:'', ph:'', country: 'MA' });
             const [agreeTerms, setAgreeTerms] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [showPass, setShowPass] = useState(false); // زر إظهار كلمة السر
             
             useEffect(() => {
                 const c = COUNTRIES.find(c => c.code === f.country);
@@ -1163,7 +1164,8 @@
                 if(isReg && !agreeTerms) return showMsg(t('must_agree'), 'error');
 
                 setLoading(true);
-                await new Promise(r => setTimeout(r, 1000));
+                // محاكاة تأخير الشبكة لإعطاء شعور بالمعالجة
+                await new Promise(r => setTimeout(r, 1500));
 
                 if(f.u==='admin' && f.p==='admin123') { 
                     localStorage.setItem('cd0777_uid', 'admin'); setUser({role:'admin'}); setView('admin'); setLoading(false); return; 
@@ -1188,112 +1190,159 @@
 
             const selectedCountry = COUNTRIES.find(c => c.code === f.country) || COUNTRIES[0];
 
-            return React.createElement('div', { className: "min-h-screen flex items-center justify-center p-4 bg-[#020617] relative overflow-hidden", dir: lang==='ar'?'rtl':'ltr' },
-                // الخلفيات المتحركة
-                React.createElement('div', { className: "absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" }),
-                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gold-500/5 to-transparent pointer-events-none" }),
-                React.createElement('div', { className: "absolute -top-24 -right-24 w-64 h-64 bg-gold-500/20 rounded-full blur-[100px] animate-pulse" }),
-                React.createElement('div', { className: "absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px]" }),
+            // مكون حقل إدخال مخصص فاخر
+            const ProInput = ({ icon: Icon, isPass, ...props }) => React.createElement('div', { className: "relative group transition-all duration-300" },
+                React.createElement('div', { className: "absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-gold-500 transition-colors z-10" }, 
+                    React.createElement(Icon, { size: 20 })
+                ),
+                React.createElement('input', { 
+                    ...props, 
+                    type: isPass ? (showPass ? "text" : "password") : (props.type || "text"),
+                    className: "w-full bg-[#0a0a0a]/80 border border-white/5 rounded-xl py-4 pl-12 pr-10 text-white placeholder:text-gray-600 focus:border-gold-500/50 focus:bg-black focus:shadow-[0_0_20px_rgba(234,179,8,0.1)] transition-all outline-none font-medium" 
+                }),
+                // زر العين لكلمة السر
+                isPass && React.createElement('button', {
+                    onClick: () => setShowPass(!showPass),
+                    className: "absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                }, showPass ? React.createElement(CheckCircle, {size:18, className:"text-gold-500"}) : React.createElement(CircleDot, {size:18}))
+            );
 
-                // زر اللغة
-                React.createElement('button', { onClick: ()=>setLang(lang==='ar'?'en':'ar'), className: "absolute top-6 right-6 z-20 text-[10px] font-black bg-white/5 border border-white/10 px-4 py-2 rounded-full text-gold-500 hover:bg-white/10 transition-colors tracking-widest" }, lang==='ar'?'ENGLISH':'العربية'),
+            return React.createElement('div', { className: "min-h-screen flex items-center justify-center p-4 bg-[#020617] relative overflow-hidden font-cairo", dir: lang==='ar'?'rtl':'ltr' },
+                
+                // 1. الخلفيات والمؤثرات البصرية
+                React.createElement('div', { className: "fixed inset-0 pointer-events-none" },
+                    // خلفية ضبابية
+                    React.createElement('div', { className: "absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,_#1e1b4b_0%,_#020617_60%)]" }),
+                    // تأثير الضوضاء (Noise)
+                    React.createElement('div', { className: "absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" }),
+                    // أضواء كاشفة (Spotlights)
+                    React.createElement('div', { className: "absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-gold-600/10 blur-[120px] rounded-full animate-pulse" }),
+                    React.createElement('div', { className: "absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-purple-900/20 blur-[120px] rounded-full" }),
+                ),
 
-                // البطاقة الرئيسية
-                React.createElement('div', { className: "w-full max-w-md relative z-10" },
-                    // الشعار
-                    React.createElement('div', { className: "flex flex-col items-center mb-8" },
-                        React.createElement('div', { className: "w-24 h-24 rounded-2xl bg-gradient-to-tr from-gold-400 to-gold-700 flex items-center justify-center text-5xl font-black text-black shadow-[0_0_40px_rgba(234,179,8,0.3)] border-4 border-gold-300 animate-float-up" }, "CD"),
-                        React.createElement('h1', { className: "mt-4 text-2xl font-black text-white font-oswald tracking-[0.2em] uppercase" }, "ELITE CLUB"),
-                        React.createElement('p', { className: "text-[10px] text-gold-500/80 font-bold tracking-widest" }, "MEMBERS ONLY AREA")
+                // زر تغيير اللغة
+                React.createElement('button', { 
+                    onClick: ()=>setLang(lang==='ar'?'en':'ar'), 
+                    className: "absolute top-6 right-6 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-300 hover:bg-white/10 hover:border-gold-500/50 transition-all cursor-pointer backdrop-blur-md" 
+                }, 
+                    React.createElement(Globe, { size: 14 }),
+                    lang==='ar'?'ENGLISH':'العربية'
+                ),
+
+                // 2. البطاقة الرئيسية (The Monolith)
+                React.createElement('div', { className: "w-full max-w-md relative z-20 perspective-1000" },
+                    
+                    // شعار الهوية (Identity)
+                    React.createElement('div', { className: "flex flex-col items-center mb-10 transform transition-all duration-700 hover:scale-105" },
+                        React.createElement('div', { className: "relative w-28 h-28" },
+                            // الحلقات الدوارة حول الشعار
+                            React.createElement('div', { className: "absolute inset-0 rounded-full border-2 border-gold-500/30 border-t-transparent animate-[spin_4s_linear_infinite]" }),
+                            React.createElement('div', { className: "absolute inset-2 rounded-full border-2 border-white/10 border-b-transparent animate-[spin_3s_linear_infinite_reverse]" }),
+                            
+                            // الشعار المركزي
+                            React.createElement('div', { className: "absolute inset-4 rounded-full bg-gradient-to-br from-dark-900 to-black flex items-center justify-center border border-gold-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]" },
+                                React.createElement('span', { className: "text-4xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-gold-300 via-yellow-500 to-gold-800 font-oswald tracking-tighter" }, "CD")
+                            )
+                        ),
+                        React.createElement('h1', { className: "mt-6 text-3xl font-black text-white font-oswald tracking-[0.3em] uppercase drop-shadow-xl" }, "CD0777"),
+                        React.createElement('p', { className: "text-xs text-gold-500/80 font-bold tracking-[0.5em] uppercase mt-1" }, "Elite Gaming Club")
                     ),
 
-                    // الحاوية الزجاجية
-                    React.createElement('div', { className: "bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden" },
-                        
-                        // التبديل بين تسجيل الدخول وإنشاء حساب (Tabs)
-                        React.createElement('div', { className: "grid grid-cols-2 gap-1 p-1 bg-black/40 rounded-2xl mb-6" },
+                    // جسم البطاقة
+                    React.createElement('div', { className: "bg-[#050505]/60 backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative" },
+                        // خط علوي ذهبي
+                        React.createElement('div', { className: "h-1 w-full bg-gradient-to-r from-transparent via-gold-500 to-transparent opacity-50" }),
+
+                        // رؤوس التبويب (Tabs)
+                        React.createElement('div', { className: "flex p-2 gap-2" },
                             React.createElement('button', { 
                                 onClick: ()=>setIsReg(false), 
-                                className: `py-3 rounded-xl text-xs font-bold transition-all duration-300 ${!isReg ? 'bg-gold-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}` 
-                            }, t('login')),
+                                className: `flex-1 py-3 rounded-xl text-xs font-black tracking-wider transition-all duration-300 ${!isReg ? 'bg-gradient-to-b from-dark-800 to-black text-white shadow-inner border border-white/5' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}` 
+                            }, t('login').toUpperCase()),
                             React.createElement('button', { 
                                 onClick: ()=>setIsReg(true), 
-                                className: `py-3 rounded-xl text-xs font-bold transition-all duration-300 ${isReg ? 'bg-gold-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}` 
-                            }, t('register'))
+                                className: `flex-1 py-3 rounded-xl text-xs font-black tracking-wider transition-all duration-300 ${isReg ? 'bg-gradient-to-b from-dark-800 to-black text-white shadow-inner border border-white/5' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}` 
+                            }, t('register').toUpperCase())
                         ),
 
-                        // النموذج
-                        React.createElement('div', { className: "p-5 space-y-4" },
-                            isReg && React.createElement(Input, { icon: User, placeholder: t('name'), value: f.n, onChange: e=>setF({...f,n:e.target.value}) }),
+                        // محتوى النموذج
+                        React.createElement('div', { className: "p-6 pt-2 space-y-5" },
                             
-                            // --- 🔥 منطقة الهاتف المحسنة (Design Trick) 🔥 ---
-                            isReg && React.createElement('div', { className: "relative w-full" },
-                                React.createElement('div', { className: "flex items-center w-full bg-dark-900 border border-white/10 rounded-xl h-14 focus-within:border-gold-500 focus-within:shadow-[0_0_15px_rgba(234,179,8,0.2)] transition-all overflow-hidden" },
-                                    
-                                    // 1. الجزء الأيسر: العلم والكود (ثابت بصرياً)
-                                    React.createElement('div', { className: "relative w-28 h-full border-r border-white/10 bg-white/5 hover:bg-white/10 transition-colors group/flag" },
-                                        // قائمة الاختيار المخفية (وظيفية فقط)
-                                        React.createElement('select', { 
-                                            value: f.country, 
-                                            onChange: e=>setF({...f, country: e.target.value}), 
-                                            className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
-                                        },
-                                            COUNTRIES.map(c => React.createElement('option', { key: c.code, value: c.code }, `${c.flag} ${c.name}`))
-                                        ),
-                                        // العرض المرئي الجميل (للمستخدم)
-                                        React.createElement('div', { className: "absolute inset-0 flex items-center justify-center gap-2 pointer-events-none" },
-                                            React.createElement('span', { className: "text-2xl drop-shadow-md" }, selectedCountry.flag),
-                                            React.createElement('span', { className: "text-xs font-mono font-bold text-gray-300 pt-0.5 dir-ltr" }, selectedCountry.prefix),
-                                            React.createElement(ChevronRight, { size: 10, className: "text-gray-500 rotate-90" }) 
-                                        )
+                            // حقول التسجيل الإضافية
+                            isReg && React.createElement('div', { className: "space-y-5 animate-slide-up" },
+                                React.createElement(ProInput, { icon: User, placeholder: t('name'), value: f.n, onChange: e=>setF({...f,n:e.target.value}) }),
+                                
+                                // حقل الهاتف المتطور
+                                React.createElement('div', { className: "relative group" },
+                                    React.createElement('div', { className: "absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-20 pointer-events-none" }, 
+                                        React.createElement(Smartphone, { size: 20 }) 
                                     ),
-
-                                    // 2. الجزء الأيمن: حقل الكتابة
-                                    React.createElement('input', { 
-                                        className: "flex-1 bg-transparent h-full px-4 text-white placeholder:text-gray-600 font-mono text-sm outline-none tracking-wider", 
-                                        placeholder: "612 345 678", 
-                                        type: "tel",
-                                        value: f.ph,
-                                        onChange: e => setF({...f, ph: e.target.value}) 
-                                    })
+                                    React.createElement('div', { className: "flex bg-[#0a0a0a]/80 border border-white/5 rounded-xl overflow-hidden group-focus-within:border-gold-500/50 group-focus-within:shadow-[0_0_15px_rgba(234,179,8,0.1)] transition-all" },
+                                        // القائمة المنسدلة للدولة
+                                        React.createElement('div', { className: "relative w-[110px] bg-white/5 border-r border-white/5 hover:bg-white/10 transition-colors" },
+                                            React.createElement('select', { 
+                                                value: f.country, 
+                                                onChange: e=>setF({...f, country: e.target.value}), 
+                                                className: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+                                            }),
+                                            React.createElement('div', { className: "absolute inset-0 flex items-center justify-center gap-2 pl-2" },
+                                                React.createElement('span', { className: "text-2xl" }, selectedCountry.flag),
+                                                React.createElement('span', { className: "text-xs font-mono font-bold text-gray-300 dir-ltr" }, selectedCountry.prefix)
+                                            )
+                                        ),
+                                        // حقل الرقم
+                                        React.createElement('input', { 
+                                            className: "flex-1 bg-transparent py-4 pr-4 pl-2 text-white placeholder:text-gray-600 outline-none font-mono",
+                                            placeholder: "612 345 678",
+                                            type: "tel",
+                                            value: f.ph,
+                                            onChange: e => setF({...f, ph: e.target.value}) 
+                                        })
+                                    )
                                 )
                             ),
-                            // --- انتهى تعديل الهاتف ---
 
-                            React.createElement(Input, { icon: User, placeholder: t('user'), value: f.u, onChange: e=>setF({...f,u:e.target.value}) }),
-                            React.createElement(Input, { icon: Lock, type: "password", placeholder: t('pass'), value: f.p, onChange: e=>setF({...f,p:e.target.value}) }),
-                            
-                            // الشروط والأحكام
-                            isReg && React.createElement('div', { className: "flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5" },
-                                React.createElement('label', { className: "flex items-center cursor-pointer relative" },
-                                     React.createElement('input', { type: "checkbox", checked: agreeTerms, onChange: e=>setAgreeTerms(e.target.checked), className: "peer sr-only" }),
-                                     React.createElement('div', { className: "w-5 h-5 rounded border-2 border-gray-600 peer-checked:bg-gold-500 peer-checked:border-gold-500 transition-all flex items-center justify-center" },
-                                         React.createElement(Check, { size: 12, className: "text-black opacity-0 peer-checked:opacity-100" })
-                                     )
+                            // الحقول الأساسية
+                            React.createElement(ProInput, { icon: UserCheck, placeholder: t('user'), value: f.u, onChange: e=>setF({...f,u:e.target.value}) }),
+                            React.createElement(ProInput, { icon: Lock, isPass: true, placeholder: t('pass'), value: f.p, onChange: e=>setF({...f,p:e.target.value}) }),
+
+                            // الشروط والأحكام (للتسجيل)
+                            isReg && React.createElement('div', { className: "flex items-start gap-3 mt-2" },
+                                React.createElement('button', { onClick: ()=>setAgreeTerms(!agreeTerms), className: `mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-all ${agreeTerms ? 'bg-gold-500 border-gold-500' : 'border-gray-600 bg-transparent'}` },
+                                    agreeTerms && React.createElement(Check, { size: 14, className: "text-black" })
                                 ),
-                                React.createElement('div', { className: "text-[10px] text-gray-400" }, 
+                                React.createElement('p', { className: "text-[10px] text-gray-400 leading-tight" }, 
                                     t('agree_terms'),
-                                    React.createElement('button', { onClick: (e) => { e.preventDefault(); e.stopPropagation(); setView('terms'); }, className: "text-gold-500 hover:underline font-bold ml-1 cursor-pointer relative z-10" }, t('terms_link'))
+                                    React.createElement('button', { 
+                                        onClick: (e) => { e.preventDefault(); e.stopPropagation(); setView('terms'); }, 
+                                        className: "text-gold-500 font-bold hover:underline mx-1" 
+                                    }, t('terms_link'))
                                 )
                             ),
 
-                            // زر التنفيذ
-                            React.createElement(Button, { full: true, onClick: submit, loading: loading, className: "py-4 text-sm tracking-widest shadow-[0_0_30px_rgba(234,179,8,0.2)]" }, 
-                                isReg ? (loading ? "CREATING..." : "CREATE ACCOUNT") : (loading ? "ACCESSING..." : "SECURE LOGIN")
+                            // زر الدخول/التسجيل الرئيسي
+                            React.createElement(Button, { full: true, onClick: submit, loading: loading, className: "py-4 text-sm font-black tracking-[0.2em] shadow-[0_0_40px_rgba(234,179,8,0.2)] hover:shadow-[0_0_60px_rgba(234,179,8,0.4)] border-gold-500/50 bg-gradient-to-r from-gold-600 via-yellow-500 to-gold-600 text-black" },
+                                isReg ? (loading ? "INITIALIZING..." : "JOIN THE CLUB") : (loading ? "AUTHENTICATING..." : "ACCESS ACCOUNT")
                             ),
 
-                            !isReg && React.createElement('div', { className: "text-center pt-2" },
+                            // رابط نسيت كلمة المرور
+                            !isReg && React.createElement('div', { className: "text-center" },
                                 React.createElement('button', { onClick: ()=>setView('forgot'), className: "text-xs text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-1 mx-auto" }, 
-                                    React.createElement(LockKeyhole, { size: 12 }), "Forgot Credentials?"
+                                    React.createElement(LockKeyhole, { size: 12 }), "Lost Access?"
                                 )
                             )
                         )
                     ),
                     
-                    // التذييل
-                    React.createElement('div', { className: "mt-8 text-center opacity-40" },
-                        React.createElement('p', { className: "text-[9px] font-mono text-gray-500" }, "ENCRYPTED CONNECTION • 256-BIT SSL"),
-                        React.createElement('p', { className: "text-[8px] text-gray-600 mt-1" }, "CD0777 SYSTEM v2.0")
+                    // التذييل السفلي
+                    React.createElement('div', { className: "mt-6 text-center space-y-1" },
+                        React.createElement('div', { className: "flex justify-center gap-4 text-gray-600 mb-2" },
+                            React.createElement(ShieldCheck, { size: 16 }),
+                            React.createElement(Wifi, { size: 16 }),
+                            React.createElement(Globe, { size: 16 })
+                        ),
+                        React.createElement('p', { className: "text-[9px] font-mono text-gray-600 uppercase tracking-wider" }, "Encrypted Connection • 256-bit SSL"),
+                        React.createElement('p', { className: "text-[8px] text-gray-700" }, "CD0777 Systems v3.0 • Premium Access Only")
                     )
                 )
             );
