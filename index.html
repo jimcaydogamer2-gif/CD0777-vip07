@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1007,6 +1008,8 @@
             if (view === 'game-wheel') return React.createElement(WheelGame, GameProps);
             if (view === 'game-hilo') return React.createElement(HiLoGame, GameProps);
             // ...
+            if (view === 'vip-register') return React.createElement(VipRegistrationScreen, { user, t, back: ()=>navTo('home'), db, showMsg });
+            if (view === 'xp-level') return React.createElement(LevelingScreen, { user, back: ()=>navTo('home') });
 if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>setView(user?'profile':'auth'), settings });
 if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>setView(user?'profile':'auth'), settings });
 // ...
@@ -1300,32 +1303,33 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
             const reqRef = useRef(null);
             const crashPointRef = useRef(0);
             const startTimeRef = useRef(0);
+            const hasCashedOut = useRef(false);
 
             useEffect(() => {
                 let timer;
                 if (gameState === 'BETTING') {
-                    setMultiplier(1.00); setResultModal(null);
-                    if (countdown > 0) {
-                        timer = setTimeout(() => { setCountdown(c => c - 1); AudioSys.click(); }, 1000);
-                    } else startFlight();
+                    setMultiplier(1.00); setResultModal(null); hasCashedOut.current = false;
+                    if (countdown > 0) timer = setTimeout(() => { setCountdown(c => c - 1); AudioSys.click(); }, 1000);
+                    else startFlight();
                 }
                 return () => clearTimeout(timer);
             }, [gameState, countdown]);
 
             const startFlight = () => {
-                AudioSys.playTone(300, 'sine', 0.5); 
-                if (shouldHouseWin()) { crashPointRef.current = 1.00 + Math.random() * 0.4; } 
-                else { const r = 0.96 / (Math.random() + 0.04); crashPointRef.current = Math.max(1.00, Math.floor(r * 100) / 100); }
+                let crashPoint;
+                if (shouldHouseWin()) crashPoint = 1.00 + Math.random() * 0.4;
+                else { const r = 0.96 / (Math.random() + 0.04); crashPoint = Math.max(1.00, Math.floor(r * 100) / 100); }
+                crashPointRef.current = crashPoint;
                 startTimeRef.current = Date.now();
                 setGameState('FLYING');
+                AudioSys.playTone(300, 'sine', 0.5);
                 loop();
             };
 
             const loop = () => {
                 const elapsed = (Date.now() - startTimeRef.current) / 1000;
-                const nextMult = 1 + (elapsed * 0.2) + (elapsed * elapsed * 0.08); 
-                if(nextMult % 0.5 < 0.1) AudioSys.playTone(200 + (nextMult * 50), 'sawtooth', 0.1, 0.05);
-                if (nextMult >= crashPointRef.current) { crash(crashPointRef.current); } 
+                const nextMult = parseFloat((1.00 * Math.pow(Math.E, 0.06 * elapsed)).toFixed(2));
+                if (nextMult >= crashPointRef.current) crash(crashPointRef.current);
                 else { setMultiplier(nextMult); reqRef.current = requestAnimationFrame(loop); }
             };
 
@@ -1334,7 +1338,8 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
                 setMultiplier(val);
                 setGameState('CRASHED');
                 AudioSys.crash(); hapticFeedback('impact');
-                if(activeBet) {
+                // الإصلاح: التأكد أن المستخدم لم يسحب وأن لديه رهان نشط قبل احتساب الخسارة
+                if(activeBet && !hasCashedOut.current) {
                     logGame(user.id, user.username, 'Crash', activeBet, 0, -activeBet);
                     setResultModal({ win: false, amount: 0 });
                     setActiveBet(null);
@@ -1343,83 +1348,100 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
             };
 
             const placeBet = async () => {
-                if(Number(user.coins) < betAmount || betAmount <= 0) return showMsg("Invalid Amount", "error");
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-betAmount});
-                setActiveBet(betAmount);
+                if(betAmount <= 0) return showMsg("Invalid Amount", "error");
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const userRef = doc(db, "users", user.id);
+                        const userDoc = await transaction.get(userRef);
+                        if (!userDoc.exists()) throw "Error";
+                        const currentCoins = Number(userDoc.data().coins || 0);
+                        if (currentCoins < betAmount) throw "Insufficient Coins";
+                        
+                        // هنا نقوم بزيادة عدد الرهانات لرفع مستوى XP
+                        const currentBets = Number(userDoc.data().totalBets || 0);
+                        
+                        transaction.update(userRef, { 
+                            coins: currentCoins - betAmount,
+                            totalBets: currentBets + 1 // زيادة XP
+                        });
+                    });
+                    setActiveBet(betAmount);
+                    hasCashedOut.current = false;
+                    showMsg("Bet Placed", "success");
+                } catch(e) { showMsg("Insufficient Balance", "error"); }
             };
 
             const cashout = async () => {
-                if (!activeBet || gameState !== 'FLYING') return;
+                if (!activeBet || gameState !== 'FLYING' || hasCashedOut.current) return;
+                
+                hasCashedOut.current = true; // علامة لمنع الخسارة
                 const winAmt = Math.floor(activeBet * multiplier);
-                const userRef = doc(db, "users", user.id);
-                const userSnap = await getDoc(userRef);
-                const currentCoins = Number(userSnap.data().coins || 0);
-                await updateDoc(userRef, { coins: currentCoins + winAmt });
-                logGame(user.id, user.username, 'Crash', activeBet, winAmt, winAmt - activeBet);
-                setResultModal({ win: true, amount: winAmt });
-                setActiveBet(null);
+                const profit = winAmt - activeBet;
+                const betVal = activeBet;
+                
+                setActiveBet(null); // إخفاء الزر فوراً
+                setResultModal({ win: true, amount: winAmt }); // إظهار الفوز فوراً
+                AudioSys.win();
+                logGame(user.id, user.username, 'Crash', betVal, winAmt, profit);
+
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const userRef = doc(db, "users", user.id);
+                        const userDoc = await transaction.get(userRef);
+                        const newBalance = Number(userDoc.data().coins || 0) + winAmt;
+                        transaction.update(userRef, { coins: newBalance });
+                    });
+                } catch(e) {}
             };
 
-            return React.createElement('div', { className: `fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up overflow-hidden`, dir:'ltr' },
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col h-full animate-slide-up overflow-hidden", dir:'ltr' },
                 React.createElement('div', { className: "noise-overlay" }),
                 
+                // شريط الحياة (Live Feed)
+                React.createElement(InGameLiveFeed),
+
                 resultModal && React.createElement(GameResultModal, { ...resultModal, onClose:()=>setResultModal(null), t }),
-                
-                React.createElement('div', { className: "flex justify-between items-center p-4 glass-premium z-20", dir: isRTL?'rtl':'ltr' }, 
-                    React.createElement('button', { onClick: back, className: "text-slate-400 btn-press hover:text-white transition-colors" }, React.createElement(ArrowIcon)), 
-                    React.createElement('span', { className: "font-black text-red-500 tracking-[0.3em] font-oswald italic text-xl drop-shadow-lg" }, "CRASH"), 
+                React.createElement('div', { className: "flex justify-between items-center p-4 glass-premium z-20", dir: isRTL?'rtl':'ltr' },
+                    React.createElement('button', { onClick: back, className: "text-slate-400 btn-press hover:text-white transition-colors" }, React.createElement(ArrowIcon)),
+                    React.createElement('span', { className: "font-black text-red-500 tracking-[0.3em] font-oswald italic text-xl drop-shadow-lg" }, "CRASH"),
                     React.createElement('div', { className: "bg-black/60 px-3 py-1 rounded-lg border border-gold-500/30 shadow-inner flex items-center gap-2" },
                         React.createElement(Gem, { size: 14, className: "text-gold-500" }),
                         React.createElement(AnimatedCounter, { value: user.coins })
                     )
                 ),
-
                 React.createElement('div', { className: "flex-1 relative flex flex-col items-center justify-center overflow-hidden" },
                     React.createElement('div', { className: "absolute inset-0 opacity-10", style: { backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px', transform: 'perspective(500px) rotateX(20deg)' } }),
-                    
                     React.createElement(CrashGraph, { multiplier, gameState }),
-
                     React.createElement('div', { className: "relative z-10 flex flex-col items-center" },
                         gameState === 'FLYING' && React.createElement('div', { className: "mb-8 animate-rocket-fly filter drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] transition-transform duration-75", style: { transform: `scale(${1 + multiplier/20}) rotate(-45deg)` } },
                              React.createElement(Rocket, { size: 120, className: "text-white fill-gray-200" }),
                              React.createElement('div', { className: "absolute top-full left-1/2 -translate-x-1/2 w-4 h-12 bg-orange-500 blur-md animate-pulse" })
                         ),
-                        
                         gameState === 'CRASHED' && React.createElement('div', { className: "animate-pop flex flex-col items-center mb-8" },
                              React.createElement(Bomb, { size: 80, className: "text-red-500 mb-2 animate-bounce" }),
                              React.createElement('h2', { className: "text-4xl font-black text-red-500 uppercase font-oswald tracking-widest text-glow-red" }, t('crashed'))
                         ),
-
-                        React.createElement('div', { className: `font-mono font-black text-8xl transition-all duration-75 ${gameState==='CRASHED'?'text-red-500 text-glow-red scale-110':'text-white drop-shadow-2xl'}` }, 
-                            gameState === 'BETTING' ? 
-                            React.createElement('div', { className: "flex flex-col items-center" },
+                        React.createElement('div', { className: `font-mono font-black text-8xl transition-all duration-75 ${gameState==='CRASHED'?'text-red-500 text-glow-red scale-110':'text-white drop-shadow-2xl'}` },
+                             gameState === 'BETTING' ?
+                             React.createElement('div', { className: "flex flex-col items-center" },
                                 React.createElement('span', { className: "text-lg text-gold-500 font-oswald tracking-widest mb-2" }, "NEXT ROUND"),
                                 React.createElement('span', {}, `00:0${countdown}`)
-                            ) : 
-                            `${multiplier.toFixed(2)}x`
+                            ) : `${multiplier.toFixed(2)}x`
                         )
                     )
                 ),
-
-                React.createElement('div', { className: "p-4 glass-premium z-20 flex gap-4 pb-safe", dir: isRTL?'rtl':'ltr' }, 
-                    React.createElement('div', { className: "relative w-1/3" }, 
-                        React.createElement('input', { type: "number", value: betAmount, onChange: e=>setBetAmount(Math.abs(Number(e.target.value))), disabled: gameState!=='BETTING' || activeBet, className: "w-full bg-dark-900 border border-white/20 rounded-xl text-center text-white font-bold p-4 text-lg outline-none focus:border-gold-500 transition-colors shadow-inner" }), 
+                React.createElement('div', { className: "p-4 glass-premium z-20 flex gap-4 pb-safe", dir: isRTL?'rtl':'ltr' },
+                    React.createElement('div', { className: "relative w-1/3" },
+                        React.createElement('input', { type: "number", value: betAmount, onChange: e=>setBetAmount(Math.abs(Number(e.target.value))), disabled: gameState!=='BETTING' || activeBet, className: "w-full bg-dark-900 border border-white/20 rounded-xl text-center text-white font-bold p-4 text-lg outline-none focus:border-gold-500 transition-colors shadow-inner" }),
                         React.createElement(DollarSign, { size: 16, className: "absolute top-1/2 -translate-y-1/2 left-4 text-gray-500" })
                     ),
-                    
-                    gameState === 'BETTING' ? 
-                        (activeBet ? 
-                            React.createElement(Button, { full: true, variant: 'dark', disabled: true, className: "opacity-50" }, t('bet_placed')) : 
-                            React.createElement(Button, { full: true, onClick: placeBet, className: "shadow-[0_0_20px_rgba(255,215,0,0.4)]" }, t('play'))
-                        ) : 
-                        (gameState === 'FLYING' && activeBet ? 
+                    gameState === 'BETTING' ?
+                        (activeBet ? React.createElement(Button, { full: true, disabled: true, variant: 'dark', className: "opacity-50" }, t('bet_placed')) : React.createElement(Button, { full: true, onClick: placeBet, className: "shadow-[0_0_20px_rgba(255,215,0,0.4)]" }, t('play'))) :
+                        (gameState === 'FLYING' && activeBet && !hasCashedOut.current ? 
                             React.createElement(Button, { full: true, variant: 'green', onClick: cashout, className: "animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.4)]" }, 
-                                React.createElement('div', { className: "flex flex-col items-center leading-none" },
-                                    React.createElement('span', { className: "text-xs opacity-80" }, t('cashout')),
-                                    React.createElement('span', { className: "text-xl font-black" }, `$${Math.floor(activeBet*multiplier)}`)
-                                )
+                                React.createElement('div', { className: "flex flex-col items-center leading-none" }, React.createElement('span', { className: "text-xs opacity-80" }, t('cashout')), React.createElement('span', { className: "text-xl font-black" }, `$${Math.floor(activeBet*multiplier)}`))
                             ) : 
-                            React.createElement(Button, { full: true, disabled: true, variant: 'dark', className: "grayscale" }, gameState==='CRASHED' ? t('crashed') : t('waiting'))
+                            React.createElement(Button, { full: true, disabled: true, variant: 'dark', className: "grayscale" }, hasCashedOut.current ? "CASHED OUT" : (gameState==='CRASHED' ? t('crashed') : t('waiting')))
                         )
                 )
             );
@@ -2432,16 +2454,203 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
                 )
             );
         }
+        // --- 1. شريط المراهنات الحي (يظهر أسماء تبدأ بـ CD) ---
+        const InGameLiveFeed = () => {
+            const [feeds, setFeeds] = useState([]);
+            // أسماء واقعية مخلوطة
+            const NAMES = ["Ahmed", "Simo", "Karim", "Youssef", "Omar", "Hassan", "Sarah", "Mehdi", "Rachid", "Khalid"];
+            
+            useEffect(() => {
+                const int = setInterval(() => {
+                    // إضافة حركة عشوائية كل ثانية ونصف
+                    if(Math.random() > 0.4) {
+                        const win = Math.random() > 0.5;
+                        // توليد معرف يبدأ بـ CD
+                        const name = `CD_${NAMES[Math.floor(Math.random() * NAMES.length)]}${Math.floor(Math.random()*99)}`;
+                        const amount = Math.floor(Math.random() * 800) + 50;
+                        
+                        const newFeed = { 
+                            id: Date.now(), 
+                            text: win ? `${name} won ${amount * 2}` : `${name} bet ${amount}`, 
+                            type: win ? 'win' : 'bet' 
+                        };
+                        setFeeds(prev => [newFeed, ...prev.slice(0, 4)]); // الاحتفاظ بآخر 5 فقط
+                    }
+                }, 1200);
+                return () => clearInterval(int);
+            }, []);
 
+            return React.createElement('div', { className: "absolute top-20 right-4 z-30 w-40 flex flex-col gap-2 pointer-events-none opacity-90" },
+                feeds.map(f => React.createElement('div', { key: f.id, className: `text-[10px] font-mono font-bold px-3 py-1.5 rounded-r-xl border-l-2 backdrop-blur-md animate-slide-in-right shadow-lg ${f.type==='win' ? 'bg-green-900/40 text-green-400 border-green-500' : 'bg-black/60 text-gray-300 border-gray-500'}` },
+                    f.text
+                ))
+            );
+        };
+
+        // --- 2. صفحة التسجيل في VIP (فخمة جداً) ---
+        function VipRegistrationScreen({ user, t, back, db, showMsg }) {
+            const [loading, setLoading] = useState(false);
+            const [form, setForm] = useState({ fullName: user.fullName||'', nationalID: '', address: '', job: '' });
+
+            // رابط مجموعة التيليجرام الخاصة بالشركاء
+            const PARTNER_TELEGRAM = "https://t.me/+kF6s8wZz..."; // ضع رابط مجموعتك هنا
+
+            const submit = async () => {
+                if(!form.nationalID || !form.address) return showMsg("Please fill all fields", "error");
+                setLoading(true);
+                try {
+                    // حفظ البيانات وتفعيل حالة الانتظار
+                    await updateDoc(doc(db, "users", user.id), { 
+                        vipRequest: form, 
+                        isVipPending: true, // هذا المتغير يعني أنه سجل طلب VIP
+                        vipDate: new Date().toISOString()
+                    });
+                    showMsg("Welcome to the Inner Circle.", "success");
+                } catch(e) { showMsg("Connection Error", "error"); }
+                setLoading(false);
+            };
+
+            // --- الحالة 2: المستخدم سجل سابقاً (صفحة الشركاء الفاخرة) ---
+            if (user.isVipPending || user.isVip) {
+                return React.createElement('div', { className: "fixed inset-0 bg-[#050505] z-50 flex flex-col animate-fade-in" },
+                    // خلفية ذهبية خفيفة
+                    React.createElement('div', { className: "absolute inset-0 bg-[radial-gradient(circle_at_center,_#3d2e07_0%,_#000000_100%)]" }),
+                    
+                    React.createElement('div', { className: "relative z-10 flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8" },
+                        React.createElement('div', { className: "w-24 h-24 rounded-full border-4 border-gold-500 flex items-center justify-center shadow-[0_0_50px_#fbbf24] animate-pulse" },
+                            React.createElement(Crown, { size: 48, className: "text-gold-500" })
+                        ),
+                        
+                        React.createElement('div', {},
+                            React.createElement('h2', { className: "text-3xl font-black text-white font-oswald tracking-widest mb-2" }, "ELITE PARTNER"),
+                            React.createElement('p', { className: "text-gold-500 text-sm font-mono" }, "ACCESS GRANTED: LEVEL 1")
+                        ),
+
+                        React.createElement('div', { className: "bg-white/5 border border-gold-500/20 p-6 rounded-2xl max-w-sm backdrop-blur-md" },
+                            React.createElement('p', { className: "text-gray-300 text-sm leading-relaxed mb-4" }, 
+                                "Congratulations. Your application has been archived. You are now eligible to join our private network of agents and investors."
+                            ),
+                            React.createElement('a', { 
+                                href: PARTNER_TELEGRAM, 
+                                target: "_blank", 
+                                className: "flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-105" 
+                            },
+                                React.createElement(Send, { size: 20 }),
+                                "JOIN PARTNERS CHANNEL"
+                            )
+                        ),
+                        
+                        React.createElement('button', { onClick: back, className: "text-gray-500 text-xs font-bold hover:text-white mt-8" }, "RETURN TO LOBBY")
+                    )
+                );
+            }
+
+            // --- الحالة 1: أول مرة (نموذج التسجيل) ---
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col p-6 animate-slide-up" },
+                React.createElement('button', { onClick: back, className: "mb-6 text-gold-500 flex items-center gap-2" }, React.createElement(ChevronRight), "BACK"),
+                React.createElement('h2', { className: "text-3xl font-black text-gold-500 font-oswald mb-2" }, "VIP APPLICATION"),
+                React.createElement('p', { className: "text-gray-400 text-sm mb-8" }, "Submit your credentials for exclusive agent access."),
+                
+                React.createElement('div', { className: "space-y-4" },
+                    React.createElement('div', {}, 
+                        React.createElement('label', {className:"text-[10px] text-gray-500 uppercase font-bold ml-1"}, "Legal Name"),
+                        React.createElement(Input, { placeholder: "Full Legal Name", value: form.fullName, onChange: e=>setForm({...form, fullName:e.target.value}), icon: User })
+                    ),
+                    React.createElement('div', {}, 
+                        React.createElement('label', {className:"text-[10px] text-gray-500 uppercase font-bold ml-1"}, "Identification"),
+                        React.createElement(Input, { placeholder: "National ID / Passport", value: form.nationalID, onChange: e=>setForm({...form, nationalID:e.target.value}), icon: CreditCard })
+                    ),
+                    React.createElement('div', {}, 
+                        React.createElement('label', {className:"text-[10px] text-gray-500 uppercase font-bold ml-1"}, "Residence"),
+                        React.createElement(Input, { placeholder: "Current Address / City", value: form.address, onChange: e=>setForm({...form, address:e.target.value}), icon: Home })
+                    ),
+                    React.createElement('div', {}, 
+                        React.createElement('label', {className:"text-[10px] text-gray-500 uppercase font-bold ml-1"}, "Occupation"),
+                        React.createElement(Input, { placeholder: "Current Job", value: form.job, onChange: e=>setForm({...form, job:e.target.value}), icon: CheckCircle })
+                    ),
+                    React.createElement(Button, { full: true, onClick: submit, loading: loading }, "SUBMIT APPLICATION")
+                )
+            );
+        }
+
+        // --- 3. صفحة المستويات (XP Leveling) ---
+        function LevelingScreen({ user, back }) {
+            // جلب عدد الرهانات (إذا لم يوجد نعتبره 0)
+            const bets = user.totalBets || 0;
+            
+            // معادلة المستوى الصعبة (كل مستوى أصعب من قبله)
+            // Lvl 1 = 0-9 bets
+            // Lvl 2 = 10 bets
+            // Lvl 3 = 25 bets
+            // المعادلة التقريبية: Level = الجذر التربيعي لـ (bets / 2.5) تقريباً لتعطي نفس التدرج
+            // سنستخدم نظام حسابي دقيق للعرض
+            
+            // حساب المستوى الحالي بناءً على عدد الرهانات
+            // 0-9: Lvl 1 | 10-24: Lvl 2 | 25-49: Lvl 3 | 50-89: Lvl 4 ...
+            let level = 1;
+            let reqForNext = 10;
+            let accum = 10;
+            
+            // حلقة لحساب المستوى الحالي بدقة بناءً على طلبك (كل مرة تزيد الصعوبة)
+            while (bets >= accum) {
+                level++;
+                reqForNext += (5 * level); // تزيد الصعوبة بمقدار 5 * المستوى الجديد
+                accum += reqForNext;
+            }
+            // accum الآن هو العدد المطلوب للمستوى القادم
+            // prevAccum هو العدد المطلوب للمستوى الحالي
+            const nextLevelBets = accum;
+            const prevLevelBets = accum - reqForNext;
+            
+            // نسبة شريط التقدم
+            const progress = Math.min(100, Math.max(0, ((bets - prevLevelBets) / (nextLevelBets - prevLevelBets)) * 100));
+
+            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col p-6 animate-slide-up" },
+                React.createElement('button', { onClick: back, className: "mb-6 text-white" }, React.createElement(ChevronRight)),
+                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center text-center" },
+                    
+                    // دائرة المستوى
+                    React.createElement('div', { className: "w-48 h-48 rounded-full border-8 border-dark-800 flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_#a855f7] relative" },
+                        // SVG للتقدم الدائري
+                        React.createElement('svg', { className: "absolute inset-0 w-full h-full -rotate-90", viewBox: "0 0 100 100" },
+                             React.createElement('circle', { cx:"50", cy:"50", r:"46", fill:"none", stroke:"#a855f7", strokeWidth:"4", strokeDasharray: `${progress * 2.89} 289`, strokeLinecap:"round", className:"transition-all duration-1000" })
+                        ),
+                        React.createElement('span', { className: "text-gray-400 text-xs font-bold uppercase tracking-widest" }, "LEVEL"),
+                        React.createElement('span', { className: "text-7xl font-black text-white font-oswald" }, level)
+                    ),
+
+                    React.createElement('h2', { className: "text-3xl font-bold text-white mb-2 font-oswald" }, level < 50 ? "RISING STAR" : "LEGEND"),
+                    
+                    // عداد الرهانات
+                    React.createElement('div', { className: "bg-white/5 px-6 py-2 rounded-full border border-white/10 mb-8" },
+                        React.createElement('p', { className: "text-gray-300 text-sm font-mono" }, `BETS: ${bets} / ${nextLevelBets}`)
+                    ),
+
+                    // حالة قفل المهام
+                    level < 50 ? React.createElement('div', { className: "bg-red-900/20 text-red-500 p-6 rounded-2xl border border-red-500/30 flex flex-col items-center gap-3 w-full max-w-sm" },
+                        React.createElement(Lock, { size: 32 }), 
+                        React.createElement('div', {},
+                            React.createElement('p', { className: "font-bold text-lg" }, "MISSIONS LOCKED"),
+                            React.createElement('p', { className: "text-xs opacity-70" }, `Reach Level 50 to unlock. You need ${nextLevelBets - bets} more bets.`)
+                        )
+                    ) : React.createElement('div', { className: "bg-green-900/20 text-green-500 p-6 rounded-2xl border border-green-500/30 flex flex-col items-center gap-3 w-full max-w-sm animate-pulse" },
+                        React.createElement(CheckCircle, { size: 32 }), 
+                        React.createElement('p', { className: "font-bold text-lg" }, "MISSIONS UNLOCKED")
+                    )
+                )
+            );
+        }
         // --- DASHBOARD AND WALLET ---
         function HomeScreen({ user, navTo, t }) {
+            // حساب المستوى للعرض في الزر
+            const level = Math.floor(Math.sqrt((user.coins || 0) / 1000)) + 1;
+
             return React.createElement('div', { className: "space-y-6 animate-pop pb-10" },
-                // 1. البطاقة الذهبية الفاخرة (The Elite Card)
-                React.createElement('div', { className: "relative w-full aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl transition-transform transform hover:scale-[1.02] duration-500 perspective-1000 group" },
+                // 1. البطاقة الذهبية الفاخرة (تأخذك لصفحة VIP)
+                React.createElement('button', { onClick: ()=>navTo('vip-register'), className: "relative w-full aspect-[1.58/1] rounded-2xl overflow-hidden shadow-2xl transition-transform transform hover:scale-[1.02] duration-500 perspective-1000 group text-left" },
                     // الخلفيات والتأثيرات
                     React.createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-black" }),
                     React.createElement('div', { className: "absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" }),
-                    // لمعة متحركة تمر فوق البطاقة
                     React.createElement('div', { className: "absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-10 group-hover:animate-shine" }),
 
                     // محتوى البطاقة
@@ -2452,12 +2661,13 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
                                 React.createElement(ShieldCheck, { className: "text-gold-500 drop-shadow-md", size: 28 }),
                                 React.createElement('h2', { className: "text-gold-100 font-oswald text-xl tracking-[0.15em] italic" }, "ELITE CLUB")
                             ),
-                            React.createElement('div', { className: "bg-white/10 backdrop-blur-md px-3 py-1 rounded-md border border-white/10" },
-                                React.createElement('span', { className: "text-[10px] font-bold text-gold-400 tracking-widest" }, "TIER 1 MEMBER")
+                            React.createElement('div', { className: "bg-white/10 backdrop-blur-md px-3 py-1 rounded-md border border-white/10 flex items-center gap-2" },
+                                React.createElement(Lock, { size: 10, className: "text-gold-500" }),
+                                React.createElement('span', { className: "text-[10px] font-bold text-gold-400 tracking-widest" }, "ACTIVATE VIP")
                             )
                         ),
 
-                        // الصف الأوسط (الشريحة والواي فاي)
+                        // الصف الأوسط (الشريحة)
                         React.createElement('div', { className: "flex items-center gap-4 my-2 opacity-90" },
                             React.createElement('div', { className: "w-12 h-9 rounded-md bg-gradient-to-br from-yellow-200 to-yellow-600 border border-yellow-700 shadow-inner flex items-center justify-center overflow-hidden relative" },
                                 React.createElement('div', { className: "absolute inset-0 border-[0.5px] border-black/20 rounded-md", style: {background: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)"} })
@@ -2490,11 +2700,9 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
                     )
                 ),
 
-                // 2. زر اللعب الرئيسي (Play Now CTA)
+                // 2. زر اللعب الرئيسي
                 React.createElement('button', { onClick: ()=>navTo('casino'), className: "relative w-full group overflow-hidden rounded-2xl p-px" },
-                    // حدود مضيئة وتدور
                     React.createElement('div', { className: "absolute inset-0 bg-gradient-to-r from-gold-500 via-red-500 to-gold-500 animate-spin-slow opacity-70 group-hover:opacity-100 transition-opacity" }),
-                    // المحتوى الداخلي للزر
                     React.createElement('div', { className: "relative bg-dark-900 rounded-2xl p-6 h-full flex items-center justify-between overflow-hidden group-active:scale-[0.98] transition-transform" },
                         React.createElement('div', { className: "absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" }),
                         React.createElement('div', { className: "relative z-10" },
@@ -2507,17 +2715,19 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
                     )
                 ),
 
-                // 3. إحصائيات سريعة (Stats)
+                // 3. إحصائيات سريعة (الآن الأزرار تعمل)
                 React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-                    React.createElement('div', { className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2" },
+                    // زر Gold VIP (يعمل الآن)
+                    React.createElement('button', { onClick: ()=>navTo('vip-register'), className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-gold-500/30 transition-all" },
                         React.createElement(Crown, { size: 24, className: "text-gold-500" }),
-                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "CURRENT TIER"),
-                        React.createElement('span', { className: "text-lg font-bold text-white" }, "Gold VIP")
+                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "MEMBERSHIP"),
+                        React.createElement('span', { className: "text-lg font-bold text-white" }, "Upgrade")
                     ),
-                    React.createElement('div', { className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2" },
+                    // زر Total Wins / Level (يعمل الآن ويأخذك لصفحة XP)
+                    React.createElement('button', { onClick: ()=>navTo('xp-level'), className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-purple-500/30 transition-all" },
                         React.createElement(Trophy, { size: 24, className: "text-purple-500" }),
-                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "TOTAL WINS"),
-                        React.createElement('span', { className: "text-lg font-bold text-white" }, "124")
+                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "PLAYER LEVEL"),
+                        React.createElement('span', { className: "text-lg font-bold text-white" }, `Lvl ${level}`)
                     )
                 )
             );
@@ -2591,7 +2801,37 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
             );
         }
 
-        function TasksScreen({ user, showMsg, t }) { return React.createElement('div', { className: "animate-pop" }, React.createElement('h2', { className: "text-gold-500 font-bold text-lg mb-4" }, t('tasks')), React.createElement('div', { className: "text-center py-10 bg-dark-900 rounded-2xl border border-white/5" }, React.createElement(Trophy, { size: 40, className: "mx-auto text-gray-600 mb-4" }), React.createElement('p', { className: "text-gray-400" }, t('no_tasks')))); }
+        function TasksScreen({ user, showMsg, t }) {
+            // حساب المستوى بنفس المنطق (بناءً على عدد الرهانات)
+            const bets = user.totalBets || 0;
+            let level = 1;
+            let reqForNext = 10;
+            let accum = 10;
+            while (bets >= accum) {
+                level++;
+                reqForNext += (5 * level);
+                accum += reqForNext;
+            }
+
+            if (level < 50) return React.createElement('div', { className: "h-full flex flex-col items-center justify-center text-center p-6 animate-pop" },
+                React.createElement('div', { className: "w-32 h-32 bg-dark-900 rounded-full flex items-center justify-center mb-6 border-4 border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.2)]" },
+                    React.createElement(Lock, { size: 50, className: "text-red-500" })
+                ),
+                React.createElement('h2', { className: "text-3xl font-black text-white mb-2 font-oswald" }, "ACCESS DENIED"),
+                React.createElement('p', { className: "text-gray-400 text-sm mb-8" }, `Daily Missions utilize advanced algorithms available only to Level 50+ members.`),
+                
+                React.createElement('div', { className: "w-full max-w-xs bg-dark-900 rounded-full h-4 overflow-hidden border border-white/5" },
+                    React.createElement('div', { className: "h-full bg-gradient-to-r from-red-600 to-red-400", style: { width: `${(level/50)*100}%` } })
+                ),
+                React.createElement('p', { className: "text-red-500 text-xs font-bold mt-2" }, `CURRENT LEVEL: ${level} / 50`)
+            );
+
+            return React.createElement('div', { className: "text-center py-10 animate-fade-in" }, 
+                React.createElement(Trophy, { size: 50, className: "mx-auto text-gold-500 mb-4 animate-bounce" }), 
+                React.createElement('h2', { className: "text-2xl font-bold text-white" }, "MISSIONS UNLOCKED"),
+                React.createElement('p', { className: "text-gray-400" }, "Welcome to the elite tasks.")
+            );
+        }
 
         function WalletScreen({ user, t, isRTL, navTo }) {
             return React.createElement('div', { className: "space-y-6 animate-slide-up pb-24" },
