@@ -155,7 +155,7 @@
         import { User, Gamepad2, LogOut, Send, CheckCircle, XCircle, ChevronRight, ChevronLeft, Lock, Gem, Home, CreditCard, Wallet, ShieldCheck, Trophy, Instagram, Facebook, ExternalLink, Plus, Trash2, Smartphone, Zap, Check, Dices, RefreshCw, Menu, X, AlertTriangle, Settings, History, Globe, FileText, LifeBuoy, ArrowLeftRight, Bomb, ArrowUp, HelpCircle, Flame, Percent, DollarSign, Image as ImageIcon, KeyRound, Upload, Disc, Rocket, Coins, Grid3X3, Target, Crown, Banknote, Landmark, Wifi, ThumbsUp, ThumbsDown, Users, Ban, Edit3, LockKeyhole, LayoutDashboard, UserCheck, PlayCircle, Copy, MessageCircle, Flag, Info, Loader2, Headphones, CircleDot, MoveUp, Mail, Star, Bell, Speaker } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         // FIX: Added limit and startAfter to imports
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc, limit, startAfter } from 'firebase/firestore';
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, orderBy, setDoc, getDoc, deleteDoc, limit, startAfter, runTransaction, increment } from 'firebase/firestore';
 
         // --- 1. FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -966,13 +966,24 @@
             if (user?.role === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');}, db, showMsg, t });
             
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, isRTL: true, db, logGame });
+            // 👇 انسخ هذا البلوك وألصقه تحت سطر Crash مباشرة 👇
+            if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-mines') return React.createElement(MinesGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-plinko') return React.createElement(PlinkoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-wheel') return React.createElement(WheelGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-limbo') return React.createElement(LimboGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-dice') return React.createElement(DiceGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-keno') return React.createElement(KenoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-coinflip') return React.createElement(CoinFlipGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            if (view === 'game-hilo') return React.createElement(HiLoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+            // 👆 انتهى النسخ 👆
             if (view === 'vip-register') return React.createElement(VipRegistrationScreen, { user, t, back: ()=>navTo('home'), db, showMsg });
             if (view === 'xp-level') return React.createElement(LevelingScreen, { user, back: ()=>navTo('home') });
             if (view === 'deposit') return React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') });
             if (view === 'withdraw') return React.createElement(WithdrawScreen, { user, showMsg, t, back: ()=>navTo('profile') });
             if (view === 'exchange') return React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') });
             if (view === 'history') return React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') });
-            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile') });
+            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile'), db, t, showMsg });
 
             // The Main Layout (Mobile Optimized)
             return React.createElement('div', { 
@@ -1325,21 +1336,24 @@
                         const userRef = doc(db, "users", user.id);
                         const userDoc = await transaction.get(userRef);
                         if (!userDoc.exists()) throw "Error";
+                        
                         const currentCoins = Number(userDoc.data().coins || 0);
                         if (currentCoins < betAmount) throw "Insufficient Coins";
                         
-                        // هنا نقوم بزيادة عدد الرهانات لرفع مستوى XP
-                        const currentBets = Number(userDoc.data().totalBets || 0);
-                        
+                        // هنا يتم خصم المال وزيادة عداد المستوى (XP)
                         transaction.update(userRef, { 
                             coins: currentCoins - betAmount,
-                            totalBets: currentBets + 1 // زيادة XP
+                            totalBets: increment(1) 
                         });
                     });
+                    
                     setActiveBet(betAmount);
                     hasCashedOut.current = false;
-                    showMsg("Bet Placed", "success");
-                } catch(e) { showMsg("Insufficient Balance", "error"); }
+                    showMsg("Bet Placed - XP Gained!", "success");
+                } catch(e) { 
+                    console.error(e);
+                    showMsg("Insufficient Balance", "error"); 
+                }
             };
 
             const cashout = async () => {
@@ -1442,7 +1456,14 @@
                 if(Number(user.coins) < bet || bet <= 0) return showMsg("Insufficient Coins", "error");
                 if(spinning.some(s => s)) return;
 
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                // الخصم وزيادة المستوى
+                try {
+                    await updateDoc(doc(db,"users",user.id), {
+                        coins: increment(-bet),
+                        totalBets: increment(1)
+                    });
+                } catch(e) { return showMsg("Connection Error", "error"); }
+
                 setResultModal(null);
                 setSpinning([true, true, true]);
                 AudioSys.spin();
@@ -1469,7 +1490,10 @@
                         win = Math.floor(bet * 1.5);
                     }
                     logGame(user.id, user.username, 'Slots', bet, win, win - bet);
-                    if(win > 0) { await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win}); setResultModal({ win: true, amount: win }); } 
+                    if(win > 0) { 
+                        await updateDoc(doc(db,"users",user.id), { coins: increment(win) }); 
+                        setResultModal({ win: true, amount: win }); 
+                    } 
                     else { setResultModal({ win: false, amount: 0 }); }
                 }, 2000);
             };
@@ -1862,7 +1886,12 @@
 
             const startGame = async () => {
                 if(Number(user.coins) < bet) return showMsg("Insufficient Coins", "error");
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                // التعديل: خصم المال + زيادة XP
+                await updateDoc(doc(db,"users",user.id),{
+                    coins: Number(user.coins)-bet,
+                    totalBets: increment(1) 
+                });
                 
                 let newGrid = Array(25).fill('gem');
                 let placed = 0;
@@ -1988,35 +2017,37 @@
                 if(dropping) return;
 
                 setDropping(true); setResultModal(null);
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
                 
-                // تحديد النتيجة
+                // التعديل: خصم المال + زيادة XP
+                await updateDoc(doc(db,"users",user.id),{
+                    coins: Number(user.coins)-bet,
+                    totalBets: increment(1)
+                });
+                
+                // ... باقي كود اللعبة كما هو ...
+                // Logic
                 let bucketIdx;
                 if (shouldHouseWin()) {
-                    bucketIdx = 3 + Math.floor(Math.random() * 3); // توجيه للوسط (خسارة)
+                    bucketIdx = 3 + Math.floor(Math.random() * 3); 
                 } else {
-                    // توزيع احتمالات (الأطراف أصعب)
                     let r = 0; for(let i=0; i<3; i++) r += Math.random();
                     bucketIdx = Math.floor(r / 3 * BUCKETS.length);
                 }
                 bucketIdx = Math.max(0, Math.min(bucketIdx, BUCKETS.length - 1));
                 const multiplier = BUCKETS[bucketIdx];
 
-                // محاكاة السقوط (Animation Simulation)
                 let step = 0;
-                const totalSteps = 16; // عدد الخطوات حتى الأسفل
+                const totalSteps = 16; 
                 
                 const int = setInterval(() => {
                     step++;
-                    // تحريك الكرة يميناً ويساراً بشكل عشوائي لتبدو كأنها ترتطم
                     const noise = (Math.random() - 0.5) * 10; 
                     setBallPos(prev => prev + noise);
                     
-                    if(step % 2 === 0) AudioSys.click(); // صوت الارتطام بالأوتاد
+                    if(step % 2 === 0) AudioSys.click(); 
 
                     if(step >= totalSteps) {
                         clearInterval(int);
-                        // تثبيت الكرة فوق الخانة الفائزة
                         const finalPos = 10 + (bucketIdx * 10); 
                         setBallPos(finalPos); 
 
@@ -2025,14 +2056,15 @@
                             logGame(user.id, user.username, 'Plinko', bet, win, win-bet);
                             
                             if(win > 0) {
-                                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+win});
+                                // هنا نستخدم increment أيضاً عند الفوز
+                                await updateDoc(doc(db,"users",user.id),{ coins: increment(win) });
                                 if(win > bet) { setResultModal({ win: true, amount: win }); AudioSys.win(); }
                                 else { showMsg(`x${multiplier}`, 'success'); AudioSys.coins(); }
                             } else {
                                 setResultModal({ win: false, amount: 0 });
                             }
                             setDropping(false);
-                            setBallPos(50); // إعادة الكرة للمنتصف
+                            setBallPos(50); 
                         }, 500);
                     }
                 }, 150);
@@ -2265,7 +2297,13 @@
                 if(spinning) return;
 
                 setSpinning(true); setResultModal(null);
-                await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)-bet});
+                
+                // التعديل: خصم المال + زيادة XP
+                await updateDoc(doc(db,"users",user.id),{
+                    coins: Number(user.coins)-bet,
+                    totalBets: increment(1)
+                });
+                
                 AudioSys.spin();
 
                 let winIndex;
@@ -2286,7 +2324,10 @@
                     setSpinning(false);
                     const winAmt = Math.floor(bet * result.mult);
                     logGame(user.id, user.username, 'Wheel', bet, winAmt, winAmt - bet);
-                    if(winAmt > 0) { await updateDoc(doc(db,"users",user.id),{coins:Number(user.coins)+winAmt}); setResultModal({ win: true, amount: winAmt }); } 
+                    if(winAmt > 0) { 
+                        await updateDoc(doc(db,"users",user.id),{ coins: increment(winAmt) }); 
+                        setResultModal({ win: true, amount: winAmt }); 
+                    } 
                     else { setResultModal({ win: false, amount: 0 }); }
                 }, 4000);
             };
