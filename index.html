@@ -109,6 +109,28 @@
         .text-glow { text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700; }
         .text-glow-red { text-shadow: 0 0 20px #ef4444, 0 0 40px #991b1b; }
         .cracked-screen { position: fixed; inset: 0; pointer-events: none; z-index: 60; background: radial-gradient(circle at 50% 50%, transparent 50%, rgba(255,0,0,0.1) 100%), linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.1) 50%, transparent 52%); box-shadow: inset 0 0 150px rgba(185, 28, 28, 0.5); background-size: 100% 100%, 200% 200%; }
+        /* تأثير اللمعان الذي يمر فوق الأزرار */
+        @keyframes shimmer {
+            0% { left: -100%; opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { left: 200%; opacity: 0; }
+        }
+        .btn-shimmer { position: relative; overflow: hidden; }
+        .btn-shimmer::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transform: skewX(-20deg);
+            animation: shimmer 3s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        /* تأثير النبض للحدود (للأشياء المهمة) */
+        @keyframes border-pulse {
+            0% { border-color: rgba(255, 215, 0, 0.3); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.2); }
+            50% { border-color: rgba(255, 215, 0, 0.8); box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.1); }
+            100% { border-color: rgba(255, 215, 0, 0.3); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.2); }
+        }
+        .border-glow { animation: border-pulse 2s infinite; }
     </style>
 </head>
 <body>
@@ -146,13 +168,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- TIER 1: SOUND ENGINE (Procedural Audio) ---
+        // --- TIER 2: SYMPHONIC AUDIO ENGINE ---
         const AudioSys = {
             ctx: null,
             init: () => {
-                if (!AudioSys.ctx) {
-                    AudioSys.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
+                if (!AudioSys.ctx) AudioSys.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if(AudioSys.ctx.state === 'suspended') AudioSys.ctx.resume();
             },
             playTone: (freq, type, duration, vol=0.1) => {
@@ -162,54 +182,36 @@
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, AudioSys.ctx.currentTime);
                 gain.gain.setValueAtTime(vol, AudioSys.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + duration);
+                gain.gain.exponentialRampToValueAtTime(0.001, AudioSys.ctx.currentTime + duration);
                 osc.connect(gain);
                 gain.connect(AudioSys.ctx.destination);
                 osc.start();
                 osc.stop(AudioSys.ctx.currentTime + duration);
             },
-            click: () => { AudioSys.init(); AudioSys.playTone(800, 'triangle', 0.05, 0.05); },
+            click: () => { 
+                AudioSys.init(); 
+                AudioSys.playTone(800, 'sine', 0.1, 0.05); 
+                AudioSys.playTone(1200, 'triangle', 0.05, 0.02); 
+            },
             success: () => { 
                 AudioSys.init(); 
-                [440, 554, 659].forEach((f,i) => setTimeout(() => AudioSys.playTone(f, 'sine', 0.3, 0.1), i*100)); 
+                [523.25, 659.25, 783.99].forEach((f,i) => setTimeout(() => AudioSys.playTone(f, 'sine', 0.6, 0.1), i*80)); 
             },
             error: () => { 
                 AudioSys.init(); 
-                AudioSys.playTone(150, 'sawtooth', 0.3, 0.1); 
+                AudioSys.playTone(150, 'sawtooth', 0.4, 0.1); 
+                AudioSys.playTone(100, 'square', 0.4, 0.05); 
             },
-            spin: () => { AudioSys.init(); AudioSys.playTone(200, 'square', 0.05, 0.03); },
+            spin: () => { AudioSys.init(); AudioSys.playTone(300, 'square', 0.05, 0.02); },
             win: () => {
                 AudioSys.init();
-                // 1. نغمة الفوز التصاعدية (الموسيقى)
-                const notes = [523.25, 659.25, 783.99, 1046.50];
-                notes.forEach((n, i) => setTimeout(() => AudioSys.playTone(n, 'sine', 0.3, 0.1), i*100));
-                
-                // 2. محاكاة صوت "صلصلة" العملات المعدنية (تأثير واقعي جداً)
-                for(let i=0; i<10; i++) {
-                    setTimeout(() => {
-                        const freq = 2200 + Math.random() * 1800; // ترددات حادة تشبه المعدن
-                        AudioSys.playTone(freq, 'triangle', 0.1, 0.02);
-                    }, 250 + (i * 70)); // توقيت متتابع ليشبه تساقط القطع فوق بعضها
-                }
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+                notes.forEach((n, i) => setTimeout(() => AudioSys.playTone(n, 'triangle', 0.4, 0.1), i*60));
             },
-            crash: () => {
-                AudioSys.init();
-                const bufferSize = AudioSys.ctx.sampleRate * 0.5;
-                const buffer = AudioSys.ctx.createBuffer(1, bufferSize, AudioSys.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const noise = AudioSys.ctx.createBufferSource();
-                noise.buffer = buffer;
-                const gain = AudioSys.ctx.createGain();
-                gain.gain.setValueAtTime(0.2, AudioSys.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, AudioSys.ctx.currentTime + 0.5);
-                noise.connect(gain);
-                gain.connect(AudioSys.ctx.destination);
-                noise.start();
-            },
-            coins: () => {
-                 AudioSys.init();
-                 for(let i=0; i<5; i++) setTimeout(()=> AudioSys.playTone(2000 + Math.random()*1000, 'sine', 0.1, 0.05), i*50);
+            crash: () => { AudioSys.init(); AudioSys.playTone(100, 'sawtooth', 0.8, 0.2); },
+            coins: () => { 
+                AudioSys.init(); 
+                for(let i=0; i<6; i++) setTimeout(()=> AudioSys.playTone(2000 + Math.random()*1500, 'sine', 0.1, 0.05), i*40); 
             }
         };
 
@@ -428,7 +430,68 @@
 `;
         // --- COMPONENTS ---
         // --- NEW REALISM HELPERS ---
-        
+        // 3. Gold Dust Cursor Effect (غبار الذهب عند اللمس)
+        const CursorTrail = () => {
+            const canvasRef = useRef(null);
+            const particles = useRef([]);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const addParticle = (x, y) => {
+                    for(let i=0; i<3; i++) { 
+                        particles.current.push({
+                            x, y,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            life: 1, 
+                            size: Math.random() * 3
+                        });
+                    }
+                };
+
+                const handleMove = (e) => {
+                    const x = e.touches ? e.touches[0].clientX : e.clientX;
+                    const y = e.touches ? e.touches[0].clientY : e.clientY;
+                    addParticle(x, y);
+                };
+
+                window.addEventListener('mousemove', handleMove);
+                window.addEventListener('touchmove', handleMove);
+
+                const animate = () => {
+                    if(!canvas) return;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    particles.current.forEach((p, i) => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= 0.02; 
+                        
+                        if(p.life <= 0) {
+                            particles.current.splice(i, 1);
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
+                            ctx.fillStyle = `rgba(255, 215, 0, ${p.life})`;
+                            ctx.fill();
+                        }
+                    });
+                    requestAnimationFrame(animate);
+                };
+                animate();
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMove);
+                    window.removeEventListener('touchmove', handleMove);
+                };
+            }, []);
+
+            return React.createElement('canvas', { ref: canvasRef, className: "fixed inset-0 pointer-events-none z-[9999]" });
+        };
         // 1. Animated Counter (سلس للعدادات)
         const AnimatedCounter = ({ value }) => {
             const [displayValue, setDisplayValue] = useState(0);
@@ -480,6 +543,67 @@
                         grad.addColorStop(1, 'rgba(0,0,0,0)');
                         ctx.fillStyle = grad; ctx.fill();
                     }
+                    // 3. Gold Dust Cursor Effect (غبار الذهب عند اللمس)
+        const CursorTrail = () => {
+            const canvasRef = useRef(null);
+            const particles = useRef([]);
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const addParticle = (x, y) => {
+                    for(let i=0; i<3; i++) { // 3 جسيمات لكل حركة
+                        particles.current.push({
+                            x, y,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            life: 1, // الحياة تبدأ من 1 وتنقص
+                            size: Math.random() * 3
+                        });
+                    }
+                };
+
+                const handleMove = (e) => {
+                    const x = e.touches ? e.touches[0].clientX : e.clientX;
+                    const y = e.touches ? e.touches[0].clientY : e.clientY;
+                    addParticle(x, y);
+                };
+
+                window.addEventListener('mousemove', handleMove);
+                window.addEventListener('touchmove', handleMove);
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    particles.current.forEach((p, i) => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= 0.02; // سرعة الاختفاء
+                        
+                        if(p.life <= 0) {
+                            particles.current.splice(i, 1);
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
+                            ctx.fillStyle = `rgba(255, 215, 0, ${p.life})`; // لون ذهبي يختفي
+                            ctx.fill();
+                        }
+                    });
+                    requestAnimationFrame(animate);
+                };
+                animate();
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMove);
+                    window.removeEventListener('touchmove', handleMove);
+                };
+            }, []);
+
+            return React.createElement('canvas', { ref: canvasRef, className: "fixed inset-0 pointer-events-none z-[9999]" });
+        };
                 };
                 animationFrameId = requestAnimationFrame(draw);
                 return () => cancelAnimationFrame(animationFrameId);
@@ -582,7 +706,7 @@
         const Button = ({ children, onClick, disabled, variant='gold', full, className='', icon: Icon, loading }) => {
             const base = "relative font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 btn-press disabled:opacity-50 disabled:grayscale select-none disabled:pointer-events-none overflow-hidden";
             const styles = {
-                gold: 'bg-gradient-to-b from-[#FFD700] to-[#B8860B] text-black shadow-[0_4px_15px_rgba(255,215,0,0.3)] border border-[#FFD700]',
+                gold: 'bg-gradient-to-b from-[#FFD700] to-[#B8860B] text-black shadow-[0_4px_15px_rgba(255,215,0,0.3)] border border-[#FFD700] btn-shimmer', // تم التفعيل هنا
                 green: 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white border border-emerald-500 shadow-[0_4px_15px_rgba(16,185,129,0.3)]',
                 red: 'bg-gradient-to-b from-red-500 to-red-700 text-white border border-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.3)]',
                 dark: 'bg-dark-800 text-gold-500 border border-gold-500/30 hover:bg-dark-700'
@@ -736,6 +860,7 @@
 
             return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
             React.createElement('div', { className: "noise-overlay" }),
+            React.createElement(CursorTrail), // 👈 أضف هذا السطر
                 notify && React.createElement('div', { className: `fixed top-12 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 animate-pop glass-panel w-max max-w-[90%] ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
                     notify.type==='success'?React.createElement(CheckCircle,{size:24, className:"text-green-400"}):React.createElement(XCircle,{size:24, className:"text-red-400"}), 
                     React.createElement('span', { className: "font-bold text-sm" }, notify.msg)
@@ -3043,3 +3168,4 @@
 </script>
 </body>
 </html>
+
