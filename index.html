@@ -1033,11 +1033,7 @@
             const [settings, setSettings] = useState({});
 
             useEffect(() => {
-                // منع التكبير باللمس المزدوج على الهواتف
-                document.addEventListener('dblclick', function(event) {
-                    event.preventDefault();
-                }, { passive: false });
-
+                document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
                 const uid = localStorage.getItem('cd0777_uid');
                 if (uid && db) {
                     if (uid === 'admin') { setUser({role: 'admin'}); return; }
@@ -1055,17 +1051,32 @@
                 }
             }, []);
 
-            useEffect(() => { if(user && view === 'auth') setView(user.role === 'admin' ? 'admin' : 'home'); }, [user]);
+            // توجيه تلقائي عند الدخول، لكن لا تلمس صفحات الشروط إذا كانت مفتوحة
+            useEffect(() => { 
+                if(user && view === 'auth') {
+                    setView(user.role === 'admin' ? 'admin' : 'home'); 
+                }
+            }, [user]);
+
             const showMsg = (msg, type='success') => { setNotify({msg, type}); setTimeout(()=>setNotify(null), 3000); };
             const navTo = (v) => { setView(v); setMenuOpen(false); AudioSys.click(); };
 
+            // ----------------------------------------------------
+            // 🟢 [التصحيح الهام] الصفحات العامة (تظهر للجميع)
+            // ----------------------------------------------------
+            // نتحقق من هذه الصفحات *قبل* التحقق من المستخدم (!user)
+            if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: DEFAULT_TERMS, back: () => setView(user ? 'home' : 'auth'), settings });
+            if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: DEFAULT_POLICY, back: () => setView(user ? 'home' : 'auth'), settings });
+
+            // الآن نتحقق: هل المستخدم غير مسجل؟
             if (!user) return React.createElement(AuthScreen, { setUser, setView, showMsg, t });
             
-            // Routing
+            // ----------------------------------------------------
+            // الصفحات الخاصة بالمستخدمين المسجلين
+            // ----------------------------------------------------
             if (user?.role === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');}, db, showMsg, t });
             
             if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, isRTL: true, db, logGame });
-            // 👇 انسخ هذا البلوك وألصقه تحت سطر Crash مباشرة 👇
             if (view === 'game-slots') return React.createElement(SlotsGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-mines') return React.createElement(MinesGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-plinko') return React.createElement(PlinkoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
@@ -1075,27 +1086,22 @@
             if (view === 'game-keno') return React.createElement(KenoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-coinflip') return React.createElement(CoinFlipGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
             if (view === 'game-hilo') return React.createElement(HiLoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
-            // 👆 انتهى النسخ 👆
+            
             if (view === 'vip-register') return React.createElement(VipRegistrationScreen, { user, t, back: ()=>navTo('home'), db, showMsg });
             if (view === 'xp-level') return React.createElement(LevelingScreen, { user, back: ()=>navTo('home') });
             if (view === 'deposit') return React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') });
             if (view === 'withdraw') return React.createElement(WithdrawScreen, { user, showMsg, t, back: ()=>navTo('profile') });
             if (view === 'exchange') return React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') });
             if (view === 'history') return React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') });
-            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile'), db, t, showMsg });
-            // ... الأسطر الموجودة سابقاً ...
-            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile'), db, t, showMsg });
             
-            // 👇 أضف هذين السطرين الجديدين هنا 👇
+            // مررنا setView هنا لكي تعمل الأزرار داخل صفحة الإعدادات
+            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile'), db, t, showMsg, setView });
+            
             if (view === 'agent') return React.createElement(AgentScreen, { user, back: ()=>navTo('home'), t, showMsg });
             if (view === 'gifts') return React.createElement(GiftScreen, { user, back: ()=>navTo('home'), showMsg });
-            // 👆 انتهى التعديل 👆
-
-            // The Main Layout...
 
             // The Main Layout (Mobile Optimized)
             return React.createElement('div', { 
-                // استخدام h-[100dvh] يحل مشكلة شريط المتصفح في الهواتف
                 className: "h-[100dvh] w-full flex flex-col bg-dark-950 text-white overflow-hidden fixed inset-0", 
                 dir: 'rtl' 
             },
@@ -1324,59 +1330,199 @@
             );
         }
 
-        function SettingsScreen({ user, showMsg, t, back, db }) {
-            const [edit, setEdit] = useState(false);
-            const [form, setForm] = useState({ fullName: user.fullName, phone: user.phone, email: user.email || '' });
+        function SettingsScreen({ user, showMsg, t, back, db, setView }) {
+            // حالة النوافذ المنبثقة (Modals)
+            const [modalType, setModalType] = useState(null); // 'profile', 'password', null
+            const [loading, setLoading] = useState(false);
+            
+            // حالة النماذج (Forms)
+            const [profileForm, setProfileForm] = useState({ 
+                fullName: user.fullName || '', 
+                phone: user.phone || '', 
+                email: user.email || '' 
+            });
+            
+            const [passForm, setPassForm] = useState({ 
+                oldPass: '', 
+                newPass: '', 
+                confirmPass: '' 
+            });
 
-            const save = async () => {
+            // تحديث البيانات عند تغير المستخدم
+            useEffect(() => {
+                setProfileForm({ 
+                    fullName: user.fullName || '', 
+                    phone: user.phone || '', 
+                    email: user.email || '' 
+                });
+            }, [user]);
+
+            // دالة تحديث الإعدادات السريعة (Toggles)
+            const toggleSetting = async (key) => {
+                const newValue = !user[key];
+                // تحديث واجهة المستخدم فوراً (Optimistic UI) - لكن سنعتمد على Firebase Listener لتحديث الـ Prop
+                AudioSys.click();
                 try {
-                    await updateDoc(doc(db, "users", user.id), form);
-                    showMsg(t('update_success'));
-                    setEdit(false);
-                } catch(e) { showMsg(t('error'), 'error'); }
+                    await updateDoc(doc(db, "users", user.id), { [key]: newValue });
+                    if(newValue) AudioSys.success();
+                    // لا حاجة لـ showMsg لكل ضغطة لتكون التجربة سلسة مثل iOS
+                } catch (e) {
+                    showMsg("Failed to update setting", "error");
+                }
             };
 
-            return React.createElement('div', { className: "animate-pop h-full bg-dark-950 p-6" },
-                React.createElement('div', { className: "flex items-center gap-4 mb-8" }, 
-                     back && React.createElement('button', { onClick: back, className: "text-gold-500 p-2 bg-gold-500/10 rounded-xl hover:bg-gold-500/20 transition-colors" }, React.createElement(ChevronRight)),
-                    React.createElement('h2', { className: "text-gold-500 font-bold text-3xl font-oswald" }, t('settings'))
+            // دالة حفظ الملف الشخصي
+            const saveProfile = async () => {
+                setLoading(true);
+                try {
+                    await updateDoc(doc(db, "users", user.id), profileForm);
+                    showMsg("Profile Updated Successfully", "success");
+                    setModalType(null);
+                } catch (e) {
+                    showMsg("Connection Error", "error");
+                }
+                setLoading(false);
+            };
+
+            // دالة تغيير كلمة المرور
+            const changePassword = async () => {
+                if (!passForm.oldPass || !passForm.newPass) return showMsg("Fill all fields", "error");
+                if (passForm.newPass !== passForm.confirmPass) return showMsg("Passwords do not match", "error");
+                
+                setLoading(true);
+                try {
+                    // التحقق من كلمة المرور القديمة (محاكاة أمنية)
+                    if (passForm.oldPass !== user.password) {
+                        showMsg("Incorrect Old Password", "error");
+                        setLoading(false);
+                        return;
+                    }
+
+                    await updateDoc(doc(db, "users", user.id), { password: passForm.newPass });
+                    showMsg("Security Credentials Updated", "success");
+                    setModalType(null);
+                    setPassForm({ oldPass: '', newPass: '', confirmPass: '' });
+                } catch (e) {
+                    showMsg("Update Failed", "error");
+                }
+                setLoading(false);
+            };
+
+            // مكون زر التبديل (Toggle Switch)
+            const Toggle = ({ active, onToggle }) => React.createElement('button', {
+                onClick: (e) => { e.stopPropagation(); onToggle(); },
+                className: `w-10 h-6 rounded-full p-1 transition-all duration-300 flex items-center ${active ? 'bg-gold-500 justify-end' : 'bg-white/10 justify-start'}`
+            }, React.createElement('div', { className: `w-4 h-4 bg-white rounded-full shadow-md` }));
+
+            // مكون عنصر القائمة
+            const SettingItem = ({ icon: Icon, label, value, type = 'arrow', onClick, color = 'text-white', active }) => React.createElement('div', {
+                onClick: type === 'arrow' ? onClick : undefined,
+                className: "flex items-center justify-between p-4 bg-dark-900/50 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 last:border-0"
+            },
+                React.createElement('div', { className: "flex items-center gap-3" },
+                    React.createElement('div', { className: `p-2 rounded-lg bg-white/5 ${color}` }, React.createElement(Icon, { size: 18 })),
+                    React.createElement('span', { className: "text-sm font-medium text-gray-200" }, label)
+                ),
+                React.createElement('div', { className: "flex items-center gap-2" },
+                    value && React.createElement('span', { className: "text-xs text-gray-500 font-mono" }, value),
+                    type === 'arrow' && React.createElement(ChevronRight, { size: 16, className: "text-gray-600" }),
+                    type === 'toggle' && React.createElement(Toggle, { active: active, onToggle: onClick })
+                )
+            );
+
+            return React.createElement('div', { className: "h-full bg-[#050505] flex flex-col animate-slide-up relative" },
+                
+                // 1. Header
+                React.createElement('div', { className: "p-6 glass-premium z-20 flex items-center gap-4" },
+                    React.createElement('button', { onClick: back, className: "p-2 bg-white/5 rounded-xl text-white hover:bg-gold-500/20 transition-colors" }, React.createElement(ChevronLeft)),
+                    React.createElement('h2', { className: "text-2xl font-black text-white font-oswald tracking-widest" }, "SETTINGS")
                 ),
 
-                React.createElement('div', { className: "space-y-6" },
-                    React.createElement('div', { className: "bg-gradient-to-br from-dark-900 to-black rounded-3xl p-6 border border-white/5 shadow-2xl relative overflow-hidden" },
-                        React.createElement('div', { className: "absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full blur-3xl pointer-events-none" }),
-                        
-                        React.createElement('div', { className: "flex justify-between items-center border-b border-white/10 pb-4 mb-4" },
-                            React.createElement('h3', { className: "text-white font-bold text-lg flex items-center gap-2" }, 
-                                React.createElement('div', { className: "p-2 bg-blue-500/10 rounded-lg" }, React.createElement(User, {size:20, className:"text-blue-500"})),
-                                t('personal_info')
+                // 2. Scrollable Content
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-6 pb-32 space-y-8" },
+                    
+                    // Profile Header
+                    React.createElement('div', { className: "flex flex-col items-center mb-4" },
+                        React.createElement('div', { className: "w-24 h-24 rounded-full p-[2px] bg-gradient-to-tr from-gold-300 to-gold-600 shadow-[0_0_30px_rgba(234,179,8,0.3)] mb-4 relative" },
+                            React.createElement('div', { className: "w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden" },
+                                React.createElement(User, { size: 40, className: "text-gold-500" })
                             ),
-                            React.createElement('button', { onClick: ()=>setEdit(!edit), className: "text-xs font-bold px-3 py-1 bg-gold-500/10 text-gold-500 rounded-lg hover:bg-gold-500/20 transition-colors" }, edit ? "Cancel" : "Edit")
+                            // مؤشر الحالة (أخضر=نشط)
+                            React.createElement('div', { className: "absolute bottom-0 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-black" })
                         ),
-                        
-                        edit ? React.createElement('div', { className: "space-y-4" },
-                            React.createElement(Input, { placeholder: t('name'), value: form.fullName, onChange: e=>setForm({...form, fullName:e.target.value}) }),
-                            React.createElement(Input, { placeholder: t('phone'), value: form.phone, onChange: e=>setForm({...form, phone:e.target.value}) }),
-                            React.createElement(Input, { placeholder: t('email'), value: form.email, onChange: e=>setForm({...form, email:e.target.value}) }),
-                            React.createElement(Button, { onClick: save, full: true }, "Save Changes")
-                        ) : React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-                            React.createElement('div', { className: "space-y-1" }, React.createElement('p', {className:"text-[10px] text-gray-500 uppercase font-bold tracking-wider"}, t('name')), React.createElement('p', {className:"text-white font-medium"}, user.fullName)),
-                            React.createElement('div', { className: "space-y-1" }, React.createElement('p', {className:"text-[10px] text-gray-500 uppercase font-bold tracking-wider"}, t('user')), React.createElement('p', {className:"text-white font-medium"}, user.username)),
-                            React.createElement('div', { className: "space-y-1" }, React.createElement('p', {className:"text-[10px] text-gray-500 uppercase font-bold tracking-wider"}, t('phone')), React.createElement('p', {className:"text-gold-500 font-mono"}, user.phone)),
-                            React.createElement('div', { className: "space-y-1" }, React.createElement('p', {className:"text-[10px] text-gray-500 uppercase font-bold tracking-wider"}, "ID"), React.createElement('p', {className:"text-white font-mono bg-white/5 px-2 py-1 rounded w-max"}, user.memberId))
+                        React.createElement('h3', { className: "text-xl font-bold text-white" }, user.fullName || "Elite Member"),
+                        React.createElement('div', { className: "flex items-center gap-2 mt-1 bg-white/5 px-3 py-1 rounded-full border border-white/10" },
+                            React.createElement('span', { className: "text-xs font-mono text-gold-500" }, user.memberId),
+                            React.createElement(Copy, { size: 12, className: "text-gray-500 cursor-pointer hover:text-white", onClick: () => { navigator.clipboard.writeText(user.memberId); showMsg("ID Copied"); } })
                         )
                     ),
 
-                    React.createElement('div', { className: "bg-dark-900 rounded-3xl p-6 border border-white/5 shadow-xl" },
-                        React.createElement('h3', { className: "text-white font-bold text-lg border-b border-white/10 pb-4 mb-4 flex items-center gap-2" }, 
-                            React.createElement('div', { className: "p-2 bg-red-500/10 rounded-lg" }, React.createElement(Lock, {size:20, className:"text-red-500"})),
-                            "Security"
-                        ),
-                        React.createElement('div', { className: "space-y-4" },
-                            React.createElement(Input, { placeholder: t('old_pass'), type:"password" }),
-                            React.createElement(Input, { placeholder: t('new_pass'), type:"password" }),
-                            React.createElement(Button, { full:true, onClick:()=>showMsg(t('success')) }, "Update Password")
+                    // Group: Account
+                    React.createElement('div', { className: "space-y-2" },
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "ACCOUNT & SECURITY"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
+                            React.createElement(SettingItem, { icon: User, label: "Personal Information", color: "text-blue-400", onClick: () => setModalType('profile') }),
+                            React.createElement(SettingItem, { icon: Lock, label: "Change Password", color: "text-red-400", onClick: () => setModalType('password') }),
+                            // هنا ربطنا الـ toggle بقاعدة البيانات
+                            React.createElement(SettingItem, { icon: ShieldCheck, label: "Two-Factor Auth (2FA)", color: "text-green-400", type: 'toggle', active: user.twoFactor, onClick: () => toggleSetting('twoFactor') }),
                         )
+                    ),
+
+                    // Group: Preferences
+                    React.createElement('div', { className: "space-y-2" },
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "PREFERENCES"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
+                            // ربطنا الصوت والاشعارات بقاعدة البيانات
+                            React.createElement(SettingItem, { icon: Bell, label: "Notifications", type: 'toggle', active: user.notifications, color: "text-yellow-400", onClick: () => toggleSetting('notifications') }),
+                            React.createElement(SettingItem, { icon: Speaker, label: "Sound Effects", type: 'toggle', active: user.sound, color: "text-pink-400", onClick: () => toggleSetting('sound') })
+                        )
+                    ),
+
+                    // Group: Legal
+                    React.createElement('div', { className: "space-y-2" },
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "LEGAL"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
+                            React.createElement(SettingItem, { icon: FileText, label: "Terms of Service", color: "text-gray-400", onClick: () => setView('terms') }),
+                            React.createElement(SettingItem, { icon: ShieldCheck, label: "Privacy Policy", color: "text-gray-400", onClick: () => setView('policy') }),
+                            React.createElement(SettingItem, { icon: Info, label: "About CD0777", value: "v2.5.0", color: "text-gray-400" })
+                        )
+                    ),
+
+                    // Logout
+                    React.createElement('button', { onClick: () => { localStorage.removeItem('cd0777_uid'); window.location.reload(); }, className: "w-full py-4 rounded-2xl border border-red-500/30 text-red-500 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 mb-8" },
+                        React.createElement(LogOut, { size: 18 }), "Sign Out"
+                    )
+                ),
+
+                // ----------------------------------------------------
+                // النوافذ المنبثقة (Modals) لتعديل البيانات
+                // ----------------------------------------------------
+                
+                // 1. Modal: Edit Profile
+                modalType === 'profile' && React.createElement('div', { className: "absolute inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-slide-up" },
+                    React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                        React.createElement('h3', { className: "text-xl font-bold text-white" }, "Edit Profile"),
+                        React.createElement('button', { onClick: ()=>setModalType(null), className: "p-2 bg-white/10 rounded-full" }, React.createElement(X, {size:20}))
+                    ),
+                    React.createElement('div', { className: "space-y-4" },
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Full Name"), React.createElement(Input, { value: profileForm.fullName, onChange: e=>setProfileForm({...profileForm, fullName:e.target.value}), icon: User })),
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Phone Number"), React.createElement(Input, { value: profileForm.phone, onChange: e=>setProfileForm({...profileForm, phone:e.target.value}), icon: Smartphone })),
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Email Address"), React.createElement(Input, { value: profileForm.email, onChange: e=>setProfileForm({...profileForm, email:e.target.value}), icon: Mail })),
+                        React.createElement(Button, { full: true, onClick: saveProfile, loading: loading }, "SAVE CHANGES")
+                    )
+                ),
+
+                // 2. Modal: Change Password
+                modalType === 'password' && React.createElement('div', { className: "absolute inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-slide-up" },
+                    React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                        React.createElement('h3', { className: "text-xl font-bold text-white" }, "Change Password"),
+                        React.createElement('button', { onClick: ()=>setModalType(null), className: "p-2 bg-white/10 rounded-full" }, React.createElement(X, {size:20}))
+                    ),
+                    React.createElement('div', { className: "space-y-4" },
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Current Password"), React.createElement(Input, { type:"password", value: passForm.oldPass, onChange: e=>setPassForm({...passForm, oldPass:e.target.value}), icon: Lock })),
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "New Password"), React.createElement(Input, { type:"password", value: passForm.newPass, onChange: e=>setPassForm({...passForm, newPass:e.target.value}), icon: KeyRound })),
+                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Confirm Password"), React.createElement(Input, { type:"password", value: passForm.confirmPass, onChange: e=>setPassForm({...passForm, confirmPass:e.target.value}), icon: CheckCircle })),
+                        React.createElement(Button, { full: true, variant: 'red', onClick: changePassword, loading: loading }, "UPDATE SECURITY")
                     )
                 )
             );
