@@ -167,8 +167,8 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
 
-        // --- TIER 2: SYMPHONIC AUDIO ENGINE ---
         const AudioSys = {
             ctx: null,
             init: () => {
@@ -391,7 +391,12 @@
             return React.createElement('div', { className: "bg-black/40 border-b border-white/5 py-1 px-4 flex justify-center overflow-hidden" }, React.createElement('p', { className: "text-[10px] text-gray-400 whitespace-nowrap animate-pulse flex items-center gap-2" }, React.createElement(CircleDot, { size: 8, className: "text-green-500 animate-ping" }), ticker));
         };
 
-        const shouldHouseWin = () => Math.random() < 0.8;
+        // متغير عالمي لتخزين نسبة فوز "المنزل" (الإدارة)
+        // القيمة الافتراضية 0.7 تعني أن الإدارة تربح 70% من الوقت
+        let GLOBAL_HOUSE_EDGE = 0.7; 
+
+        // الدالة التي تستخدمها الألعاب لتحديد الفائز
+        const shouldHouseWin = () => Math.random() < GLOBAL_HOUSE_EDGE;
         const logGame = async (userId, username, game, bet, win, profit) => {
             if(!userId || userId === 'admin') return;
             try { await addDoc(collection(db, "game_logs"), { userId, username, game, bet, win, profit, date: new Date().toISOString() }); } catch(e) { console.error("Log Error", e); }
@@ -986,6 +991,10 @@
             if (view === 'game-dice') return React.createElement(DiceGame, GameProps);
             if (view === 'game-wheel') return React.createElement(WheelGame, GameProps);
             if (view === 'game-hilo') return React.createElement(HiLoGame, GameProps);
+            // ...
+if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>setView(user?'profile':'auth'), settings });
+if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>setView(user?'profile':'auth'), settings });
+// ...
 
             return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
             React.createElement('div', { className: "noise-overlay" }),
@@ -1029,7 +1038,7 @@
             
             useEffect(() => {
                 const c = COUNTRIES.find(c => c.code === f.country);
-                if(c && isReg) setF(prev => ({ ...prev, ph: '' })); // Reset phone on country change to avoid confusion
+                if(c && isReg) setF(prev => ({ ...prev, ph: '' }));
             }, [f.country, isReg]);
 
             const submit = async () => {
@@ -1049,7 +1058,6 @@
                     if(isReg) {
                         const q = query(collection(db, "users"), where("username", "==", f.u)); if(!(await getDocs(q)).empty) throw new Error('Username taken');
                         const sz = (await getDocs(collection(db, "users"))).size;
-                        // Combine prefix with number
                         const selectedC = COUNTRIES.find(c => c.code === f.country) || COUNTRIES[0];
                         const fullPhone = selectedC.prefix + f.ph;
                         
@@ -1073,9 +1081,7 @@
                     
                     isReg && React.createElement(Input, { icon: User, placeholder: t('name'), onChange: e=>setF({...f,n:e.target.value}) }),
                     
-                    // --- بداية الكود الجديد لخانة الهاتف ---
                     isReg && React.createElement('div', { className: "group bg-dark-900 border border-white/10 rounded-xl flex items-center transition-all focus-within:border-gold-500 focus-within:shadow-[0_0_15px_rgba(255,215,0,0.1)] h-14 overflow-hidden" },
-                        // قسم اختيار الدولة
                         React.createElement('div', { className: "relative h-full flex items-center border-r border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer min-w-[100px]" },
                             React.createElement('select', { 
                                 value: f.country, 
@@ -1089,7 +1095,6 @@
                                 React.createElement('span', { className: "text-xs font-mono font-bold text-gray-300 dir-ltr" }, selectedCountry.prefix)
                             )
                         ),
-                        // قسم كتابة الرقم
                         React.createElement('input', { 
                             className: "flex-1 bg-transparent h-full px-4 text-white placeholder:text-gray-600 font-mono text-lg outline-none", 
                             placeholder: "612 345 678", 
@@ -1097,21 +1102,21 @@
                             onChange: e => setF({...f, ph: e.target.value}) 
                         })
                     ),
-                    // --- نهاية الكود الجديد لخانة الهاتف ---
 
                     React.createElement(Input, { icon: User, placeholder: t('user'), onChange: e=>setF({...f,u:e.target.value}) }),
                     React.createElement(Input, { icon: Lock, type: "password", placeholder: t('pass'), onChange: e=>setF({...f,p:e.target.value}) }),
                     
                     isReg && React.createElement('div', { className: "flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors checkbox-wrapper" },
                         React.createElement('label', { className: "flex items-center cursor-pointer" },
-                             React.createElement('input', { type: "checkbox", checked: agreeTerms, onChange: e=>setAgreeTerms(e.target.value), className: "hidden" }),
+                             React.createElement('input', { type: "checkbox", checked: agreeTerms, onChange: e=>setAgreeTerms(e.target.checked), className: "hidden" }), // تصحيح e.target.checked
                              React.createElement('div', { className: `w-5 h-5 rounded border border-gray-500 flex items-center justify-center transition-colors ${agreeTerms ? 'bg-gold-500 border-gold-500' : 'bg-transparent'}` },
                                  React.createElement(Check, { size: 14, className: `text-black ${agreeTerms ? 'block' : 'hidden'}` })
                              )
                         ),
+                        // 👇👇 هنا التصحيح: جعل الرابط يغير الـ view بشكل صحيح 👇👇
                         React.createElement('div', { className: "text-xs text-gray-300 select-none flex gap-1" }, 
                             t('agree_terms'),
-                            React.createElement('button', { onClick: (e) => { e.preventDefault(); setView('terms'); }, className: "text-blue-400 hover:text-blue-300 underline font-bold" }, t('terms_link'))
+                            React.createElement('button', { onClick: (e) => { e.preventDefault(); e.stopPropagation(); setView('terms'); }, className: "text-blue-400 hover:text-blue-300 underline font-bold cursor-pointer relative z-50" }, t('terms_link'))
                         )
                     ),
 
@@ -2963,10 +2968,17 @@
                         React.createElement(SidebarBtn, { icon: Dices, label: t('casino'), onClick: ()=>navTo('casino'), badge: "HOT" }),
                         React.createElement(SidebarBtn, { icon: Wallet, label: t('wallet'), onClick: ()=>navTo('profile') }),
                         React.createElement(SidebarBtn, { icon: Trophy, label: t('tasks'), onClick: ()=>navTo('tasks') }),
+                        
                         React.createElement('div', { className: "h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-4 mx-2" }), 
+                        
                         React.createElement(SidebarBtn, { icon: History, label: t('history'), onClick: ()=>navTo('history') }),
                         React.createElement(SidebarBtn, { icon: Settings, label: t('settings'), onClick: ()=>navTo('settings') }),
+                        
+                        // 👇👇 تمت إضافة زر الشروط والأحكام هنا 👇👇
+                        React.createElement(SidebarBtn, { icon: FileText, label: t('terms'), onClick: ()=>navTo('terms') }),
+                        
                         React.createElement(SidebarBtn, { icon: ShieldCheck, label: t('policy'), onClick: ()=>navTo('policy') }),
+                        
                         React.createElement('button', { 
                             onClick: () => { const l = lang==='ar'?'en':'ar'; setLang(l); localStorage.setItem('cd0777_lang', l); AudioSys.click(); },
                             className: "w-full flex items-center justify-between p-3.5 rounded-xl text-gray-400 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all mt-2 group" 
@@ -3072,172 +3084,213 @@
 
         // --- OPTIMIZED ADMIN PANEL (TIER 1 SCALABILITY) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
-            const [tab, setTab] = useState('deposits'); 
+            const [activeTab, setActiveTab] = useState('configuration'); // نبدأ بصفحة الإعدادات
             const [dataList, setDataList] = useState([]);
-            const [lastDoc, setLastDoc] = useState(null);
             const [loading, setLoading] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
-            const [conf, setConf] = useState({});
-            const [editId, setEditId] = useState(null);
             const [balInput, setBalInput] = useState('');
+            const [editId, setEditId] = useState(null);
+            
+            // تهيئة المتغيرات (بما في ذلك طرق الدفع الأربعة)
+            const [conf, setConf] = useState({
+                house_win_rate: 70,
+                promo_code: "CD0777",
+                telegram_link: "",
+                xbet_link: "",
+                // طرق الدفع الأربعة
+                attijari_info: "", // Bank Info
+                cashplus_info: "", // CashPlus Info
+                binance_info: "",  // Crypto Wallet
+                paypal_info: "",   // PayPal Email
+                // النصوص
+                terms: DEFAULT_TERMS,
+                policy: DEFAULT_POLICY
+            });
 
+            // تحميل البيانات
             useEffect(() => {
-                getDoc(doc(db, "settings", "global")).then(s => s.exists() && setConf(s.data()));
+                getDoc(doc(db, "settings", "global")).then(s => {
+                    if(s.exists()) {
+                        const d = s.data();
+                        setConf(prev => ({...prev, ...d}));
+                        if(d.house_win_rate) GLOBAL_HOUSE_EDGE = d.house_win_rate / 100;
+                    }
+                });
             }, []);
 
+            // جلب القوائم
             useEffect(() => {
                 let unsub;
-                setDataList([]); setLastDoc(null);
-
-                if(tab === 'deposits') {
-                    const q = query(collection(db, "deposits"), where("status", "==", "pending"), limit(50));
-                    unsub = onSnapshot(q, s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                } 
-                else if(tab === 'withdraws') {
-                    const q = query(collection(db, "withdraws"), where("status", "==", "pending"), limit(50));
-                    unsub = onSnapshot(q, s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                }
-                else if(tab === 'pending_users') {
-                    const q = query(collection(db, "users"), where("status", "==", "pending"), limit(50));
-                    unsub = onSnapshot(q, s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                }
-                else if(tab === 'users' || tab === 'logs') {
-                    loadData(true);
-                }
-
+                setDataList([]); 
+                if(activeTab === 'deposits') unsub = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                else if(activeTab === 'withdraws') unsub = onSnapshot(query(collection(db, "withdraws"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                else if(activeTab === 'pending_users') unsub = onSnapshot(query(collection(db, "users"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                else if(activeTab === 'users' || activeTab === 'logs') loadData();
                 return () => { if(unsub) unsub(); };
-            }, [tab]);
+            }, [activeTab]);
 
-            const loadData = async (reset = false) => {
-                if(loading) return;
+            const loadData = async () => {
+                const col = activeTab === 'users' ? 'users' : 'game_logs';
+                const snap = await getDocs(query(collection(db, col), limit(20)));
+                setDataList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+            };
+
+            const saveConfig = async () => {
                 setLoading(true);
                 try {
-                    let q;
-                    let collectionName = tab === 'users' ? 'users' : 'game_logs';
-                    
-                    if (reset) {
-                        q = query(collection(db, collectionName), limit(20));
-                    } else if (lastDoc) {
-                        q = query(collection(db, collectionName), startAfter(lastDoc), limit(20));
-                    } else {
-                        setLoading(false); return;
-                    }
-
-                    const snap = await getDocs(q);
-                    if (!snap.empty) {
-                        setLastDoc(snap.docs[snap.docs.length - 1]);
-                        const items = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                        setDataList(prev => reset ? items : [...prev, ...items]);
-                    }
-                } catch(e) { console.error(e); }
+                    await setDoc(doc(db,"settings","global"), conf, {merge:true});
+                    GLOBAL_HOUSE_EDGE = conf.house_win_rate / 100;
+                    showMsg("SETTINGS SAVED ✅");
+                } catch(e) { showMsg("Error", "error"); }
                 setLoading(false);
+            };
+
+            const updateSt = async (uid, st, type, item) => {
+                if(type === 'user') await updateDoc(doc(db, "users", uid), { status: st });
+                else {
+                    await updateDoc(doc(db, type==='dep'?'deposits':'withdraws', uid), { status: st });
+                    if(st === 'approved' && type === 'dep') {
+                        const uRef = doc(db,"users", item.userId);
+                        const uSnap = await getDoc(uRef);
+                        if(uSnap.exists()) await updateDoc(uRef, { coins: Number(uSnap.data().coins||0) + (item.amount * 10) }); 
+                    }
+                }
+                showMsg("Updated");
             };
 
             const handleSearch = async () => {
-                if(!searchTerm) return loadData(true);
-                setLoading(true);
-                try {
-                    const q = query(collection(db, "users"), where("username", "==", searchTerm));
-                    const snap = await getDocs(q);
-                    setDataList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                } catch(e) { showMsg("User not found", "error"); }
-                setLoading(false);
+                if(!searchTerm) return loadData();
+                const snap = await getDocs(query(collection(db, "users"), where("username", "==", searchTerm)));
+                setDataList(snap.docs.map(d => ({id: d.id, ...d.data()})));
             };
 
-            const updateSt = async (uid, st) => {
-                await updateDoc(doc(db, "users", uid), { status: st, ...(st==='active'?{coins:1000, balance:10}:{}) });
-                showMsg(`User ${st}`);
-                setDataList(prev => prev.filter(u => u.id !== uid));
-            };
-
-            const handleTrans = async (r, type, act) => {
-                const col = type === 'dep' ? 'deposits' : 'withdraws';
-                if (act === 'app') {
-                    if(type === 'dep') {
-                        const uRef = doc(db, "users", r.userId);
-                        const uSnap = await getDoc(uRef);
-                        if(uSnap.exists()) await updateDoc(uRef, { balance: Number(uSnap.data().balance || 0) + Number(r.amount) });
-                    }
-                    await updateDoc(doc(db, col, r.id), { status: 'approved' });
-                } else {
-                    if(type === 'with') {
-                        const uRef = doc(db, "users", r.userId);
-                        const uSnap = await getDoc(uRef);
-                        if(uSnap.exists()) await updateDoc(uRef, { balance: Number(uSnap.data().balance || 0) + Number(r.amount) });
-                    }
-                    await updateDoc(doc(db, col, r.id), { status: 'rejected' });
-                }
-                showMsg("Transaction Updated");
-            };
-
-            return React.createElement('div', { className: "h-screen flex flex-col bg-dark-950 p-6 font-sans overflow-hidden" },
-                React.createElement('div', { className: "flex justify-between items-center mb-8 shrink-0" },
-                    React.createElement('h1', { className: "text-2xl font-bold text-gold-500 flex gap-2" }, React.createElement(LayoutDashboard), "TIER 1 ADMIN"),
-                    React.createElement('button', { onClick: logout, className: "bg-red-900/30 text-red-500 p-2 rounded" }, React.createElement(LogOut))
-                ),
-                
-                React.createElement('div', { className: "grid grid-cols-3 md:grid-cols-6 gap-2 mb-6 shrink-0" },
-                    ['deposits', 'withdraws', 'pending_users', 'users', 'logs', 'settings'].map(t => 
-                        React.createElement('button', { key: t, onClick:()=>setTab(t), className: `p-3 rounded-lg font-bold border capitalize ${tab===t?'bg-gold-500 text-black border-gold-500':'border-white/10 text-gray-400'}` }, t)
+            const AdminSidebar = () => React.createElement('div', { className: "w-64 bg-dark-900 border-r border-white/5 flex flex-col p-4 hidden md:flex" },
+                React.createElement('h1', { className: "text-2xl font-black text-gold-500 mb-8 tracking-widest text-center" }, "GOD MODE"),
+                ['configuration', 'pending_users', 'deposits', 'withdraws', 'users', 'logs'].map(t => 
+                    React.createElement('button', { key: t, onClick: ()=>setActiveTab(t), className: `p-3 rounded-xl mb-2 text-left font-bold text-xs transition-all flex items-center gap-3 ${activeTab===t ? 'bg-gold-500 text-black shadow-lg shadow-gold-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}` }, 
+                        t.toUpperCase().replace('_', ' ')
                     )
                 ),
+                React.createElement('button', { onClick: logout, className: "mt-auto p-3 rounded-xl bg-red-900/20 text-red-500 font-bold flex items-center gap-3 hover:bg-red-900/40" }, React.createElement(LogOut, {size:18}), "LOGOUT")
+            );
 
-                tab === 'users' && React.createElement('div', { className: "flex gap-2 mb-4" },
-                    React.createElement('input', { className: "bg-dark-900 border border-white/10 p-2 rounded-lg flex-1 text-white", placeholder: "Search Username...", value: searchTerm, onChange: e=>setSearchTerm(e.target.value) }),
-                    React.createElement(Button, { onClick: handleSearch, className: "py-2 px-6" }, "Search")
-                ),
-
-                React.createElement('div', { className: "flex-1 overflow-y-auto pb-20 space-y-4 pr-1" },
-                    tab === 'deposits' && dataList.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row gap-4" },
-                        r.image && React.createElement('img', { src: r.image, className: "w-32 h-32 object-cover rounded bg-black" }),
-                        React.createElement('div', { className: "flex-1" },
-                            React.createElement('div', { className: "flex justify-between" }, React.createElement('span', { className: "font-bold text-white" }, r.username), React.createElement('span', { className: "text-green-500 font-mono text-xl" }, `+${r.amount}$`)),
-                            React.createElement('p', { className: "text-xs text-gray-400 mb-4" }, `${r.method} • ${new Date(r.date).toLocaleString()}`),
-                            React.createElement('div', { className: "flex gap-2" }, React.createElement(Button, { onClick:()=>handleTrans(r,'dep','app'), variant:'green', className:"py-2 px-4 text-xs" }, "Approve"), React.createElement(Button, { onClick:()=>handleTrans(r,'dep','rej'), variant:'red', className:"py-2 px-4 text-xs" }, "Reject"))
-                        )
-                    )),
-
-                    tab === 'withdraws' && dataList.map(r => React.createElement('div', { key: r.id, className: "bg-dark-900 p-4 rounded-xl border border-red-900/30 flex flex-col gap-2" },
-                        React.createElement('div', { className: "flex justify-between items-center" },
-                            React.createElement('div', {}, React.createElement('span', { className: "font-bold text-white block" }, r.username), React.createElement('span', { className: "text-xs text-gray-400" }, `${r.method} • ${r.details?.phone||'N/A'}`)),
-                            React.createElement('span', { className: "text-red-500 font-mono text-xl font-bold" }, `-${r.amount}$`)
+            const renderContent = () => {
+                if (activeTab === 'configuration') return React.createElement('div', { className: "space-y-6 animate-fade-in pb-20" },
+                    
+                    // 1. GAME SETTINGS (WIN RATE)
+                    React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl border border-gold-500/30 shadow-lg relative overflow-hidden" },
+                        React.createElement('h3', { className: "text-gold-500 font-bold mb-4 flex items-center gap-2" }, React.createElement(Target), "GAME DIFFICULTY CONTROL"),
+                        React.createElement('div', { className: "flex items-center gap-4" },
+                            React.createElement('span', { className: "text-green-500 text-xs font-bold" }, "EASY"),
+                            React.createElement('input', { type: "range", min: "0", max: "100", step: "5", value: conf.house_win_rate, onChange: e=>setConf({...conf, house_win_rate: Number(e.target.value)}), className: "flex-1 h-3 bg-gray-700 rounded-full appearance-none cursor-pointer accent-gold-500" }),
+                            React.createElement('span', { className: "text-red-500 text-xs font-bold" }, "HARD")
                         ),
-                        React.createElement('div', { className: "flex gap-2 mt-2" }, React.createElement(Button, { onClick:()=>handleTrans(r,'with','app'), variant:'green', className:"py-2 px-4 text-xs flex-1" }, "Approve"), React.createElement(Button, { onClick:()=>handleTrans(r,'with','rej'), variant:'red', className:"py-2 px-4 text-xs flex-1" }, "Reject"))
-                    )),
-
-                    tab === 'pending_users' && dataList.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-4 rounded-xl border border-yellow-500/30 flex justify-between items-center" },
-                        React.createElement('div', {}, React.createElement('p', { className: "font-bold text-white" }, u.username), React.createElement('p', { className: "text-xs text-gray-400" }, `${u.fullName} • ${u.memberId}`)),
-                        React.createElement('div', { className: "flex gap-2" }, React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "bg-green-500 text-black font-bold py-2 px-4 rounded-lg" }, "ACCEPT"), React.createElement('button', { onClick:()=>deleteDoc(doc(db,"users",u.id)), className: "bg-red-500/20 text-red-500 p-2 rounded-lg" }, React.createElement(X, {size:20})))
-                    )),
-
-                    tab === 'users' && React.createElement(React.Fragment, null,
-                        dataList.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 p-3 rounded-lg border border-white/5 flex justify-between items-center" },
-                            React.createElement('div', {}, React.createElement('p', { className: "font-bold text-sm" }, u.username, u.status==='banned'&&React.createElement('span',{className:"text-red-500 ml-2"},"BANNED")), React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, `Coins: ${u.coins} | Bal: $${u.balance||0}`)),
-                            editId === u.id ? React.createElement('div', { className: "flex gap-1 bg-black p-1 rounded" }, 
-                                React.createElement('input', { type:"number", className: "w-20 bg-transparent text-white text-xs px-1", onChange:e=>setBalInput(e.target.value) }), 
-                                React.createElement('button', { onClick:()=>{updateDoc(doc(db,"users",u.id),{coins:Number(balInput)}); setEditId(null)}, className: "text-green-500" }, React.createElement(Check, {size:16}))
-                            ) : React.createElement('div', { className: "flex gap-2" }, 
-                                React.createElement('button', { onClick:()=>{setEditId(u.id); setBalInput(u.coins)}, className: "text-blue-500 bg-blue-500/10 p-2 rounded" }, React.createElement(Edit3, {size:14})),
-                                u.status!=='banned' ? React.createElement('button', { onClick:()=>updateSt(u.id, 'banned'), className: "text-orange-500 bg-orange-500/10 p-2 rounded" }, React.createElement(Ban, {size:14})) : React.createElement('button', { onClick:()=>updateSt(u.id, 'active'), className: "text-green-500 bg-green-500/10 p-2 rounded" }, React.createElement(CheckCircle, {size:14}))
-                            )
-                        )),
-                        (tab === 'users' || tab === 'logs') && React.createElement('button', { onClick: ()=>loadData(false), disabled: loading, className: "w-full py-4 text-gray-500 font-bold hover:text-white" }, loading ? "Loading..." : "Load More")
+                        React.createElement('p', { className: "text-center mt-2 font-mono text-gold-500" }, `House Win Rate: ${conf.house_win_rate}%`)
                     ),
 
-                    tab === 'logs' && dataList.map((l, i) => React.createElement('div', {key:i, className:"grid grid-cols-4 text-xs p-2 bg-dark-900 rounded border border-white/5"}, 
-                        React.createElement('span', {className:"text-gray-500 truncate"}, new Date(l.date).toLocaleTimeString()), 
-                        React.createElement('span', {className:"truncate"}, l.username), 
-                        React.createElement('span', {className:"text-gold-500"}, l.game), 
-                        React.createElement('span', {className: l.profit >= 0 ? "text-green-500" : "text-red-500"}, l.profit)
-                    )),
+                    // 2. PAYMENT METHODS (THE 4 METHODS)
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                        // Bank
+                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                            React.createElement('h4', { className: "text-orange-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Landmark, {size:16}), "Bank Transfer (Attijari)"),
+                            React.createElement('textarea', { className: "w-full h-20 bg-black border border-white/10 p-2 rounded text-white text-xs", placeholder: "RIB / Name...", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) })
+                        ),
+                        // CashPlus
+                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                            React.createElement('h4', { className: "text-yellow-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Zap, {size:16}), "Cash Plus / Wafa"),
+                            React.createElement('textarea', { className: "w-full h-20 bg-black border border-white/10 p-2 rounded text-white text-xs", placeholder: "Full Name / City / Phone...", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) })
+                        ),
+                        // Crypto
+                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                            React.createElement('h4', { className: "text-green-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Disc, {size:16}), "Crypto (USDT TRC20)"),
+                            React.createElement('input', { className: "w-full bg-black border border-white/10 p-3 rounded text-white text-xs font-mono", placeholder: "Wallet Address...", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) })
+                        ),
+                        // PayPal
+                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
+                            React.createElement('h4', { className: "text-blue-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Wallet, {size:16}), "PayPal"),
+                            React.createElement('input', { className: "w-full bg-black border border-white/10 p-3 rounded text-white text-xs", placeholder: "PayPal Email...", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) })
+                        )
+                    ),
 
-                    tab === 'settings' && React.createElement('div', { className: "space-y-4 max-w-md" },
-                        React.createElement(Input, { placeholder: "Promo Code", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
-                        React.createElement(Input, { placeholder: "1XBET Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
-                        React.createElement(Input, { placeholder: "Telegram", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
-                        React.createElement('textarea', { className: "w-full h-20 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Bank Info...", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) }),
-                        React.createElement('textarea', { className: "w-full h-20 bg-dark-900 border border-white/10 p-2 rounded-xl text-white text-xs", placeholder: "Crypto Info...", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) }),
-                        React.createElement(Button, { onClick:()=> { setDoc(doc(db,"settings","global"), conf, {merge:true}); showMsg("Saved"); }, full:true }, "Save Config")
+                    // 3. LINKS & CODES
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
+                        React.createElement(Input, { placeholder:"Promo Code", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
+                        React.createElement(Input, { placeholder:"1XBET Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
+                        React.createElement(Input, { placeholder:"Telegram Link", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
+                    ),
+
+                    // 4. LEGAL TEXTS
+                    React.createElement('div', { className: "space-y-4" },
+                        React.createElement('h3', {className:"text-gold-500 font-bold"}, "Legal Texts"),
+                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-3 rounded-xl text-white text-xs font-mono", placeholder:"Terms & Conditions", value: conf.terms, onChange: e=>setConf({...conf, terms:e.target.value}) }),
+                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-3 rounded-xl text-white text-xs font-mono", placeholder:"Privacy Policy", value: conf.policy, onChange: e=>setConf({...conf, policy:e.target.value}) }),
+                    ),
+
+                    React.createElement(Button, { onClick: saveConfig, full: true, loading: loading }, "SAVE ALL CHANGES")
+                );
+
+                // --- OLD TABS (DATA TABLES) ---
+                return React.createElement('div', { className: "space-y-4 animate-fade-in" },
+                    activeTab === 'users' && React.createElement('div', { className: "flex gap-2 mb-4" },
+                        React.createElement('input', { className: "bg-dark-900 border border-white/10 p-2 rounded-lg flex-1 text-white", placeholder: "Search Username...", value: searchTerm, onChange: e=>setSearchTerm(e.target.value) }),
+                        React.createElement(Button, { onClick: handleSearch, className: "py-2 px-6" }, "Search")
+                    ),
+                    dataList.length === 0 ? React.createElement('div', {className:"text-center text-gray-500 py-10"}, "No records found.") : 
+                    dataList.map(item => React.createElement('div', { key: item.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row justify-between items-center gap-4" },
+                        React.createElement('div', { className: "flex-1" },
+                            React.createElement('p', { className: "font-bold text-white" }, item.username || item.fullName || "User"),
+                            React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, 
+                                activeTab === 'users' ? `Coins: ${item.coins} | Bal: $${item.balance||0}` : 
+                                activeTab === 'logs' ? `${item.game} | Profit: ${item.profit}` :
+                                `${item.amount}$ via ${item.method}`
+                            ),
+                            item.image && React.createElement('a', { href: item.image, target: "_blank", className: "text-xs text-blue-400 underline block mt-1" }, "View Payment Proof")
+                        ),
+                        React.createElement('div', { className: "flex gap-2" },
+                            (activeTab === 'deposits') && React.createElement(React.Fragment, null,
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'approved', 'dep', item), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "APPROVE"),
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'rejected', 'dep'), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "REJECT")
+                            ),
+                            (activeTab === 'withdraws') && React.createElement(React.Fragment, null,
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'approved', 'with', item), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "PAY & APPROVE"),
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'rejected', 'with'), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "REJECT")
+                            ),
+                            (activeTab === 'pending_users') && React.createElement(React.Fragment, null,
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'active', 'user'), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "ACTIVATE"),
+                                React.createElement('button', { onClick: ()=>deleteDoc(doc(db,"users",item.id)), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "DELETE")
+                            ),
+                            (activeTab === 'users') && React.createElement(React.Fragment, null,
+                                editId === item.id ? React.createElement('div', {className:"flex gap-2"},
+                                    React.createElement('input', {type:"number", className:"w-20 bg-black text-white px-2 rounded", onChange:e=>setBalInput(e.target.value)}),
+                                    React.createElement('button', {onClick:()=>{updateDoc(doc(db,"users",item.id),{coins:Number(balInput)}); setEditId(null)}, className:"text-green-500"}, React.createElement(Check))
+                                ) : React.createElement('button', {onClick:()=>{setEditId(item.id); setBalInput(item.coins)}, className:"text-blue-500 p-2 bg-blue-500/10 rounded"}, React.createElement(Edit3, {size:16})),
+                                React.createElement('button', { onClick: ()=>updateSt(item.id, item.status==='banned'?'active':'banned', 'user'), className: `px-3 py-1 rounded-lg text-xs font-bold ${item.status==='banned'?'bg-green-500/20 text-green-500':'bg-red-500/20 text-red-500'}` }, item.status==='banned'?'UNBAN':'BAN')
+                            )
+                        )
+                    ))
+                );
+            };
+
+            return React.createElement('div', { className: "flex h-screen bg-[#050505] text-white font-sans overflow-hidden" },
+                React.createElement(AdminSidebar),
+                React.createElement('div', { className: "flex-1 flex flex-col h-full" },
+                    // Mobile Header
+                    React.createElement('div', { className: "md:hidden p-4 border-b border-white/10 flex justify-between items-center bg-dark-900" },
+                        React.createElement('h1', { className: "text-lg font-black text-gold-500" }, "ADMIN GOD MODE"),
+                        React.createElement('button', { onClick: logout, className: "text-red-500" }, React.createElement(LogOut, {size:20}))
+                    ),
+                    // Mobile Nav Scroll
+                    React.createElement('div', { className: "md:hidden flex gap-2 p-2 overflow-x-auto bg-dark-950 border-b border-white/5" },
+                        ['configuration', 'pending_users', 'deposits', 'withdraws', 'users', 'logs'].map(t => 
+                            React.createElement('button', { 
+                                key: t, onClick: ()=>setActiveTab(t), 
+                                className: `px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${activeTab===t ? 'bg-gold-500 text-black' : 'bg-white/5 text-gray-400'}` 
+                            }, t.toUpperCase().replace('_', ' '))
+                        )
+                    ),
+                    // Main Content Area
+                    React.createElement('div', { className: "flex-1 overflow-y-auto p-6" },
+                        renderContent()
                     )
                 )
             );
