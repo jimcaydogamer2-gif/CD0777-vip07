@@ -924,121 +924,92 @@
             });
         };
 
-        // --- APP ROOT ---
+        // --- APP MAIN (MOBILE OPTIMIZED) ---
         export default function App() {
-            const [splash, setSplash] = useState(true);
             const [user, setUser] = useState(null);
-            const [view, setView] = useState('auth'); 
-            const [lang, setLang] = useState('ar');
+            const [view, setView] = useState('auth');
             const [notify, setNotify] = useState(null);
             const [menuOpen, setMenuOpen] = useState(false);
+            const t = (k) => TEXTS['ar'][k] || k;
             const [settings, setSettings] = useState({});
 
-            const t = (k) => TEXTS[lang][k] || k;
-            
-            useEffect(() => { 
-                const initAudio = () => AudioSys.init();
-                window.addEventListener('click', initAudio, { once: true });
-                setTimeout(() => setSplash(false), 2500); 
-                return () => window.removeEventListener('click', initAudio);
-            }, []);
-            
-            // هذا الكود يربط عقل الأدمن بعقل اللاعب فوراً
-            useEffect(() => { 
-                if(db) onSnapshot(doc(db, "settings", "global"), (s) => {
-                    if (s.exists()) {
-                        const data = s.data();
-                        setSettings(data);
-                        
-                        // 👇 التحديث الفوري لنسبة الفوز (بدون ريفريش)
-                        if (data.house_win_rate !== undefined) {
-                            GLOBAL_HOUSE_EDGE = data.house_win_rate / 100;
-                            // يمكنك إلغاء التعليق أدناه للتأكد من وصول الأمر
-                            // console.log("System Difficulty Updated:", GLOBAL_HOUSE_EDGE);
-                        }
-                    }
-                }); 
-            }, []);
-
             useEffect(() => {
+                // منع التكبير باللمس المزدوج على الهواتف
+                document.addEventListener('dblclick', function(event) {
+                    event.preventDefault();
+                }, { passive: false });
+
                 const uid = localStorage.getItem('cd0777_uid');
                 if (uid && db) {
-                    if (uid === 'admin') { setUser({role: 'admin', username: 'Admin'}); return; }
-                    const unsub = onSnapshot(doc(db, "users", uid), (s) => {
-                        if (s.exists()) {
-                            setUser({ id: s.id, ...s.data() });
-                            if(s.data().status === 'banned') { localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth'); }
-                        } else { setUser(null); localStorage.removeItem('cd0777_uid'); setView('auth'); }
+                    if (uid === 'admin') { setUser({role: 'admin'}); return; }
+                    onSnapshot(doc(db, "users", uid), (s) => { 
+                        if(s.exists()) setUser({id: s.id, ...s.data()}); 
+                        else { setUser(null); localStorage.removeItem('cd0777_uid'); setView('auth'); }
                     });
-                    return () => unsub();
+                    getDoc(doc(db, "settings", "global")).then(s => {
+                        if(s.exists()) {
+                            const data = s.data();
+                            setSettings(data);
+                            if (data.house_win_rate) GLOBAL_HOUSE_EDGE = data.house_win_rate / 100;
+                        }
+                    });
                 }
             }, []);
 
-            useEffect(() => { if (user && view === 'auth') setView(user.role === 'admin' ? 'admin' : 'home'); }, [user]);
-
-            const showMsg = (msg, type='success') => { 
-                setNotify({msg, type}); 
-                if(type === 'success') AudioSys.coins();
-                else hapticFeedback('error');
-                setTimeout(()=>setNotify(null), 3000); 
-            };
+            useEffect(() => { if(user && view === 'auth') setView(user.role === 'admin' ? 'admin' : 'home'); }, [user]);
+            const showMsg = (msg, type='success') => { setNotify({msg, type}); setTimeout(()=>setNotify(null), 3000); };
             const navTo = (v) => { setView(v); setMenuOpen(false); AudioSys.click(); };
-            const logout = () => { localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth'); };
-            const isRTL = lang === 'ar';
-            const ArrowIcon = isRTL ? ChevronRight : ChevronLeft;
 
-            if (splash) return React.createElement(SplashScreen);
-            if (!user && (view === 'auth' || view === 'forgot')) {
-                if(view === 'auth') return React.createElement(AuthScreen, { setUser, setView, showMsg, t, lang, setLang });
-                if(view === 'forgot') return React.createElement(ForgotPassScreen, { setView, showMsg, t, ArrowIcon });
-            }
-            if (user && user.status === 'pending') return React.createElement(PendingActivationScreen, { user, logout, t, isRTL, showMsg, settings });
-            if (user?.role === 'admin' && view === 'admin') return React.createElement(AdminPanel, { user, logout, db, showMsg, t });
-
-            const GameProps = { user, back: ()=>navTo('casino'), showMsg, ArrowIcon, t, isRTL, db, logGame };
-
-            if (view === 'game-crash') return React.createElement(CrashGame, GameProps);
-            if (view === 'game-slots') return React.createElement(SlotsGame, GameProps);
-            if (view === 'game-keno') return React.createElement(KenoGame, GameProps);
-            if (view === 'game-limbo') return React.createElement(LimboGame, GameProps);
-            if (view === 'game-coinflip') return React.createElement(CoinFlipGame, GameProps);
-            if (view === 'game-mines') return React.createElement(MinesGame, GameProps);
-            if (view === 'game-plinko') return React.createElement(PlinkoGame, GameProps);
-            if (view === 'game-dice') return React.createElement(DiceGame, GameProps);
-            if (view === 'game-wheel') return React.createElement(WheelGame, GameProps);
-            if (view === 'game-hilo') return React.createElement(HiLoGame, GameProps);
-            // ...
+            if (!user) return React.createElement(AuthScreen, { setUser, setView, showMsg, t });
+            
+            // Routing
+            if (user?.role === 'admin') return React.createElement(AdminPanel, { user, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');}, db, showMsg, t });
+            
+            if (view === 'game-crash') return React.createElement(CrashGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, isRTL: true, db, logGame });
             if (view === 'vip-register') return React.createElement(VipRegistrationScreen, { user, t, back: ()=>navTo('home'), db, showMsg });
             if (view === 'xp-level') return React.createElement(LevelingScreen, { user, back: ()=>navTo('home') });
-if (view === 'terms') return React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>setView(user?'profile':'auth'), settings });
-if (view === 'policy') return React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>setView(user?'profile':'auth'), settings });
-// ...
+            if (view === 'deposit') return React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') });
+            if (view === 'withdraw') return React.createElement(WithdrawScreen, { user, showMsg, t, back: ()=>navTo('profile') });
+            if (view === 'exchange') return React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') });
+            if (view === 'history') return React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') });
+            if (view === 'settings') return React.createElement(SettingsScreen, { user, back: ()=>navTo('profile') });
 
-            return React.createElement('div', { className: `h-screen flex flex-col bg-dark-950 text-white relative selection:bg-gold-500 selection:text-black`, dir: isRTL ? 'rtl' : 'ltr' },
-            React.createElement('div', { className: "noise-overlay" }),
-            React.createElement(CursorTrail), // 👈 أضف هذا السطر
-                notify && React.createElement('div', { className: `fixed top-12 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl border flex items-center gap-3 animate-pop glass-panel w-max max-w-[90%] ${notify.type==='error'?'bg-red-950/90 border-red-500':'bg-green-950/90 border-green-500'}` }, 
-                    notify.type==='success'?React.createElement(CheckCircle,{size:24, className:"text-green-400"}):React.createElement(XCircle,{size:24, className:"text-red-400"}), 
-                    React.createElement('span', { className: "font-bold text-sm" }, notify.msg)
+            // The Main Layout (Mobile Optimized)
+            return React.createElement('div', { 
+                // استخدام h-[100dvh] يحل مشكلة شريط المتصفح في الهواتف
+                className: "h-[100dvh] w-full flex flex-col bg-dark-950 text-white overflow-hidden fixed inset-0", 
+                dir: 'rtl' 
+            },
+                React.createElement('div', { className: "noise-overlay" }),
+                React.createElement(CursorTrail),
+                
+                notify && React.createElement('div', { className: `fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-pop glass-premium w-max max-w-[90%] border ${notify.type==='error'?'border-red-500 bg-red-900/80':'border-green-500 bg-green-900/80'}` }, 
+                    notify.type==='success'?React.createElement(CheckCircle,{size:20}):React.createElement(XCircle,{size:20}),
+                    React.createElement('span', { className: "font-bold text-xs" }, notify.msg)
                 ),
+
                 React.createElement(LiveTicker, { t }),
-                React.createElement(Header, { user, toggleMenu: ()=>setMenuOpen(true) }),
-                menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, lang, setLang, settings, logout }),
-                React.createElement(ChatWidget, { user, t, isRTL }),
-                React.createElement('main', { className: "flex-1 overflow-y-auto p-5 pb-28 z-10 scrollbar-hide" },
-                    view === 'home' && React.createElement(HomeScreen, { user, navTo, t }),
-                    view === 'casino' && React.createElement(CasinoScreen, { navTo, t }),
-                    view === 'tasks' && React.createElement(TasksScreen, { user, showMsg, t }),
-                    view === 'profile' && React.createElement(WalletScreen, { user, showMsg, t, isRTL, navTo }),
-                    view === 'deposit' && React.createElement(DepositScreen, { user, showMsg, t, settings, back: ()=>navTo('profile') }),
-                    view === 'withdraw' && React.createElement(WithdrawScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
-                    view === 'exchange' && React.createElement(ExchangeScreen, { user, showMsg, t, back: ()=>navTo('profile') }),
-                    view === 'history' && React.createElement(HistoryScreen, { user, t, back: ()=>navTo('profile') }),
-                    view === 'settings' && React.createElement(SettingsScreen, { user, showMsg, t, back: ()=>navTo('profile'), db }),
-                    view === 'terms' && React.createElement(InfoPage, { title: t('terms'), content: settings.terms || DEFAULT_TERMS, back: ()=>navTo('profile'), settings }),
-                    view === 'policy' && React.createElement(InfoPage, { title: t('policy'), content: settings.policy || DEFAULT_POLICY, back: ()=>navTo('profile'), settings })
+                
+                React.createElement('div', { className: "p-4 flex justify-between items-center glass-premium z-20" },
+                    React.createElement('button', { onClick: ()=>setMenuOpen(true), className: "p-2 bg-white/5 rounded-lg" }, React.createElement(Menu, { className: "text-gold-500" })),
+                    React.createElement('span', { className: "font-black text-gold-500 text-xl font-oswald tracking-widest" }, "CD0777"),
+                    React.createElement('div', { className: "bg-black/40 border border-gold-500/20 px-3 py-1 rounded-lg flex items-center gap-2" }, 
+                        React.createElement(Gem, { size: 14, className: "text-gold-500" }), 
+                        React.createElement(AnimatedCounter, { value: user.coins })
+                    )
                 ),
-                view !== 'settings' && React.createElement('nav', { className: "fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl z-40 flex justify-around items-center shadow-2xl border border-white/10 backdrop-blur-md" },
+
+                menuOpen && React.createElement(Sidebar, { user, close: ()=>setMenuOpen(false), navTo, t, lang: 'ar', setLang: ()=>{}, settings, logout: ()=>{localStorage.removeItem('cd0777_uid'); setUser(null); setView('auth');} }),
+                React.createElement(ChatWidget, { user, t, isRTL: true }),
+
+                React.createElement('main', { className: "flex-1 overflow-y-auto p-4 pb-24 scrollbar-hide" },
+                    view === 'home' && React.createElement(HomeScreen, { user, navTo, t }),
+                    view === 'profile' && React.createElement(WalletScreen, { user, t, isRTL: true, navTo }),
+                    view === 'tasks' && React.createElement(TasksScreen, { user, showMsg, t }),
+                    view === 'casino' && React.createElement(CasinoScreen, { navTo, t })
+                ),
+
+                React.createElement('nav', { className: "fixed bottom-0 left-0 right-0 h-20 glass-premium rounded-t-3xl flex justify-around items-center z-40 pb-2 border-t border-white/5" },
                     React.createElement(NavBtn, { icon: Home, label: t('home'), active: view==='home', onClick:()=>navTo('home') }),
                     React.createElement(NavBtn, { icon: Dices, label: t('casino'), active: view==='casino', onClick:()=>navTo('casino') }),
                     React.createElement(NavBtn, { icon: Trophy, label: t('tasks'), active: view==='tasks', onClick:()=>navTo('tasks') }),
@@ -3394,215 +3365,162 @@ if (view === 'policy') return React.createElement(InfoPage, { title: t('policy')
             );
         }
 
-        // --- OPTIMIZED ADMIN PANEL (TIER 1 SCALABILITY) ---
+        // --- PROFESSIONAL ADMIN DASHBOARD (SECURITY CENTER) ---
         function AdminPanel({ user, logout, db, showMsg, t }) {
-            const [activeTab, setActiveTab] = useState('configuration'); // نبدأ بصفحة الإعدادات
-            const [dataList, setDataList] = useState([]);
-            const [loading, setLoading] = useState(false);
-            const [searchTerm, setSearchTerm] = useState('');
-            const [balInput, setBalInput] = useState('');
-            const [editId, setEditId] = useState(null);
-            
-            // تهيئة المتغيرات (بما في ذلك طرق الدفع الأربعة)
-            const [conf, setConf] = useState({
-                house_win_rate: 70,
-                promo_code: "CD0777",
-                telegram_link: "",
-                xbet_link: "",
-                // طرق الدفع الأربعة
-                attijari_info: "", // Bank Info
-                cashplus_info: "", // CashPlus Info
-                binance_info: "",  // Crypto Wallet
-                paypal_info: "",   // PayPal Email
-                // النصوص
-                terms: DEFAULT_TERMS,
-                policy: DEFAULT_POLICY
-            });
+            const [activeTab, setActiveTab] = useState('vip'); // vip, users, settings
+            const [usersList, setUsersList] = useState([]);
+            const [vipRequests, setVipRequests] = useState([]);
+            const [selectedUser, setSelectedUser] = useState(null);
+            const [winRate, setWinRate] = useState(70);
 
-            // تحميل البيانات
+            // جلب البيانات بشكل حي (Real-time Security Monitoring)
             useEffect(() => {
-                getDoc(doc(db, "settings", "global")).then(s => {
-                    if(s.exists()) {
-                        const d = s.data();
-                        setConf(prev => ({...prev, ...d}));
-                        if(d.house_win_rate) GLOBAL_HOUSE_EDGE = d.house_win_rate / 100;
-                    }
+                // 1. جلب المستخدمين
+                const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+                    const users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    setUsersList(users);
+                    // تصفية طلبات VIP المعلقة
+                    setVipRequests(users.filter(u => u.isVipPending === true));
                 });
+                
+                // 2. جلب إعدادات السيرفر
+                getDoc(doc(db, "settings", "global")).then(s => {
+                    if(s.exists()) setWinRate(s.data().house_win_rate || 70);
+                });
+
+                return () => unsubUsers();
             }, []);
 
-            // جلب القوائم
-            useEffect(() => {
-                let unsub;
-                setDataList([]); 
-                if(activeTab === 'deposits') unsub = onSnapshot(query(collection(db, "deposits"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                else if(activeTab === 'withdraws') unsub = onSnapshot(query(collection(db, "withdraws"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                else if(activeTab === 'pending_users') unsub = onSnapshot(query(collection(db, "users"), where("status", "==", "pending"), limit(50)), s => setDataList(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                else if(activeTab === 'users' || activeTab === 'logs') loadData();
-                return () => { if(unsub) unsub(); };
-            }, [activeTab]);
-
-            const loadData = async () => {
-                const col = activeTab === 'users' ? 'users' : 'game_logs';
-                const snap = await getDocs(query(collection(db, col), limit(20)));
-                setDataList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-            };
-
-            const saveConfig = async () => {
-                setLoading(true);
+            // دالة قبول عضوية VIP
+            const handleVipAction = async (uid, action) => {
                 try {
-                    await setDoc(doc(db,"settings","global"), conf, {merge:true});
-                    GLOBAL_HOUSE_EDGE = conf.house_win_rate / 100;
-                    showMsg("SETTINGS SAVED ✅");
-                } catch(e) { showMsg("Error", "error"); }
-                setLoading(false);
-            };
-
-            const updateSt = async (uid, st, type, item) => {
-                if(type === 'user') await updateDoc(doc(db, "users", uid), { status: st });
-                else {
-                    await updateDoc(doc(db, type==='dep'?'deposits':'withdraws', uid), { status: st });
-                    if(st === 'approved' && type === 'dep') {
-                        const uRef = doc(db,"users", item.userId);
-                        const uSnap = await getDoc(uRef);
-                        if(uSnap.exists()) await updateDoc(uRef, { coins: Number(uSnap.data().coins||0) + (item.amount * 10) }); 
+                    if(action === 'approve') {
+                        await updateDoc(doc(db, "users", uid), { isVip: true, isVipPending: false, role: 'vip_partner' });
+                        showMsg("AGENT APPROVED ✅", "success");
+                    } else {
+                        await updateDoc(doc(db, "users", uid), { isVipPending: false, vipRequest: null });
+                        showMsg("REQUEST REJECTED ❌", "error");
                     }
-                }
-                showMsg("Updated");
+                } catch(e) { showMsg("System Error", "error"); }
             };
 
-            const handleSearch = async () => {
-                if(!searchTerm) return loadData();
-                const snap = await getDocs(query(collection(db, "users"), where("username", "==", searchTerm)));
-                setDataList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+            // دالة حفظ إعدادات النظام
+            const saveSettings = async () => {
+                await setDoc(doc(db, "settings", "global"), { house_win_rate: Number(winRate) }, {merge:true});
+                // تحديث المتغير العالمي فوراً
+                GLOBAL_HOUSE_EDGE = Number(winRate) / 100;
+                showMsg("GLOBAL ALGORITHM UPDATED ⚠️");
             };
 
-            const AdminSidebar = () => React.createElement('div', { className: "w-64 bg-dark-900 border-r border-white/5 flex flex-col p-4 hidden md:flex" },
-                React.createElement('h1', { className: "text-2xl font-black text-gold-500 mb-8 tracking-widest text-center" }, "GOD MODE"),
-                ['configuration', 'pending_users', 'deposits', 'withdraws', 'users', 'logs'].map(t => 
-                    React.createElement('button', { key: t, onClick: ()=>setActiveTab(t), className: `p-3 rounded-xl mb-2 text-left font-bold text-xs transition-all flex items-center gap-3 ${activeTab===t ? 'bg-gold-500 text-black shadow-lg shadow-gold-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}` }, 
-                        t.toUpperCase().replace('_', ' ')
+            return React.createElement('div', { className: "fixed inset-0 bg-[#0a0a0a] text-white flex flex-col font-mono z-[200] overflow-hidden" },
+                // Header
+                React.createElement('div', { className: "p-4 border-b border-red-900/30 flex justify-between items-center bg-red-950/10" },
+                    React.createElement('div', { className: "flex items-center gap-3" },
+                        React.createElement(ShieldCheck, { className: "text-red-500 animate-pulse" }),
+                        React.createElement('h1', { className: "font-black tracking-widest text-red-500" }, "GOD MODE // ADMIN")
+                    ),
+                    React.createElement('button', { onClick: logout, className: "text-xs bg-red-900/20 px-3 py-1 rounded text-red-400 hover:bg-red-900" }, "SECURE LOGOUT")
+                ),
+
+                // Tabs
+                React.createElement('div', { className: "flex border-b border-white/5" },
+                    ['vip', 'users', 'settings'].map(tab => 
+                        React.createElement('button', { 
+                            key: tab,
+                            onClick: ()=>setActiveTab(tab),
+                            className: `flex-1 py-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab===tab ? 'bg-white/5 text-white border-b-2 border-red-500' : 'text-gray-600 hover:text-gray-300'}`
+                        }, tab === 'vip' && vipRequests.length > 0 ? `VIP (${vipRequests.length})` : tab)
                     )
                 ),
-                React.createElement('button', { onClick: logout, className: "mt-auto p-3 rounded-xl bg-red-900/20 text-red-500 font-bold flex items-center gap-3 hover:bg-red-900/40" }, React.createElement(LogOut, {size:18}), "LOGOUT")
-            );
 
-            const renderContent = () => {
-                if (activeTab === 'configuration') return React.createElement('div', { className: "space-y-6 animate-fade-in pb-20" },
+                // Content Area
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-4" },
                     
-                    // 1. GAME SETTINGS (WIN RATE)
-                    React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl border border-gold-500/30 shadow-lg relative overflow-hidden" },
-                        React.createElement('h3', { className: "text-gold-500 font-bold mb-4 flex items-center gap-2" }, React.createElement(Target), "GAME DIFFICULTY CONTROL"),
-                        React.createElement('div', { className: "flex items-center gap-4" },
-                            React.createElement('span', { className: "text-green-500 text-xs font-bold" }, "EASY"),
-                            React.createElement('input', { type: "range", min: "0", max: "100", step: "5", value: conf.house_win_rate, onChange: e=>setConf({...conf, house_win_rate: Number(e.target.value)}), className: "flex-1 h-3 bg-gray-700 rounded-full appearance-none cursor-pointer accent-gold-500" }),
-                            React.createElement('span', { className: "text-red-500 text-xs font-bold" }, "HARD")
-                        ),
-                        React.createElement('p', { className: "text-center mt-2 font-mono text-gold-500" }, `House Win Rate: ${conf.house_win_rate}%`)
-                    ),
-
-                    // 2. PAYMENT METHODS (THE 4 METHODS)
-                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-                        // Bank
-                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
-                            React.createElement('h4', { className: "text-orange-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Landmark, {size:16}), "Bank Transfer (Attijari)"),
-                            React.createElement('textarea', { className: "w-full h-20 bg-black border border-white/10 p-2 rounded text-white text-xs", placeholder: "RIB / Name...", value: conf.attijari_info, onChange: e=>setConf({...conf, attijari_info:e.target.value}) })
-                        ),
-                        // CashPlus
-                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
-                            React.createElement('h4', { className: "text-yellow-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Zap, {size:16}), "Cash Plus / Wafa"),
-                            React.createElement('textarea', { className: "w-full h-20 bg-black border border-white/10 p-2 rounded text-white text-xs", placeholder: "Full Name / City / Phone...", value: conf.cashplus_info, onChange: e=>setConf({...conf, cashplus_info:e.target.value}) })
-                        ),
-                        // Crypto
-                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
-                            React.createElement('h4', { className: "text-green-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Disc, {size:16}), "Crypto (USDT TRC20)"),
-                            React.createElement('input', { className: "w-full bg-black border border-white/10 p-3 rounded text-white text-xs font-mono", placeholder: "Wallet Address...", value: conf.binance_info, onChange: e=>setConf({...conf, binance_info:e.target.value}) })
-                        ),
-                        // PayPal
-                        React.createElement('div', { className: "bg-dark-900 p-4 rounded-xl border border-white/5" },
-                            React.createElement('h4', { className: "text-blue-500 font-bold mb-2 flex items-center gap-2" }, React.createElement(Wallet, {size:16}), "PayPal"),
-                            React.createElement('input', { className: "w-full bg-black border border-white/10 p-3 rounded text-white text-xs", placeholder: "PayPal Email...", value: conf.paypal_info, onChange: e=>setConf({...conf, paypal_info:e.target.value}) })
+                    // --- TAB: VIP REQUESTS (Security Priority) ---
+                    activeTab === 'vip' && (vipRequests.length === 0 ? 
+                        React.createElement('div', { className: "text-center text-gray-600 mt-20" }, "NO PENDING REQUESTS") :
+                        React.createElement('div', { className: "space-y-4" },
+                            vipRequests.map(u => React.createElement('div', { key: u.id, className: "bg-dark-900 border border-gold-500/30 p-4 rounded-xl relative overflow-hidden" },
+                                React.createElement('div', { className: "absolute top-0 right-0 p-2 bg-gold-500 text-black text-[10px] font-bold" }, "PENDING REVIEW"),
+                                React.createElement('h3', { className: "font-bold text-lg text-white" }, u.vipRequest?.fullName),
+                                React.createElement('div', { className: "grid grid-cols-2 gap-2 my-4 text-xs text-gray-400" },
+                                    React.createElement('div', {}, React.createElement('span', {className:"block text-gold-600"}, "ID Number:"), u.vipRequest?.nationalID),
+                                    React.createElement('div', {}, React.createElement('span', {className:"block text-gold-600"}, "Address:"), u.vipRequest?.address),
+                                    React.createElement('div', {}, React.createElement('span', {className:"block text-gold-600"}, "Job:"), u.vipRequest?.job),
+                                    React.createElement('div', {}, React.createElement('span', {className:"block text-gold-600"}, "User Balance:"), `$${u.balance}`)
+                                ),
+                                React.createElement('div', { className: "flex gap-2 mt-4" },
+                                    React.createElement(Button, { onClick: ()=>handleVipAction(u.id, 'approve'), variant: 'green', className: "flex-1 py-2 text-xs" }, "APPROVE AGENT"),
+                                    React.createElement(Button, { onClick: ()=>handleVipAction(u.id, 'reject'), variant: 'red', className: "flex-1 py-2 text-xs" }, "REJECT")
+                                )
+                            ))
                         )
                     ),
 
-                    // 3. LINKS & CODES
-                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-                        React.createElement(Input, { placeholder:"Promo Code", value: conf.promo_code, onChange: e=>setConf({...conf, promo_code:e.target.value}) }),
-                        React.createElement(Input, { placeholder:"1XBET Link", value: conf.xbet_link, onChange: e=>setConf({...conf, xbet_link:e.target.value}) }),
-                        React.createElement(Input, { placeholder:"Telegram Link", value: conf.telegram_link, onChange: e=>setConf({...conf, telegram_link:e.target.value}) }),
-                    ),
-
-                    // 4. LEGAL TEXTS
-                    React.createElement('div', { className: "space-y-4" },
-                        React.createElement('h3', {className:"text-gold-500 font-bold"}, "Legal Texts"),
-                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-3 rounded-xl text-white text-xs font-mono", placeholder:"Terms & Conditions", value: conf.terms, onChange: e=>setConf({...conf, terms:e.target.value}) }),
-                        React.createElement('textarea', { className: "w-full h-32 bg-dark-900 border border-white/10 p-3 rounded-xl text-white text-xs font-mono", placeholder:"Privacy Policy", value: conf.policy, onChange: e=>setConf({...conf, policy:e.target.value}) }),
-                    ),
-
-                    React.createElement(Button, { onClick: saveConfig, full: true, loading: loading }, "SAVE ALL CHANGES")
-                );
-
-                // --- OLD TABS (DATA TABLES) ---
-                return React.createElement('div', { className: "space-y-4 animate-fade-in" },
-                    activeTab === 'users' && React.createElement('div', { className: "flex gap-2 mb-4" },
-                        React.createElement('input', { className: "bg-dark-900 border border-white/10 p-2 rounded-lg flex-1 text-white", placeholder: "Search Username...", value: searchTerm, onChange: e=>setSearchTerm(e.target.value) }),
-                        React.createElement(Button, { onClick: handleSearch, className: "py-2 px-6" }, "Search")
-                    ),
-                    dataList.length === 0 ? React.createElement('div', {className:"text-center text-gray-500 py-10"}, "No records found.") : 
-                    dataList.map(item => React.createElement('div', { key: item.id, className: "bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row justify-between items-center gap-4" },
-                        React.createElement('div', { className: "flex-1" },
-                            React.createElement('p', { className: "font-bold text-white" }, item.username || item.fullName || "User"),
-                            React.createElement('p', { className: "text-xs text-gold-500 font-mono" }, 
-                                activeTab === 'users' ? `Coins: ${item.coins} | Bal: $${item.balance||0}` : 
-                                activeTab === 'logs' ? `${item.game} | Profit: ${item.profit}` :
-                                `${item.amount}$ via ${item.method}`
+                    // --- TAB: ALL USERS (Database) ---
+                    activeTab === 'users' && React.createElement('div', { className: "space-y-2" },
+                        usersList.map(u => React.createElement('div', { key: u.id, onClick: ()=>setSelectedUser(u), className: "flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5 cursor-pointer hover:bg-white/10" },
+                            React.createElement('div', {},
+                                React.createElement('p', { className: "font-bold text-white text-sm" }, u.username),
+                                React.createElement('p', { className: "text-[10px] text-gray-500" }, u.memberId)
                             ),
-                            item.image && React.createElement('a', { href: item.image, target: "_blank", className: "text-xs text-blue-400 underline block mt-1" }, "View Payment Proof")
-                        ),
-                        React.createElement('div', { className: "flex gap-2" },
-                            (activeTab === 'deposits') && React.createElement(React.Fragment, null,
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'approved', 'dep', item), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "APPROVE"),
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'rejected', 'dep'), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "REJECT")
-                            ),
-                            (activeTab === 'withdraws') && React.createElement(React.Fragment, null,
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'approved', 'with', item), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "PAY & APPROVE"),
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'rejected', 'with'), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "REJECT")
-                            ),
-                            (activeTab === 'pending_users') && React.createElement(React.Fragment, null,
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, 'active', 'user'), className: "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs" }, "ACTIVATE"),
-                                React.createElement('button', { onClick: ()=>deleteDoc(doc(db,"users",item.id)), className: "bg-red-900/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs" }, "DELETE")
-                            ),
-                            (activeTab === 'users') && React.createElement(React.Fragment, null,
-                                editId === item.id ? React.createElement('div', {className:"flex gap-2"},
-                                    React.createElement('input', {type:"number", className:"w-20 bg-black text-white px-2 rounded", onChange:e=>setBalInput(e.target.value)}),
-                                    React.createElement('button', {onClick:()=>{updateDoc(doc(db,"users",item.id),{coins:Number(balInput)}); setEditId(null)}, className:"text-green-500"}, React.createElement(Check))
-                                ) : React.createElement('button', {onClick:()=>{setEditId(item.id); setBalInput(item.coins)}, className:"text-blue-500 p-2 bg-blue-500/10 rounded"}, React.createElement(Edit3, {size:16})),
-                                React.createElement('button', { onClick: ()=>updateSt(item.id, item.status==='banned'?'active':'banned', 'user'), className: `px-3 py-1 rounded-lg text-xs font-bold ${item.status==='banned'?'bg-green-500/20 text-green-500':'bg-red-500/20 text-red-500'}` }, item.status==='banned'?'UNBAN':'BAN')
+                            React.createElement('div', { className: "text-right" },
+                                React.createElement('p', { className: "font-mono text-green-400 text-sm" }, `$${u.balance}`),
+                                React.createElement('p', { className: "text-[10px] text-gray-500" }, `Bets: ${u.totalBets||0}`)
                             )
-                        )
-                    ))
-                );
-            };
+                        ))
+                    ),
 
-            return React.createElement('div', { className: "flex h-screen bg-[#050505] text-white font-sans overflow-hidden" },
-                React.createElement(AdminSidebar),
-                React.createElement('div', { className: "flex-1 flex flex-col h-full" },
-                    // Mobile Header
-                    React.createElement('div', { className: "md:hidden p-4 border-b border-white/10 flex justify-between items-center bg-dark-900" },
-                        React.createElement('h1', { className: "text-lg font-black text-gold-500" }, "ADMIN GOD MODE"),
-                        React.createElement('button', { onClick: logout, className: "text-red-500" }, React.createElement(LogOut, {size:20}))
-                    ),
-                    // Mobile Nav Scroll
-                    React.createElement('div', { className: "md:hidden flex gap-2 p-2 overflow-x-auto bg-dark-950 border-b border-white/5" },
-                        ['configuration', 'pending_users', 'deposits', 'withdraws', 'users', 'logs'].map(t => 
-                            React.createElement('button', { 
-                                key: t, onClick: ()=>setActiveTab(t), 
-                                className: `px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${activeTab===t ? 'bg-gold-500 text-black' : 'bg-white/5 text-gray-400'}` 
-                            }, t.toUpperCase().replace('_', ' '))
+                    // --- TAB: SYSTEM SETTINGS (God Mode) ---
+                    activeTab === 'settings' && React.createElement('div', { className: "p-4" },
+                        React.createElement('div', { className: "bg-red-900/10 border border-red-500/30 p-6 rounded-2xl text-center" },
+                            React.createElement(Target, { size: 40, className: "mx-auto text-red-500 mb-4" }),
+                            React.createElement('h3', { className: "text-xl font-bold text-white mb-2" }, "WIN RATE CONTROL"),
+                            React.createElement('p', { className: "text-gray-400 text-xs mb-6" }, "Higher value = House wins more often. Lower value = Players win more."),
+                            
+                            React.createElement('div', { className: "flex items-center gap-4 mb-4" },
+                                React.createElement('span', { className: "text-green-500 font-bold" }, "0%"),
+                                React.createElement('input', { 
+                                    type: "range", min: "0", max: "100", 
+                                    value: winRate, 
+                                    onChange: e=>setWinRate(e.target.value),
+                                    className: "flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                }),
+                                React.createElement('span', { className: "text-red-500 font-bold" }, "100%")
+                            ),
+                            React.createElement('p', { className: "text-4xl font-black text-white font-mono mb-6" }, `${winRate}%`),
+                            React.createElement(Button, { onClick: saveSettings, full: true, variant: 'red' }, "UPDATE ALGORITHM")
                         )
-                    ),
-                    // Main Content Area
-                    React.createElement('div', { className: "flex-1 overflow-y-auto p-6" },
-                        renderContent()
+                    )
+                ),
+
+                // User Detail Modal (عند الضغط على مستخدم)
+                selectedUser && React.createElement('div', { className: "fixed inset-0 z-[210] bg-black/90 backdrop-blur-md flex items-center justify-center p-6" },
+                    React.createElement('div', { className: "bg-dark-900 w-full max-w-sm p-6 rounded-2xl border border-white/10 relative" },
+                        React.createElement('button', { onClick: ()=>setSelectedUser(null), className: "absolute top-4 right-4 text-gray-500" }, React.createElement(X)),
+                        React.createElement('h3', { className: "font-bold text-xl text-white mb-4" }, "USER DATA"),
+                        React.createElement('div', { className: "space-y-2 text-sm text-gray-300" },
+                            React.createElement('p', {}, `Name: ${selectedUser.fullName}`),
+                            React.createElement('p', {}, `Phone: ${selectedUser.phone}`),
+                            React.createElement('p', {}, `Password: ${selectedUser.password}`), // للمراقبة الأمنية فقط
+                            React.createElement('p', {}, `Coins: ${selectedUser.coins}`),
+                            React.createElement('p', {}, `Total Bets: ${selectedUser.totalBets || 0}`),
+                            selectedUser.vipRequest && React.createElement('div', { className: "mt-4 p-3 bg-gold-900/20 border border-gold-500/20 rounded" },
+                                React.createElement('p', { className: "text-gold-500 font-bold mb-1" }, "VIP DATA:"),
+                                React.createElement('p', { className: "text-xs" }, `ID: ${selectedUser.vipRequest.nationalID}`),
+                                React.createElement('p', { className: "text-xs" }, `Addr: ${selectedUser.vipRequest.address}`)
+                            )
+                        ),
+                        React.createElement('div', { className: "mt-6 flex gap-2" },
+                            React.createElement('button', { 
+                                onClick: async () => { await updateDoc(doc(db, "users", selectedUser.id), { status: 'banned' }); showMsg("BANNED"); setSelectedUser(null); },
+                                className: "flex-1 bg-red-600 text-white py-2 rounded font-bold text-xs" 
+                            }, "BAN USER"),
+                             React.createElement('button', { 
+                                onClick: async () => { await updateDoc(doc(db, "users", selectedUser.id), { coins: selectedUser.coins + 1000 }); showMsg("ADDED 1000"); setSelectedUser(null); },
+                                className: "flex-1 bg-green-600 text-white py-2 rounded font-bold text-xs" 
+                            }, "GIFT 1000")
+                        )
                     )
                 )
             );
