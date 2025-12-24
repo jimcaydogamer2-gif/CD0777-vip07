@@ -2727,19 +2727,45 @@
                     )
                 ),
 
-                // 3. إحصائيات سريعة (الآن الأزرار تعمل)
-                React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-                    // زر Gold VIP (يعمل الآن)
-                    React.createElement('button', { onClick: ()=>navTo('vip-register'), className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-gold-500/30 transition-all" },
-                        React.createElement(Crown, { size: 24, className: "text-gold-500" }),
-                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "MEMBERSHIP"),
-                        React.createElement('span', { className: "text-lg font-bold text-white" }, "Upgrade")
+                // 3. أزرار الإحصائيات الفاخرة (VIP & XP Stats)
+                React.createElement('div', { className: "grid grid-cols-2 gap-4 mt-2" },
+                    
+                    // --- زر VIP (النسخة الذهبية الفاخرة) ---
+                    React.createElement('button', { 
+                        onClick: ()=>navTo('vip-register'), 
+                        className: "relative group overflow-hidden bg-gradient-to-br from-[#1a1a1a] to-black border border-gold-500/30 p-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(234,179,8,0.15)] transition-all duration-300 active:scale-95" 
+                    },
+                        // تأثير اللمعان الخلفي
+                        React.createElement('div', { className: "absolute inset-0 bg-gold-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" }),
+                        React.createElement('div', { className: "absolute -top-10 -right-10 w-20 h-20 bg-gold-500/20 blur-2xl rounded-full group-hover:bg-gold-500/30 transition-all" }),
+                        
+                        // الأيقونة والنص
+                        React.createElement('div', { className: "relative z-10 flex flex-col items-center" },
+                            React.createElement(Crown, { size: 28, className: "text-gold-500 mb-1 drop-shadow-md group-hover:scale-110 transition-transform duration-300" }),
+                            React.createElement('span', { className: "text-[9px] text-gold-200/60 font-black uppercase tracking-[0.2em]" }, "MEMBERSHIP"),
+                            React.createElement('span', { className: "text-lg font-black text-transparent bg-clip-text bg-gradient-to-b from-gold-300 to-gold-600" }, "ELITE CLUB")
+                        )
                     ),
-                    // زر Total Wins / Level (يعمل الآن ويأخذك لصفحة XP)
-                    React.createElement('button', { onClick: ()=>navTo('xp-level'), className: "bg-dark-900/50 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-purple-500/30 transition-all" },
-                        React.createElement(Trophy, { size: 24, className: "text-purple-500" }),
-                        React.createElement('span', { className: "text-[10px] text-gray-400 uppercase tracking-widest" }, "PLAYER LEVEL"),
-                        React.createElement('span', { className: "text-lg font-bold text-white" }, `Lvl ${level}`)
+
+                    // --- زر XP (النسخة البنفسجية الرقمية) ---
+                    React.createElement('button', { 
+                        onClick: ()=>navTo('xp-level'), 
+                        className: "relative group overflow-hidden bg-gradient-to-br from-[#1a1a1a] to-black border border-purple-500/30 p-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 active:scale-95" 
+                    },
+                        // تأثير اللمعان الخلفي
+                        React.createElement('div', { className: "absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" }),
+                        React.createElement('div', { className: "absolute -bottom-10 -left-10 w-20 h-20 bg-purple-500/20 blur-2xl rounded-full group-hover:bg-purple-500/30 transition-all" }),
+
+                        // الأيقونة والنص
+                        React.createElement('div', { className: "relative z-10 flex flex-col items-center" },
+                            React.createElement(Trophy, { size: 28, className: "text-purple-500 mb-1 drop-shadow-md group-hover:rotate-12 transition-transform duration-300" }),
+                            React.createElement('span', { className: "text-[9px] text-purple-200/60 font-black uppercase tracking-[0.2em]" }, "TOTAL XP"),
+                            // هنا التغيير: عرض عدد الرهانات بدلاً من المستوى
+                            React.createElement('div', { className: "flex items-baseline gap-1" },
+                                React.createElement('span', { className: "text-lg font-mono font-black text-white" }, user.totalBets || 0),
+                                React.createElement('span', { className: "text-[9px] text-gray-500 font-bold" }, "BETS")
+                            )
+                        )
                     )
                 )
             );
