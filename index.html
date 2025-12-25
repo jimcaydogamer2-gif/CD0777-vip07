@@ -1165,6 +1165,162 @@
                 )
             );
         };
+        // --- NEW: LEADERBOARD SCREEN (THE HALL OF FAME) ---
+        function LeaderboardScreen({ user, back, db }) {
+            const [fakeLeaders, setFakeLeaders] = useState([]);
+            const [realLeaders, setRealLeaders] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            // قائمة أسماء وهمية لتبدو كأنها "حيتان" (Whales)
+            const WHALES = [
+                "Saudi_Falcon", "Dubai_Prince", "Crypto_King", "Golden_Lion", 
+                "Dr_Cash", "Qatar_Elite", "Kuwait_Boss", "Atlas_Lion", 
+                "Eagle_Eye", "VIP_Master", "Shadow_X", "Money_Maker", 
+                "Sultan_777", "Baron_Red", "Empire_Build", "Wolf_Street"
+            ];
+
+            useEffect(() => {
+                // 1. توليد القادة الوهميين (يتغيرون عشوائياً في كل زيارة)
+                const generateFakes = () => {
+                    // خلط الأسماء
+                    const shuffledNames = [...WHALES].sort(() => 0.5 - Math.random());
+                    // أخذ أول 10
+                    const selected = shuffledNames.slice(0, 10).map((name, i) => ({
+                        id: `fake_${i}`,
+                        username: name,
+                        // رصيد ضخم عشوائي بين 1 مليون و 10 مليون
+                        coins: Math.floor(Math.random() * 9000000) + 1000000,
+                        isFake: true,
+                        avatar: Math.floor(Math.random() * 5) // لتغيير الأيقونات
+                    }));
+                    // ترتيبهم تنازلياً
+                    return selected.sort((a, b) => b.coins - a.coins);
+                };
+
+                setFakeLeaders(generateFakes());
+
+                // 2. جلب القادة الحقيقيين من Firebase
+                const fetchReal = async () => {
+                    try {
+                        const q = query(collection(db, "users"), orderBy("coins", "desc"), limit(10));
+                        const snap = await getDocs(q);
+                        const realUsers = snap.docs.map(d => ({ id: d.id, ...d.data(), isFake: false }));
+                        setRealLeaders(realUsers);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    setLoading(false);
+                };
+
+                fetchReal();
+            }, []);
+
+            // مكون صف الجدول (List Row)
+            const RankItem = ({ u, index, isReal }) => {
+                const isTop3 = index < 3;
+                const rankColor = index === 0 ? 'text-yellow-400' : (index === 1 ? 'text-gray-300' : (index === 2 ? 'text-orange-400' : 'text-gray-500'));
+                const borderColor = index === 0 ? 'border-yellow-500/50' : 'border-white/5';
+                
+                return React.createElement('div', { className: `flex items-center justify-between p-4 rounded-2xl border ${borderColor} ${isReal ? 'bg-white/5' : 'bg-dark-900/40'} mb-2 animate-slide-up` },
+                    React.createElement('div', { className: "flex items-center gap-4" },
+                        // الرتبة
+                        React.createElement('div', { className: `font-black text-xl w-8 text-center ${rankColor} font-oswald` }, 
+                            index + 1
+                        ),
+                        // الصورة والاسم
+                        React.createElement('div', { className: "flex items-center gap-3" },
+                            React.createElement('div', { className: `w-10 h-10 rounded-full flex items-center justify-center ${isTop3 ? 'bg-gradient-to-tr from-gold-400 to-black' : 'bg-dark-800'}` },
+                                isTop3 ? React.createElement(Crown, { size: 18, className: "text-white" }) : React.createElement(User, { size: 18, className: "text-gray-500" })
+                            ),
+                            React.createElement('div', {},
+                                React.createElement('p', { className: "font-bold text-sm text-white" }, u.username || "Unknown"),
+                                React.createElement('p', { className: "text-[9px] text-gray-500 uppercase" }, isReal ? "VERIFIED MEMBER" : "GLOBAL ELITE")
+                            )
+                        )
+                    ),
+                    // الرصيد
+                    React.createElement('div', { className: "text-right" },
+                        React.createElement('p', { className: "font-mono font-bold text-gold-400" }, u.coins.toLocaleString()),
+                        React.createElement('p', { className: "text-[8px] text-gray-600" }, "COINS")
+                    )
+                );
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 z-50 bg-[#050505] flex flex-col animate-slide-up" },
+                // Header
+                React.createElement('div', { className: "p-6 glass-premium z-20 flex items-center gap-4 flex-shrink-0" },
+                    React.createElement('button', { onClick: back, className: "p-2 bg-white/5 rounded-xl text-white hover:bg-gold-500/20" }, React.createElement(ChevronLeft)),
+                    React.createElement('div', {},
+                        React.createElement('h2', { className: "text-2xl font-black text-gold-500 font-oswald tracking-widest" }, "LEADERBOARD"),
+                        React.createElement('p', { className: "text-[10px] text-gray-400" }, "TOP PLAYERS WORLDWIDE")
+                    )
+                ),
+
+                // Content
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-4 pb-32 no-scrollbar" },
+                    
+                    // 1. منصة التتويج (للوهميين الأوائل - لإبهار المستخدم)
+                    fakeLeaders.length > 0 && React.createElement('div', { className: "flex justify-center items-end gap-2 mb-8 mt-4" },
+                        // المركز الثاني
+                        React.createElement('div', { className: "flex flex-col items-center animate-slide-up", style: {animationDelay: '0.1s'} },
+                            React.createElement('div', { className: "w-16 h-16 rounded-full border-2 border-gray-400 bg-black flex items-center justify-center mb-2 overflow-hidden relative" },
+                                React.createElement('span', { className: "font-black text-gray-400 text-xl" }, "2")
+                            ),
+                            React.createElement('div', { className: "w-20 h-24 bg-gradient-to-t from-gray-900 to-gray-800 rounded-t-xl border-t border-gray-600 flex flex-col items-center justify-end p-2" },
+                                React.createElement('p', { className: "text-[10px] font-bold text-white truncate w-full text-center" }, fakeLeaders[1].username),
+                                React.createElement('p', { className: "text-[8px] text-gold-500" }, (fakeLeaders[1].coins/1000000).toFixed(1) + "M")
+                            )
+                        ),
+                        // المركز الأول
+                        React.createElement('div', { className: "flex flex-col items-center animate-slide-up z-10" },
+                            React.createElement(Crown, { className: "text-gold-500 mb-1 animate-bounce", size: 32 }),
+                            React.createElement('div', { className: "w-20 h-20 rounded-full border-2 border-gold-500 bg-black flex items-center justify-center mb-2 overflow-hidden shadow-[0_0_20px_#fbbf24]" },
+                                React.createElement('span', { className: "font-black text-gold-500 text-2xl" }, "1")
+                            ),
+                            React.createElement('div', { className: "w-24 h-32 bg-gradient-to-t from-gold-900 to-yellow-800 rounded-t-xl border-t border-gold-500 flex flex-col items-center justify-end p-2 shadow-lg" },
+                                React.createElement('p', { className: "text-xs font-black text-white truncate w-full text-center" }, fakeLeaders[0].username),
+                                React.createElement('p', { className: "text-[10px] text-white" }, (fakeLeaders[0].coins/1000000).toFixed(1) + "M")
+                            )
+                        ),
+                        // المركز الثالث
+                        React.createElement('div', { className: "flex flex-col items-center animate-slide-up", style: {animationDelay: '0.2s'} },
+                            React.createElement('div', { className: "w-16 h-16 rounded-full border-2 border-orange-700 bg-black flex items-center justify-center mb-2 overflow-hidden" },
+                                React.createElement('span', { className: "font-black text-orange-700 text-xl" }, "3")
+                            ),
+                            React.createElement('div', { className: "w-20 h-20 bg-gradient-to-t from-orange-900 to-orange-800 rounded-t-xl border-t border-orange-700 flex flex-col items-center justify-end p-2" },
+                                React.createElement('p', { className: "text-[10px] font-bold text-white truncate w-full text-center" }, fakeLeaders[2].username),
+                                React.createElement('p', { className: "text-[8px] text-gold-500" }, (fakeLeaders[2].coins/1000000).toFixed(1) + "M")
+                            )
+                        )
+                    ),
+
+                    // عنوان القسم الوهمي
+                    React.createElement('h3', { className: "text-gold-500 font-bold text-xs uppercase tracking-widest mb-3 px-2 flex items-center gap-2" }, 
+                        React.createElement(Globe, { size: 14 }), "Global Elite (Top 10)"
+                    ),
+
+                    // باقي القائمة الوهمية (من 4 إلى 10)
+                    fakeLeaders.slice(3).map((u, i) => 
+                        React.createElement(RankItem, { key: u.id, u, index: i + 3, isReal: false })
+                    ),
+
+                    // فاصل
+                    React.createElement('div', { className: "my-8 border-t border-dashed border-white/10 relative" },
+                        React.createElement('span', { className: "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#050505] px-3 text-xs text-gray-500 font-bold" }, "LOCAL RANKING")
+                    ),
+
+                    // عنوان القسم الحقيقي
+                    React.createElement('h3', { className: "text-green-500 font-bold text-xs uppercase tracking-widest mb-3 px-2 flex items-center gap-2" }, 
+                        React.createElement(Users, { size: 14 }), "Verified Players"
+                    ),
+
+                    // قائمة الحقيقيين
+                    loading 
+                    ? React.createElement('div', { className: "text-center py-4 text-gray-500" }, "Loading real players...") 
+                    : realLeaders.map((u, i) => React.createElement(RankItem, { key: u.id, u, index: i, isReal: true }))
+                )
+            );
+        }
         // --- APP MAIN (THE FINAL LEGENDARY VERSION) ---
         export default function App() {
             // States
@@ -1282,6 +1438,11 @@
             
             if (view === 'agent') return React.createElement(AgentScreen, { user, back: ()=>navTo('home'), t, showMsg });
             if (view === 'gifts') return React.createElement(GiftScreen, { user, back: ()=>navTo('home'), showMsg });
+            // ... داخل دالة App ...
+if (view === 'game-hilo') return React.createElement(HiLoGame, { user, back: ()=>navTo('casino'), showMsg, ArrowIcon: ChevronRight, t, db, logGame });
+
+// 👇👇👇 أضف هذا السطر هنا 👇👇👇
+if (view === 'leaderboard') return React.createElement(LeaderboardScreen, { user, back: ()=>navTo('home'), db });
 
             // ----------------------------------------------------
             // 6. الواجهة الرئيسية (Main UI Container)
@@ -1575,198 +1736,107 @@
         }
 
         function SettingsScreen({ user, showMsg, t, back, db, setView }) {
-            // حالة النوافذ المنبثقة (Modals)
-            const [modalType, setModalType] = useState(null); // 'profile', 'password', null
+            const [modalType, setModalType] = useState(null);
             const [loading, setLoading] = useState(false);
-            
-            // حالة النماذج (Forms)
-            const [profileForm, setProfileForm] = useState({ 
-                fullName: user.fullName || '', 
-                phone: user.phone || '', 
-                email: user.email || '' 
-            });
-            
-            const [passForm, setPassForm] = useState({ 
-                oldPass: '', 
-                newPass: '', 
-                confirmPass: '' 
-            });
+            const [profileForm, setProfileForm] = useState({ fullName: user.fullName || '', phone: user.phone || '', email: user.email || '' });
+            const [passForm, setPassForm] = useState({ oldPass: '', newPass: '', confirmPass: '' });
 
-            // تحديث البيانات عند تغير المستخدم
-            useEffect(() => {
-                setProfileForm({ 
-                    fullName: user.fullName || '', 
-                    phone: user.phone || '', 
-                    email: user.email || '' 
-                });
-            }, [user]);
+            useEffect(() => { if (user) setProfileForm({ fullName: user.fullName || '', phone: user.phone || '', email: user.email || '' }); }, [user]);
 
-            // دالة تحديث الإعدادات السريعة (Toggles)
             const toggleSetting = async (key) => {
                 const newValue = !user[key];
-                // تحديث واجهة المستخدم فوراً (Optimistic UI) - لكن سنعتمد على Firebase Listener لتحديث الـ Prop
                 AudioSys.click();
-                try {
-                    await updateDoc(doc(db, "users", user.id), { [key]: newValue });
-                    if(newValue) AudioSys.success();
-                    // لا حاجة لـ showMsg لكل ضغطة لتكون التجربة سلسة مثل iOS
-                } catch (e) {
-                    showMsg("Failed to update setting", "error");
-                }
+                try { await updateDoc(doc(db, "users", user.id), { [key]: newValue }); } catch (e) { showMsg("Error", "error"); }
             };
 
-            // دالة حفظ الملف الشخصي
             const saveProfile = async () => {
+                if(!profileForm.fullName) return showMsg("Name is required", "error");
                 setLoading(true);
-                try {
-                    await updateDoc(doc(db, "users", user.id), profileForm);
-                    showMsg("Profile Updated Successfully", "success");
-                    setModalType(null);
-                } catch (e) {
-                    showMsg("Connection Error", "error");
-                }
+                try { await updateDoc(doc(db, "users", user.id), profileForm); showMsg("Saved", "success"); setModalType(null); } catch (e) { showMsg("Error", "error"); }
                 setLoading(false);
             };
 
-            // دالة تغيير كلمة المرور
             const changePassword = async () => {
-                if (!passForm.oldPass || !passForm.newPass) return showMsg("Fill all fields", "error");
-                if (passForm.newPass !== passForm.confirmPass) return showMsg("Passwords do not match", "error");
-                
+                if (!passForm.oldPass || !passForm.newPass) return showMsg("Fill fields", "error");
                 setLoading(true);
-                try {
-                    // التحقق من كلمة المرور القديمة (محاكاة أمنية)
-                    if (passForm.oldPass !== user.password) {
-                        showMsg("Incorrect Old Password", "error");
-                        setLoading(false);
-                        return;
-                    }
-
-                    await updateDoc(doc(db, "users", user.id), { password: passForm.newPass });
-                    showMsg("Security Credentials Updated", "success");
-                    setModalType(null);
-                    setPassForm({ oldPass: '', newPass: '', confirmPass: '' });
-                } catch (e) {
-                    showMsg("Update Failed", "error");
-                }
+                try { await updateDoc(doc(db, "users", user.id), { password: passForm.newPass }); showMsg("Updated", "success"); setModalType(null); } catch (e) { showMsg("Error", "error"); }
                 setLoading(false);
             };
 
-            // مكون زر التبديل (Toggle Switch)
-            const Toggle = ({ active, onToggle }) => React.createElement('button', {
-                onClick: (e) => { e.stopPropagation(); onToggle(); },
-                className: `w-10 h-6 rounded-full p-1 transition-all duration-300 flex items-center ${active ? 'bg-gold-500 justify-end' : 'bg-white/10 justify-start'}`
-            }, React.createElement('div', { className: `w-4 h-4 bg-white rounded-full shadow-md` }));
+            const Toggle = ({ active, onToggle }) => React.createElement('button', { onClick: (e) => { e.stopPropagation(); onToggle(); }, className: `w-10 h-6 rounded-full p-1 transition-all ${active ? 'bg-gold-500 justify-end' : 'bg-white/10 justify-start'} flex items-center` }, React.createElement('div', { className: `w-4 h-4 bg-white rounded-full shadow` }));
 
-            // مكون عنصر القائمة
-            const SettingItem = ({ icon: Icon, label, value, type = 'arrow', onClick, color = 'text-white', active }) => React.createElement('div', {
-                onClick: type === 'arrow' ? onClick : undefined,
-                className: "flex items-center justify-between p-4 bg-dark-900/50 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 last:border-0"
-            },
-                React.createElement('div', { className: "flex items-center gap-3" },
-                    React.createElement('div', { className: `p-2 rounded-lg bg-white/5 ${color}` }, React.createElement(Icon, { size: 18 })),
-                    React.createElement('span', { className: "text-sm font-medium text-gray-200" }, label)
-                ),
-                React.createElement('div', { className: "flex items-center gap-2" },
-                    value && React.createElement('span', { className: "text-xs text-gray-500 font-mono" }, value),
-                    type === 'arrow' && React.createElement(ChevronRight, { size: 16, className: "text-gray-600" }),
-                    type === 'toggle' && React.createElement(Toggle, { active: active, onToggle: onClick })
-                )
+            const SettingItem = ({ icon: Icon, label, value, type = 'arrow', onClick, color = 'text-white', active }) => React.createElement('div', { onClick: type === 'arrow' ? onClick : undefined, className: "flex items-center justify-between p-4 bg-dark-900/50 border-b border-white/5 last:border-0 cursor-pointer hover:bg-white/5" },
+                React.createElement('div', { className: "flex items-center gap-3" }, React.createElement('div', { className: `p-2 rounded-lg bg-white/5 ${color}` }, React.createElement(Icon, { size: 18 })), React.createElement('span', { className: "text-sm text-gray-200" }, label)),
+                React.createElement('div', { className: "flex items-center gap-2" }, value && React.createElement('span', { className: "text-xs text-gray-500 font-mono" }, value), type === 'arrow' && React.createElement(ChevronRight, { size: 16, className: "text-gray-600" }), type === 'toggle' && React.createElement(Toggle, { active: active, onToggle: onClick }))
             );
 
-            return React.createElement('div', { className: "h-full bg-[#050505] flex flex-col animate-slide-up relative" },
+            // --- التعديل هنا: fixed inset-0 وتفعيل السكرول ---
+            return React.createElement('div', { className: "fixed inset-0 z-50 bg-[#050505] flex flex-col animate-slide-up" },
                 
-                // 1. Header
-                React.createElement('div', { className: "p-6 glass-premium z-20 flex items-center gap-4" },
-                    React.createElement('button', { onClick: back, className: "p-2 bg-white/5 rounded-xl text-white hover:bg-gold-500/20 transition-colors" }, React.createElement(ChevronLeft)),
+                // Header (ثابت)
+                React.createElement('div', { className: "p-6 glass-premium z-20 flex items-center gap-4 flex-shrink-0" },
+                    React.createElement('button', { onClick: back, className: "p-2 bg-white/5 rounded-xl text-white" }, React.createElement(ChevronLeft)),
                     React.createElement('h2', { className: "text-2xl font-black text-white font-oswald tracking-widest" }, "SETTINGS")
                 ),
 
-                // 2. Scrollable Content
-                React.createElement('div', { className: "flex-1 overflow-y-auto p-6 pb-32 space-y-8" },
+                // Content (قابل للسكرول)
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-6 pb-32 space-y-8 no-scrollbar" },
                     
-                    // Profile Header
                     React.createElement('div', { className: "flex flex-col items-center mb-4" },
-                        React.createElement('div', { className: "w-24 h-24 rounded-full p-[2px] bg-gradient-to-tr from-gold-300 to-gold-600 shadow-[0_0_30px_rgba(234,179,8,0.3)] mb-4 relative" },
-                            React.createElement('div', { className: "w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden" },
-                                React.createElement(User, { size: 40, className: "text-gold-500" })
-                            ),
-                            // مؤشر الحالة (أخضر=نشط)
-                            React.createElement('div', { className: "absolute bottom-0 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-black" })
+                        React.createElement('div', { className: "w-24 h-24 rounded-full bg-gradient-to-tr from-gold-600 to-black p-[2px] mb-4" },
+                            React.createElement('div', { className: "w-full h-full rounded-full bg-black flex items-center justify-center" }, React.createElement(User, { size: 40, className: "text-gold-500" }))
                         ),
-                        React.createElement('h3', { className: "text-xl font-bold text-white" }, user.fullName || "Elite Member"),
-                        React.createElement('div', { className: "flex items-center gap-2 mt-1 bg-white/5 px-3 py-1 rounded-full border border-white/10" },
-                            React.createElement('span', { className: "text-xs font-mono text-gold-500" }, user.memberId),
-                            React.createElement(Copy, { size: 12, className: "text-gray-500 cursor-pointer hover:text-white", onClick: () => { navigator.clipboard.writeText(user.memberId); showMsg("ID Copied"); } })
-                        )
+                        React.createElement('h3', { className: "text-xl font-bold text-white" }, user.fullName || "User"),
+                        React.createElement('span', { className: "text-xs font-mono text-gold-500 bg-white/5 px-2 py-1 rounded mt-2" }, user.memberId)
                     ),
 
-                    // Group: Account
                     React.createElement('div', { className: "space-y-2" },
-                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "ACCOUNT & SECURITY"),
-                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
-                            React.createElement(SettingItem, { icon: User, label: "Personal Information", color: "text-blue-400", onClick: () => setModalType('profile') }),
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 ml-2" }, "ACCOUNT"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden" },
+                            React.createElement(SettingItem, { icon: User, label: "Edit Profile", color: "text-blue-400", onClick: () => setModalType('profile') }),
                             React.createElement(SettingItem, { icon: Lock, label: "Change Password", color: "text-red-400", onClick: () => setModalType('password') }),
-                            // هنا ربطنا الـ toggle بقاعدة البيانات
-                            React.createElement(SettingItem, { icon: ShieldCheck, label: "Two-Factor Auth (2FA)", color: "text-green-400", type: 'toggle', active: user.twoFactor, onClick: () => toggleSetting('twoFactor') }),
+                            React.createElement(SettingItem, { icon: ShieldCheck, label: "2FA Security", color: "text-green-400", type: 'toggle', active: user.twoFactor, onClick: () => toggleSetting('twoFactor') })
                         )
                     ),
 
-                    // Group: Preferences
                     React.createElement('div', { className: "space-y-2" },
-                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "PREFERENCES"),
-                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
-                            // ربطنا الصوت والاشعارات بقاعدة البيانات
-                            React.createElement(SettingItem, { icon: Bell, label: "Notifications", type: 'toggle', active: user.notifications, color: "text-yellow-400", onClick: () => toggleSetting('notifications') }),
-                            React.createElement(SettingItem, { icon: Speaker, label: "Sound Effects", type: 'toggle', active: user.sound, color: "text-pink-400", onClick: () => toggleSetting('sound') })
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 ml-2" }, "SYSTEM"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden" },
+                            React.createElement(SettingItem, { icon: Bell, label: "Notifications", color: "text-yellow-400", type: 'toggle', active: user.notifications, onClick: () => toggleSetting('notifications') }),
+                            React.createElement(SettingItem, { icon: Speaker, label: "Sound", color: "text-pink-400", type: 'toggle', active: user.sound, onClick: () => toggleSetting('sound') })
                         )
                     ),
 
-                    // Group: Legal
                     React.createElement('div', { className: "space-y-2" },
-                        React.createElement('p', { className: "text-xs font-bold text-gray-500 uppercase tracking-widest ml-2" }, "LEGAL"),
-                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm" },
-                            React.createElement(SettingItem, { icon: FileText, label: "Terms of Service", color: "text-gray-400", onClick: () => setView('terms') }),
-                            React.createElement(SettingItem, { icon: ShieldCheck, label: "Privacy Policy", color: "text-gray-400", onClick: () => setView('policy') }),
-                            React.createElement(SettingItem, { icon: Info, label: "About CD0777", value: "v2.5.0", color: "text-gray-400" })
+                        React.createElement('p', { className: "text-xs font-bold text-gray-500 ml-2" }, "LEGAL"),
+                        React.createElement('div', { className: "bg-white/5 rounded-2xl border border-white/5 overflow-hidden" },
+                            React.createElement(SettingItem, { icon: FileText, label: "Terms", onClick: () => setView('terms') }),
+                            React.createElement(SettingItem, { icon: ShieldCheck, label: "Privacy", onClick: () => setView('policy') })
                         )
                     ),
 
-                    // Logout
-                    React.createElement('button', { onClick: () => { localStorage.removeItem('cd0777_uid'); window.location.reload(); }, className: "w-full py-4 rounded-2xl border border-red-500/30 text-red-500 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 mb-8" },
+                    React.createElement('button', { onClick: () => { localStorage.removeItem('cd0777_uid'); window.location.reload(); }, className: "w-full py-4 rounded-2xl border border-red-500/30 text-red-500 font-bold hover:bg-red-500/10 flex items-center justify-center gap-2" },
                         React.createElement(LogOut, { size: 18 }), "Sign Out"
                     )
                 ),
 
-                // ----------------------------------------------------
-                // النوافذ المنبثقة (Modals) لتعديل البيانات
-                // ----------------------------------------------------
-                
-                // 1. Modal: Edit Profile
-                modalType === 'profile' && React.createElement('div', { className: "absolute inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-slide-up" },
-                    React.createElement('div', { className: "flex justify-between items-center mb-8" },
-                        React.createElement('h3', { className: "text-xl font-bold text-white" }, "Edit Profile"),
-                        React.createElement('button', { onClick: ()=>setModalType(null), className: "p-2 bg-white/10 rounded-full" }, React.createElement(X, {size:20}))
-                    ),
+                // Modals (Overlay)
+                modalType === 'profile' && React.createElement('div', { className: "absolute inset-0 z-[60] bg-black/95 flex flex-col p-6 animate-slide-up" },
+                    React.createElement('div', { className: "flex justify-between mb-8" }, React.createElement('h3', {className:"text-xl font-bold"}, "Edit Profile"), React.createElement('button', { onClick: ()=>setModalType(null) }, React.createElement(X))),
                     React.createElement('div', { className: "space-y-4" },
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Full Name"), React.createElement(Input, { value: profileForm.fullName, onChange: e=>setProfileForm({...profileForm, fullName:e.target.value}), icon: User })),
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Phone Number"), React.createElement(Input, { value: profileForm.phone, onChange: e=>setProfileForm({...profileForm, phone:e.target.value}), icon: Smartphone })),
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Email Address"), React.createElement(Input, { value: profileForm.email, onChange: e=>setProfileForm({...profileForm, email:e.target.value}), icon: Mail })),
-                        React.createElement(Button, { full: true, onClick: saveProfile, loading: loading }, "SAVE CHANGES")
+                        React.createElement(Input, { value: profileForm.fullName, onChange: e=>setProfileForm({...profileForm, fullName:e.target.value}), icon: User }),
+                        React.createElement(Input, { value: profileForm.phone, onChange: e=>setProfileForm({...profileForm, phone:e.target.value}), icon: Smartphone }),
+                        React.createElement(Input, { value: profileForm.email, onChange: e=>setProfileForm({...profileForm, email:e.target.value}), icon: Mail }),
+                        React.createElement(Button, { full: true, onClick: saveProfile, loading: loading }, "SAVE")
                     )
                 ),
-
-                // 2. Modal: Change Password
-                modalType === 'password' && React.createElement('div', { className: "absolute inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-slide-up" },
-                    React.createElement('div', { className: "flex justify-between items-center mb-8" },
-                        React.createElement('h3', { className: "text-xl font-bold text-white" }, "Change Password"),
-                        React.createElement('button', { onClick: ()=>setModalType(null), className: "p-2 bg-white/10 rounded-full" }, React.createElement(X, {size:20}))
-                    ),
+                modalType === 'password' && React.createElement('div', { className: "absolute inset-0 z-[60] bg-black/95 flex flex-col p-6 animate-slide-up" },
+                    React.createElement('div', { className: "flex justify-between mb-8" }, React.createElement('h3', {className:"text-xl font-bold"}, "Password"), React.createElement('button', { onClick: ()=>setModalType(null) }, React.createElement(X))),
                     React.createElement('div', { className: "space-y-4" },
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Current Password"), React.createElement(Input, { type:"password", value: passForm.oldPass, onChange: e=>setPassForm({...passForm, oldPass:e.target.value}), icon: Lock })),
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "New Password"), React.createElement(Input, { type:"password", value: passForm.newPass, onChange: e=>setPassForm({...passForm, newPass:e.target.value}), icon: KeyRound })),
-                        React.createElement('div', {}, React.createElement('label', {className:"text-xs text-gray-500 font-bold ml-1"}, "Confirm Password"), React.createElement(Input, { type:"password", value: passForm.confirmPass, onChange: e=>setPassForm({...passForm, confirmPass:e.target.value}), icon: CheckCircle })),
-                        React.createElement(Button, { full: true, variant: 'red', onClick: changePassword, loading: loading }, "UPDATE SECURITY")
+                        React.createElement(Input, { type:"password", placeholder:"Old Password", value: passForm.oldPass, onChange: e=>setPassForm({...passForm, oldPass:e.target.value}), icon: Lock }),
+                        React.createElement(Input, { type:"password", placeholder:"New Password", value: passForm.newPass, onChange: e=>setPassForm({...passForm, newPass:e.target.value}), icon: KeyRound }),
+                        React.createElement(Input, { type:"password", placeholder:"Confirm", value: passForm.confirmPass, onChange: e=>setPassForm({...passForm, confirmPass:e.target.value}), icon: CheckCircle }),
+                        React.createElement(Button, { full: true, variant:'red', onClick: changePassword, loading: loading }, "UPDATE")
                     )
                 )
             );
@@ -3084,65 +3154,42 @@
             );
         }
 
-        // --- 3. صفحة المستويات (XP Leveling) ---
         function LevelingScreen({ user, back }) {
-            // جلب عدد الرهانات (إذا لم يوجد نعتبره 0)
             const bets = user.totalBets || 0;
-            
-            // معادلة المستوى الصعبة (كل مستوى أصعب من قبله)
-            // Lvl 1 = 0-9 bets
-            // Lvl 2 = 10 bets
-            // Lvl 3 = 25 bets
-            // المعادلة التقريبية: Level = الجذر التربيعي لـ (bets / 2.5) تقريباً لتعطي نفس التدرج
-            // سنستخدم نظام حسابي دقيق للعرض
-            
-            // حساب المستوى الحالي بناءً على عدد الرهانات
-            // 0-9: Lvl 1 | 10-24: Lvl 2 | 25-49: Lvl 3 | 50-89: Lvl 4 ...
-            let level = 1;
-            let reqForNext = 10;
-            let accum = 10;
-            
-            // حلقة لحساب المستوى الحالي بدقة بناءً على طلبك (كل مرة تزيد الصعوبة)
-            while (bets >= accum) {
-                level++;
-                reqForNext += (5 * level); // تزيد الصعوبة بمقدار 5 * المستوى الجديد
-                accum += reqForNext;
-            }
-            // accum الآن هو العدد المطلوب للمستوى القادم
-            // prevAccum هو العدد المطلوب للمستوى الحالي
+            let level = 1, req = 10, accum = 10;
+            while (bets >= accum) { level++; req += (5 * level); accum += req; }
             const nextLevelBets = accum;
-            const prevLevelBets = accum - reqForNext;
-            
-            // نسبة شريط التقدم
+            const prevLevelBets = accum - req;
             const progress = Math.min(100, Math.max(0, ((bets - prevLevelBets) / (nextLevelBets - prevLevelBets)) * 100));
 
-            return React.createElement('div', { className: "fixed inset-0 bg-dark-950 z-50 flex flex-col p-6 animate-slide-up" },
-                React.createElement('button', { onClick: back, className: "mb-6 text-white" }, React.createElement(ChevronRight)),
-                React.createElement('div', { className: "flex-1 flex flex-col items-center justify-center text-center" },
+            return React.createElement('div', { className: "fixed inset-0 z-50 bg-dark-950 flex flex-col animate-slide-up" },
+                // Header Fixed
+                React.createElement('div', { className: "p-6 flex-shrink-0" },
+                    React.createElement('button', { onClick: back, className: "text-white p-2 bg-white/5 rounded-xl" }, React.createElement(ChevronRight))
+                ),
+
+                // Scrollable Content
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-6 pb-20 flex flex-col items-center no-scrollbar" },
                     
-                    // دائرة المستوى
-                    React.createElement('div', { className: "w-48 h-48 rounded-full border-8 border-dark-800 flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_#a855f7] relative" },
-                        // SVG للتقدم الدائري
+                    React.createElement('div', { className: "w-48 h-48 rounded-full border-8 border-dark-800 flex flex-col items-center justify-center mb-6 shadow-[0_0_30px_#a855f7] relative flex-shrink-0" },
                         React.createElement('svg', { className: "absolute inset-0 w-full h-full -rotate-90", viewBox: "0 0 100 100" },
-                             React.createElement('circle', { cx:"50", cy:"50", r:"46", fill:"none", stroke:"#a855f7", strokeWidth:"4", strokeDasharray: `${progress * 2.89} 289`, strokeLinecap:"round", className:"transition-all duration-1000" })
+                             React.createElement('circle', { cx:"50", cy:"50", r:"46", fill:"none", stroke:"#a855f7", strokeWidth:"4", strokeDasharray: `${progress * 2.89} 289`, strokeLinecap:"round" })
                         ),
-                        React.createElement('span', { className: "text-gray-400 text-xs font-bold uppercase tracking-widest" }, "LEVEL"),
+                        React.createElement('span', { className: "text-gray-400 text-xs font-bold uppercase" }, "LEVEL"),
                         React.createElement('span', { className: "text-7xl font-black text-white font-oswald" }, level)
                     ),
 
                     React.createElement('h2', { className: "text-3xl font-bold text-white mb-2 font-oswald" }, level < 50 ? "RISING STAR" : "LEGEND"),
                     
-                    // عداد الرهانات
                     React.createElement('div', { className: "bg-white/5 px-6 py-2 rounded-full border border-white/10 mb-8" },
                         React.createElement('p', { className: "text-gray-300 text-sm font-mono" }, `BETS: ${bets} / ${nextLevelBets}`)
                     ),
 
-                    // حالة قفل المهام
                     level < 50 ? React.createElement('div', { className: "bg-red-900/20 text-red-500 p-6 rounded-2xl border border-red-500/30 flex flex-col items-center gap-3 w-full max-w-sm" },
                         React.createElement(Lock, { size: 32 }), 
-                        React.createElement('div', {},
+                        React.createElement('div', { className: "text-center" },
                             React.createElement('p', { className: "font-bold text-lg" }, "MISSIONS LOCKED"),
-                            React.createElement('p', { className: "text-xs opacity-70" }, `Reach Level 50 to unlock. You need ${nextLevelBets - bets} more bets.`)
+                            React.createElement('p', { className: "text-xs opacity-70" }, `Reach Level 50 to unlock.`)
                         )
                     ) : React.createElement('div', { className: "bg-green-900/20 text-green-500 p-6 rounded-2xl border border-green-500/30 flex flex-col items-center gap-3 w-full max-w-sm animate-pulse" },
                         React.createElement(CheckCircle, { size: 32 }), 
@@ -3851,12 +3898,18 @@
 
         function Sidebar({ user, close, navTo, t, lang, setLang, settings, logout }) {
             return React.createElement('div', { className: "fixed inset-0 z-50 flex" },
+                // الخلفية المظللة (Backdrop) مع إغلاق عند الضغط
                 React.createElement('div', { className: "absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300", onClick: close }),
+                
+                // القائمة الجانبية (Drawer)
                 React.createElement('div', { className: `relative w-80 h-full bg-[#050505] border-l border-gold-500/20 shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col transition-transform duration-300 ${lang==='ar'?'animate-slide-in-right':'animate-slide-in-left'}` },
                     
-                    // رأس القائمة (مع الشعار)
-                    React.createElement('div', { className: "p-8 border-b border-white/5 bg-gradient-to-b from-gold-900/10 to-transparent relative overflow-hidden" },
+                    // 1. رأس القائمة (Header & Profile)
+                    React.createElement('div', { className: "p-8 border-b border-white/5 bg-gradient-to-b from-gold-900/10 to-transparent relative overflow-hidden flex-shrink-0" },
+                        // تأثير الخلفية الباهت
                         React.createElement('div', { className: "absolute top-0 right-0 w-full h-full bg-[url('./logo.jpg')] bg-cover opacity-5 blur-sm pointer-events-none mix-blend-overlay" }),
+                        
+                        // صف الصورة وزر الإغلاق
                         React.createElement('div', { className: "flex justify-between items-start mb-6 relative z-10" },
                             React.createElement('div', { className: "w-20 h-20 rounded-full bg-gradient-to-tr from-gold-300 via-yellow-500 to-gold-800 p-[3px] shadow-[0_0_30px_rgba(234,179,8,0.3)] animate-pulse-glow" },
                                 React.createElement('div', { className: "w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden relative" },
@@ -3870,6 +3923,8 @@
                             ),
                             React.createElement('button', { onClick: close, className: "text-gray-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full backdrop-blur-md hover:bg-red-500/20 hover:text-red-500" }, React.createElement(X, { size: 20 }))
                         ),
+                        
+                        // اسم المستخدم والرتبة
                         React.createElement('div', { className: "relative z-10 space-y-1" },
                             React.createElement('h3', { className: "text-white font-black text-2xl font-oswald tracking-wide uppercase" }, user.fullName || "VIP MEMBER"),
                             React.createElement('div', { className: "flex items-center gap-2" },
@@ -3879,23 +3934,28 @@
                         )
                     ),
 
-                    // الروابط
+                    // 2. روابط التنقل (Navigation Links)
                     React.createElement('nav', { className: "flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar" },
                         React.createElement(SidebarBtn, { icon: Home, label: t('home'), onClick: ()=>navTo('home') }),
                         React.createElement(SidebarBtn, { icon: Dices, label: t('casino'), onClick: ()=>navTo('casino'), badge: "HOT" }),
+                        
+                        // 🔥 الزر الجديد: لوحة الأوائل
+                        React.createElement(SidebarBtn, { icon: Crown, label: lang === 'ar' ? "لوحة الأوائل" : "Leaderboard", onClick: ()=>navTo('leaderboard') }),
+
                         React.createElement(SidebarBtn, { icon: Wallet, label: t('wallet'), onClick: ()=>navTo('profile') }),
                         React.createElement(SidebarBtn, { icon: Trophy, label: t('tasks'), onClick: ()=>navTo('tasks') }),
                         
+                        // فاصل
                         React.createElement('div', { className: "h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-4 mx-2" }), 
                         
                         React.createElement(SidebarBtn, { icon: History, label: t('history'), onClick: ()=>navTo('history') }),
                         React.createElement(SidebarBtn, { icon: Settings, label: t('settings'), onClick: ()=>navTo('settings') }),
                         
-                        // 👇👇 تمت إضافة زر الشروط والأحكام هنا 👇👇
+                        // روابط الصفحات القانونية
                         React.createElement(SidebarBtn, { icon: FileText, label: t('terms'), onClick: ()=>navTo('terms') }),
-                        
                         React.createElement(SidebarBtn, { icon: ShieldCheck, label: t('policy'), onClick: ()=>navTo('policy') }),
                         
+                        // زر تغيير اللغة
                         React.createElement('button', { 
                             onClick: () => { const l = lang==='ar'?'en':'ar'; setLang(l); localStorage.setItem('cd0777_lang', l); AudioSys.click(); },
                             className: "w-full flex items-center justify-between p-3.5 rounded-xl text-gray-400 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all mt-2 group" 
@@ -3908,8 +3968,8 @@
                         )
                     ),
 
-                    // زر الخروج
-                    React.createElement('div', { className: "p-6 border-t border-white/5 bg-black/40" },
+                    // 3. التذييل (زر الخروج)
+                    React.createElement('div', { className: "p-6 border-t border-white/5 bg-black/40 flex-shrink-0" },
                         React.createElement('button', { onClick: logout, className: "w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-red-500/5 text-red-500 border border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] transition-all font-bold text-sm btn-press group" },
                             React.createElement(LogOut, { size: 18, className: "group-hover:-translate-x-1 transition-transform" }),
                             t('logout')
@@ -3925,17 +3985,23 @@
 
         function InfoPage({ title, content, back, settings }) {
             const supportLink = settings?.support_link || "https://t.me/your_admin";
-            const supportText = settings?.support_text || "Contact us for assistance";
-            return React.createElement('div', { className: "h-full bg-dark-950 p-6 overflow-y-auto animate-pop" },
-                React.createElement('button', { onClick: back, className: "mb-6 text-gold-500 flex items-center gap-2 font-bold p-2 bg-gold-500/10 rounded-xl w-max" }, React.createElement(ChevronRight), "Back"),
-                React.createElement('h2', { className: "text-3xl font-bold mb-6 text-gold-500 font-oswald uppercase" }, title),
-                React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-cairo border border-white/5 shadow-lg mb-6" }, content),
-                React.createElement('div', { className: "border-t border-white/10 pt-6 mt-4" },
-                    React.createElement('div', { className: "bg-blue-900/20 border border-blue-500/30 p-6 rounded-2xl text-center" },
-                        React.createElement(Headphones, { size: 32, className: "text-blue-400 mx-auto mb-3" }),
-                        React.createElement('h3', { className: "text-white font-bold mb-2" }, "Support Center"),
-                        React.createElement('p', { className: "text-gray-400 text-xs mb-4" }, supportText),
-                        React.createElement('a', { href: supportLink, target: "_blank", rel: "noopener", className: "inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-blue-900/50" }, React.createElement(Send, { size: 16 }), "Contact Support")
+            return React.createElement('div', { className: "fixed inset-0 z-[100] bg-dark-950 flex flex-col animate-slide-up" },
+                // رأس الصفحة الثابت
+                React.createElement('div', { className: "p-6 glass-premium z-20 flex items-center gap-4 flex-shrink-0" },
+                    React.createElement('button', { onClick: back, className: "p-2 bg-white/5 rounded-xl text-gold-500" }, React.createElement(ChevronLeft)),
+                    React.createElement('h2', { className: "text-2xl font-bold text-gold-500 font-oswald uppercase" }, title),
+                ),
+                
+                // المحتوى القابل للسكرول
+                React.createElement('div', { className: "flex-1 overflow-y-auto p-6 pb-32 no-scrollbar" },
+                    React.createElement('div', { className: "bg-dark-900 p-6 rounded-2xl text-gray-300 text-sm leading-loose whitespace-pre-wrap font-cairo border border-white/5 shadow-lg mb-6" }, content),
+                    
+                    React.createElement('div', { className: "border-t border-white/10 pt-6 mt-4" },
+                        React.createElement('div', { className: "bg-blue-900/20 border border-blue-500/30 p-6 rounded-2xl text-center" },
+                            React.createElement(Headphones, { size: 32, className: "text-blue-400 mx-auto mb-3" }),
+                            React.createElement('h3', { className: "text-white font-bold mb-2" }, "Support Center"),
+                            React.createElement('a', { href: supportLink, target: "_blank", className: "inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold mt-2" }, React.createElement(Send, { size: 16 }), "Contact Support")
+                        )
                     )
                 )
             );
